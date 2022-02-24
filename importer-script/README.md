@@ -1,6 +1,6 @@
 # Terraform Importer Script
 
-The `terraform-importer.py` script was built to quickly import existing resources from a cloudtamer.io installation and begin managing them (and creating new ones) using the cloudtamer.io Terraform Provider.
+The `terraform-importer.py` script was built to quickly import existing resources from a Kion installation and begin managing them (and creating new ones) using the Kion Terraform Provider.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ The general workflow when using this script for the first time, or on subsequent
 
 ## Importing Current Resource State
 
-After importing resources from your installation of cloudtamer.io, but before running your first `terraform plan`, you'll need to generate the Terraform state. After running the importer script, it will generate a bash script for you that you can run to easily do this. The script contains the `terraform import` command for each individual resource that was imported during the run.
+After importing resources from your installation of Kion, but before running your first `terraform plan`, you'll need to generate the Terraform state. After running the importer script, it will generate a bash script for you that you can run to easily do this. The script contains the `terraform import` command for each individual resource that was imported during the run.
 
 At the end of the run, you'll see this in the output:
 `cd <import directory> ; bash import_resource_state.sh`
@@ -47,9 +47,9 @@ Just copy and paste that command to run the script and generate the initial Terr
 Here is an example of usage and output:
 
 ```
-$ python3 terraform-importer.py --import-dir ./cloudtamer/roles --ct-url https://cloudtamer.myorg.com --skip-cfts --skip-cloud-rules --skip-iams --prepend-id
+$ python3 terraform-importer.py --import-dir ./kion/roles --kion-url https://kion.example.com --skip-cfts --skip-cloud-rules --skip-iams --prepend-id
 
-Beginning import from https://cloudtamer.myorg.com
+Beginning import from https://kion.example.com
 
 Skipping AWS CloudFormation Templates
 
@@ -81,11 +81,11 @@ This script will normalize the names of your resources for better management by 
 
 It will replace all spaces with underscores, and remove all non-alphanumeric characters except for dashes and underscores.
 
-This only applies to the names of the files kept in the import directory, and the values of some fields. It will not rename anything in cloudtamer.
+This only applies to the names of the files kept in the import directory, and the values of some fields. It will not rename anything in Kion.
 
 ## Handling of Cloud Access Roles
 
-This script will create sub-directories in the `cloud-access-role-ou` and `cloud-access-role-project` directories for each of the OUs and projects found in cloudtamer that have locally applied Cloud Access Roles.
+This script will create sub-directories in the `cloud-access-role-ou` and `cloud-access-role-project` directories for each of the OUs and projects found in Kion that have locally applied Cloud Access Roles.
 
 This way, roles will be organized by OU / Project for easier management.
 
@@ -135,9 +135,9 @@ The script will tell you if any required folder is missing, and exit. For exampl
 - cloud-access-role-project
 ```
 
-### cloudtamer API key & user with permissions
+### Kion API key & user with permissions
 
-You will need a cloudtamer app API key in order for the script to authenticate with cloudtamer. The user for which this key is generated will need at least `Browse` permissions on:
+You will need a Kion app API key in order for the script to authenticate with Kion. The user for which this key is generated will need at least `Browse` permissions on:
 - Cloud Rules
 - AWS CloudFormation templates
 - AWS IAM policies
@@ -148,19 +148,19 @@ You will need a cloudtamer app API key in order for the script to authenticate w
 It is recommended to export this to the environment rather than providing the key as a CLI argument. For example:
 
 ```bash
-$ export CT_API_KEY='app_1_ksjdlZUisjdlFKSJdlfskj'
+$ export KION_API_KEY='app_1_ksjdlZUisjdlFKSJdlfskj'
 ```
 
 ## Required Arguments
 
-### `--ct-url`
+### `--kion-url`
 
-The URL to cloudtamer.
+The URL to Kion.
 
 Example usage:
 
 ```bash
-$ python3 terraform-importer --ct-url https://cloudtamer.myorg.com
+$ python3 terraform-importer --kion-url https://kion.example.com
 ```
 
 ### `--import-dir`
@@ -170,28 +170,28 @@ The path to the root of the directory for the import. All resources will be kept
 Example usage:
 
 ```bash
-$ python3 terraform-importer --import-dir /Users/me/Code/cloudtamer/terraform/import
+$ python3 terraform-importer --import-dir /Users/me/Code/kion/terraform/import
 ```
 
 ## Optional Arguments
 
-### `--ct-api-key`
+### `--kion-api-key`
 
-The cloudtamer app API key mentioned in the `Prerequisites` section.
+The Kion app API key mentioned in the `Prerequisites` section.
 This is actually required if the environment variable hasn't been set
 
 Example usage:
 
 ```bash
-$ python3 terraform-importer --ct-api-key app_thisshouldreallybeanenvironmentvariable
+$ python3 terraform-importer --kion-api-key app_thisshouldreallybeanenvironmentvariable
 ```
 
-This can also be set as an environment variable called `CT_API_KEY`. (preferred)
+This can also be set as an environment variable called `KION_API_KEY`. (preferred)
 
 Here is an example of doing that:
 
 ```bash
-$ export CT_API_KEY='app_1_ksjdlZUisjdlFKSJdlfskj'
+$ export KION_API_KEY='app_1_ksjdlZUisjdlFKSJdlfskj'
 ```
 
 ### `--skip-cfts`
@@ -286,9 +286,9 @@ $ python3 terraform-importer --skip-azure-roles
 
 ### `--skip-ssl-verify`
 
-Skip verification of the cloudtamer SSL certificate.
+Skip verification of the Kion SSL certificate.
 
-Use this if cloudtamer does not have a valid certificate.
+Use this if Kion does not have a valid certificate.
 
 Using this will output a warning message during the import and may affect functionality overall.
 
@@ -304,7 +304,7 @@ Clone system-managed resources.
 
 When this flag is used, the script will make a clone of all system-managed resources and then import those clones into the repository.
 
-Keep in mind that doing this will effectively double the number of resources in your instance of cloudtamer, which can lead to a lot of clutter.
+Keep in mind that doing this will effectively double the number of resources in your instance of Kion, which can lead to a lot of clutter.
 
 Not all resources are compatible with being cloned and some errors may occur during the cloning process.
 
@@ -340,7 +340,7 @@ $ python3 terraform-importer --clone-system-managed --clone-prefix MYCLONE_ --cl
 
 ### `--import-aws-managed`
 
-Import AWS-managed resources that are already present in cloudtamer.
+Import AWS-managed resources that are already present in Kion.
 
 You may want to import then to easily find their IDs
 for referencing in other resources, or just for reviewing their content.
@@ -400,7 +400,7 @@ By setting this flag, the resource and metadata files that manage that IAM polic
 4-AWSServicesOnlyInUSA.metadata.json
 ```
 
-One caveat to this is that you will need to manually maintain this naming scheme after running the import. Since new resources will not have an ID yet in cloudtamer that means you will have to rename the files with the ID after its been created. Depending on your source control workflow, that may require opening merge / pull requests just for file name changes.
+One caveat to this is that you will need to manually maintain this naming scheme after running the import. Since new resources will not have an ID yet in Kion that means you will have to rename the files with the ID after its been created. Depending on your source control workflow, that may require opening merge / pull requests just for file name changes.
 
 Example usage:
 

@@ -241,7 +241,7 @@ func AssociationChangedInt(d *schema.ResourceData, fieldname string) (*int, *int
 }
 
 // DetermineAssociations will take in a src array (source of truth/repo) and a
-// destination array (cloudtamer.io application) and then return an array of
+// destination array (Kion application) and then return an array of
 // associations to add (arrAdd) and then remove (arrRemove).
 func determineAssociations(src []int, dest []int) (arrAdd []int, arrRemove []int, isChanged bool) {
 	mSrc := makeMapFromArray(src)

@@ -1,4 +1,4 @@
-// Package ctclient provides a client for interacting with the cloudtamer.io
+// Package ctclient provides a client for interacting with the Kion
 // application.
 package ctclient
 

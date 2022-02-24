@@ -15,7 +15,7 @@ Please answer these questions when submitting your issue. Thanks!
 2. Which operating system, processor architecture, and Go version are you using (`go env`)?
 
 
-3. What are the affected resources? For example, cloudtamerio_aws_iam_policy, cloudtamerio_compliance_check, etc.
+3. What are the affected resources? For example, kion_aws_iam_policy, kion_compliance_check, etc.
 
 
 4. What does your Terraform configuration file look like?

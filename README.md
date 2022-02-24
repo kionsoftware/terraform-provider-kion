@@ -79,7 +79,7 @@ terraform plan
 terraform apply --auto-approve
 ```
 
-You can now make changes to the `main.tf` file and then re-run the `apply` command to push the changes to cloudtamer.io.
+You can now make changes to the `main.tf` file and then re-run the `apply` command to push the changes to Kion.
 
 ### Importing Resource State
 
@@ -91,7 +91,7 @@ terraform init
 
 # Import the resource from your environment - this assumes you have a module called
 # 'aws-cloudformation-template' and you are importing into a resource you defined as 'AuditLogging'.
-# The '20' at the end is the ID of the resource in cloudtamer.io.
+# The '20' at the end is the ID of the resource in Kion.
 terraform import module.aws-cloudformation-template.kion_aws_cloudformation_template.AuditLogging 20
 
 # Verify the state is correct - there shouldn't be any changes listed.
@@ -334,7 +334,7 @@ output "user_group_id" {
 # Create an association between a User Group and a SAML IDMS.
 resource "kion_saml_group_association" "sa1" {
   assertion_name         = "memberOf"
-  assertion_regex        = "^cloudtamer-admins"
+  assertion_regex        = "^kion-admins"
   idms_id                = 5
   update_on_login        = true
   user_group_id          = 1
