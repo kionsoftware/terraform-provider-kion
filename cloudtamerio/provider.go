@@ -1,5 +1,5 @@
-// Package cloudtamerio provides the Terraform provider.
-package cloudtamerio
+// package kion provides the Terraform provider.
+package kion
 
 import (
 	"context"
