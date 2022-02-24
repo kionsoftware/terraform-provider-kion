@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	hc "github.com/cloudtamer-io/terraform-provider-cloudtamerio/cloudtamerio/internal/ctclient"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	hc "github.com/kionsoftware/terraform-provider-kion/cloudtamerio/internal/ctclient"
 )
 
 func TestAccDataSourceOU(t *testing.T) {

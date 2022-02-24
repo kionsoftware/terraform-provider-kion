@@ -27,7 +27,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.4] - 2021-08-09
 ### Added
-- Support creating, updating, and deleting resources for: OUs. (Requires cloudtamer.io v2.31.0 or newer)
+- Support creating, updating, and deleting resources for: OUs. (Requires Kion v2.31.0 or newer)
 
 ## [0.1.3] - 2021-06-29
 ### Changed

@@ -1,4 +1,4 @@
-module github.com/cloudtamer-io/terraform-provider-cloudtamerio
+module github.com/kionsoftware/terraform-provider-kion
 
 go 1.13
 

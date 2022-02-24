@@ -4,9 +4,9 @@ package cloudtamerio
 import (
 	"context"
 
-	"github.com/cloudtamer-io/terraform-provider-cloudtamerio/cloudtamerio/internal/ctclient"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/kionsoftware/terraform-provider-kion/cloudtamerio/internal/ctclient"
 )
 
 // Provider -

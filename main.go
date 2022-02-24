@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/cloudtamer-io/terraform-provider-cloudtamerio/cloudtamerio"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"github.com/kionsoftware/terraform-provider-kion/cloudtamerio"
 )
 
 // Generate docs for website

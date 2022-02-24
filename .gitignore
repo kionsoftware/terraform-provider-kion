@@ -27,7 +27,7 @@ Thumbs.db
 
 # Repository Specific
 # Compiled and apps
-terraform-provider-cloudtamerio
+terraform-provider-kion
 bin
 .terraform.lock.hcl
 .envrc

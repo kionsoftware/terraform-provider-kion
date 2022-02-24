@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cloudtamer-io/terraform-provider-cloudtamerio/cloudtamerio/internal/ctclient"
-	hc "github.com/cloudtamer-io/terraform-provider-cloudtamerio/cloudtamerio/internal/ctclient"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/kionsoftware/terraform-provider-kion/cloudtamerio/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/cloudtamerio/internal/ctclient"
 )
 
 const (

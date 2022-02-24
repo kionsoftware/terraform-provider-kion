@@ -3,9 +3,9 @@ package cloudtamerio
 import (
 	"fmt"
 
-	hc "github.com/cloudtamer-io/terraform-provider-cloudtamerio/cloudtamerio/internal/ctclient"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	hc "github.com/kionsoftware/terraform-provider-kion/cloudtamerio/internal/ctclient"
 )
 
 // OUChanges allows moving an OU if the parent ID changes and updating permissions.
