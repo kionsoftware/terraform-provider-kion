@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2022-02-24
+### Changed
+- Rebrand to Kion.
+- Changed provider name, resource names, and environment variables.
+
 ## [0.2.1] - 2021-12-06
 ### Added
 - Support creating, updating, and deleting resources for: AWS Service Control Policies.
