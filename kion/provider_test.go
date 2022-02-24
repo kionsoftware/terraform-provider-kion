@@ -28,10 +28,10 @@ func TestProvider_impl(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	if err := os.Getenv("CLOUDTAMERIO_URL"); err == "" {
-		t.Fatal("CLOUDTAMERIO_URL must be set for acceptance tests")
+	if err := os.Getenv("KION_URL"); err == "" {
+		t.Fatal("KION_URL must be set for acceptance tests")
 	}
-	if err := os.Getenv("CLOUDTAMERIO_APIKEY"); err == "" {
-		t.Fatal("CLOUDTAMERIO_APIKEY must be set for acceptance tests")
+	if err := os.Getenv("KION_APIKEY"); err == "" {
+		t.Fatal("KION_APIKEY must be set for acceptance tests")
 	}
 }

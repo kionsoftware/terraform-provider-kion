@@ -15,7 +15,7 @@ The cloudtamerio provider allows you to interact with an installation of cloudta
 provider "cloudtamerio" {
   # If these are commented out, they will be loaded from
   # environment variables.
-  # url = "https://cloudtamerio.example.com"
+  # url = "https://example.example.com"
   # apikey = "key here"
 }
 
@@ -63,9 +63,9 @@ output "policy_id" {
 If you want to configure the provider via environment variables, you can use these below.
 
 ```bash
-export CLOUDTAMERIO_APIKEY="app_1_XXXXXXXXXXXX"
-export CLOUDTAMERIO_URL="https://cloudtamerio.example.com"
-export CLOUDTAMERIO_SKIPSSLVALIDATION="false"
+export KION_APIKEY="app_1_XXXXXXXXXXXX"
+export KION_URL="https://kion.example.com"
+export KION_SKIPSSLVALIDATION="false"
 ```
 
 ### Importing Resource State

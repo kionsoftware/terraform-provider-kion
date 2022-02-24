@@ -17,8 +17,8 @@ import requests
 from json.decoder import JSONDecodeError
 
 PARSER = argparse.ArgumentParser(description='Import Cloud Resources into the Repo Module')
-PARSER.add_argument('--ct-url', type=str, required=True, help='URL to cloudtamer, without trailing slash. Example: https://cloudtamer.myorg.com')
-PARSER.add_argument('--ct-api-key', type=str, help='cloudtamer API key. Can be set via env variable CLOUDTAMERIO_APIKEY or CT_API_KEY instead (preferred).')
+PARSER.add_argument('--ct-url', type=str, required=True, help='URL to cloudtamer, without trailing slash. Example: https://kion.myorg.com')
+PARSER.add_argument('--ct-api-key', type=str, help='Kion API key. Can be set via env variable KION_APIKEY or CT_API_KEY instead (preferred).')
 PARSER.add_argument('--import-dir', type=str, required=True, help='Path to the root of the target import directory, without trailing slash.')
 PARSER.add_argument('--skip-cfts', action='store_true', help='Skip importing AWS CloudFormation templates.')
 PARSER.add_argument('--skip-iams', action='store_true', help='Skip importing AWS IAM policies.')
@@ -58,12 +58,12 @@ elif re.compile(".+/$").match(ARGS.import_dir):
 
 # validate API key
 if not ARGS.ct_api_key:
-    if os.environ.get('CLOUDTAMERIO_APIKEY'):
-        ARGS.ct_api_key = os.environ['CLOUDTAMERIO_APIKEY']
+    if os.environ.get('KION_APIKEY'):
+        ARGS.ct_api_key = os.environ['KION_APIKEY']
     elif os.environ.get('CT_API_KEY'):
         ARGS.ct_api_key = os.environ['CT_API_KEY']
     else:
-        sys.exit("Did not find a cloudtamer API key supplied via CLI argument or environment variable (CLOUDTAMERIO_APIKEY or CT_API_KEY).")
+        sys.exit("Did not find a cloudtamer API key supplied via CLI argument or environment variable (KION_APIKEY or CT_API_KEY).")
 
 # validate flags related to cloning
 if ARGS.clone_system_managed:

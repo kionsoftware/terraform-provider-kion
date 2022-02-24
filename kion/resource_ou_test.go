@@ -8,12 +8,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
 )
 
 const (
-	resourceTypeOU        = "cloudtamerio_ou"
+	resourceTypeOU        = "kion_ou"
 	resourceNameOU        = "ou1"
 	dataSourceLocalNameOU = "ous"
 )
@@ -143,7 +142,7 @@ func testAccOUCheckResourceDestroy(s *terraform.State) error {
 		return nil
 	}
 
-	c := meta.(*ctclient.Client)
+	c := meta.(*hc.Client)
 
 	// loop through the resources in state, verifying each resource is destroyed
 	for _, rs := range s.RootModule().Resources {

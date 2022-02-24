@@ -1,6 +1,6 @@
-# terraform-provider-cloudtamerio <!-- omit in toc -->
+# terraform-provider-kion <!-- omit in toc -->
 
-The Terraform provider for cloudtamer.io allows you interact with the cloudtamer.io API using the Terraform HCL language. Our provider supports creating, updating, reading, and deleting resources. You can also use it to query for resources using filters even if a resource is not created through Terraform.
+The Terraform provider for Kion allows you interact with the Kion API using the Terraform HCL language. Our provider supports creating, updating, reading, and deleting resources. You can also use it to query for resources using filters even if a resource is not created through Terraform.
 
 - [Getting Started](#getting-started)
   - [Importing Resource State](#importing-resource-state)
@@ -12,13 +12,13 @@ The Terraform provider for cloudtamer.io allows you interact with the cloudtamer
 
 ## Getting Started
 
-Below is sample code on how to create an IAM policy in cloudtamer.io using Terraform.
+Below is sample code on how to create an IAM policy in Kion using Terraform.
 
 First, set your environment variables:
 
 ```bash
-export CLOUDTAMERIO_URL=https://cloudtamerio.example.com
-export CLOUDTAMERIO_APIKEY=API-KEY-HERE
+export KION_URL=https://kion.example.com
+export KION_APIKEY=API-KEY-HERE
 ```
 
 Next, paste this code into a `main.tf` file:
@@ -26,21 +26,21 @@ Next, paste this code into a `main.tf` file:
 ```hcl
 terraform {
   required_providers {
-    cloudtamerio = {
-      source  = "cloudtamer-io/cloudtamerio"
+    kion = {
+      source  = "kionsoftware/kion"
       version = "0.2.1"
     }
   }
 }
 
-provider "cloudtamerio" {
+provider "kion" {
   # If these are commented out, they will be loaded from environment variables.
-  # url = "https://cloudtamerio.example.com"
+  # url = "https://kion.example.com"
   # apikey = "key here"
 }
 
 # Create an IAM policy.
-resource "cloudtamerio_aws_iam_policy" "p1" {
+resource "kion_aws_iam_policy" "p1" {
   name         = "sample-resource"
   description  = "Provides read only access to Amazon EC2 via the AWS Management Console."
   aws_iam_path = ""
@@ -62,7 +62,7 @@ EOF
 
 # Output the ID of the resource created.
 output "policy_id" {
-  value = cloudtamerio_aws_iam_policy.p1.id
+  value = kion_aws_iam_policy.p1.id
 }
 ```
 
@@ -92,7 +92,7 @@ terraform init
 # Import the resource from your environment - this assumes you have a module called
 # 'aws-cloudformation-template' and you are importing into a resource you defined as 'AuditLogging'.
 # The '20' at the end is the ID of the resource in cloudtamer.io.
-terraform import module.aws-cloudformation-template.cloudtamerio_aws_cloudformation_template.AuditLogging 20
+terraform import module.aws-cloudformation-template.kion_aws_cloudformation_template.AuditLogging 20
 
 # Verify the state is correct - there shouldn't be any changes listed.
 terraform plan
@@ -108,7 +108,7 @@ A few of the optional fields are commented out.
 
 ```hcl
 # Create an IAM policy.
-resource "cloudtamerio_aws_iam_policy" "p1" {
+resource "kion_aws_iam_policy" "p1" {
   name = "sample-resource"
   # description  = "Provides read only access to Amazon EC2 via the AWS Management Console."
   # aws_iam_path = ""
@@ -130,13 +130,13 @@ EOF
 
 # Output the ID of the resource created.
 output "policy_id" {
-  value = cloudtamerio_aws_iam_policy.p1.id
+  value = kion_aws_iam_policy.p1.id
 }
 ```
 
 ```hcl
 # Create a CloudFormation template.
-resource "cloudtamerio_aws_cloudformation_template" "t1" {
+resource "kion_aws_cloudformation_template" "t1" {
   name    = "sample-resource"
   regions = ["us-east-1"]
   # description = "Creates a test IAM role."
@@ -189,13 +189,13 @@ EOF
 
 # Output the ID of the resource created.
 output "template_id" {
-  value = cloudtamerio_aws_cloudformation_template.t1.id
+  value = kion_aws_cloudformation_template.t1.id
 }
 ```
 
 ```hcl
 # Create an external compliance check.
-resource "cloudtamerio_compliance_check" "c1" {
+resource "kion_compliance_check" "c1" {
   name                     = "sample-resource"
   cloud_provider_id        = 1
   compliance_check_type_id = 1
@@ -217,13 +217,13 @@ resource "cloudtamerio_compliance_check" "c1" {
 
 # Output the ID of the resource created.
 output "check_id" {
-  value = cloudtamerio_compliance_check.c1.id
+  value = kion_compliance_check.c1.id
 }
 ```
 
 ```hcl
 # Create a compliance standard.
-resource "cloudtamerio_compliance_standard" "s1" {
+resource "kion_compliance_standard" "s1" {
   name               = "sample-resource"
   created_by_user_id = 1
   owner_users { id = 1 }
@@ -232,13 +232,13 @@ resource "cloudtamerio_compliance_standard" "s1" {
 
 # Output the ID of the resource created.
 output "standard_id" {
-  value = cloudtamerio_compliance_standard.s1.id
+  value = kion_compliance_standard.s1.id
 }
 ```
 
 ```hcl
 # Create a cloud rule.
-resource "cloudtamerio_cloud_rule" "cr1" {
+resource "kion_cloud_rule" "cr1" {
   name        = "sample-resource"
   description = "Sample cloud rule."
   aws_iam_policies { id = 1 }
@@ -248,13 +248,13 @@ resource "cloudtamerio_cloud_rule" "cr1" {
 
 # Output the ID of the resource created.
 output "rule_id" {
-  value = cloudtamerio_cloud_rule.cr1.id
+  value = kion_cloud_rule.cr1.id
 }
 ```
 
 ```hcl
 # Create a cloud access role on a project.
-resource "cloudtamerio_project_cloud_access_role" "carp1" {
+resource "kion_project_cloud_access_role" "carp1" {
   name                   = "sample-car"
   project_id             = 1
   aws_iam_role_name      = "sample-car"
@@ -271,13 +271,13 @@ resource "cloudtamerio_project_cloud_access_role" "carp1" {
 
 # Output the ID of the resource created.
 output "project_car_id" {
-  value = cloudtamerio_project_cloud_access_role.carp1.id
+  value = kion_project_cloud_access_role.carp1.id
 }
 ```
 
 ```hcl
 # Create a cloud access role on an OU.
-resource "cloudtamerio_ou_cloud_access_role" "carou1" {
+resource "kion_ou_cloud_access_role" "carou1" {
   name                   = "sample-car"
   ou_id                  = 3
   aws_iam_role_name      = "sample-car"
@@ -292,13 +292,13 @@ resource "cloudtamerio_ou_cloud_access_role" "carou1" {
 
 # Output the ID of the resource created.
 output "ou_car_id" {
-  value = cloudtamerio_ou_cloud_access_role.carou1.id
+  value = kion_ou_cloud_access_role.carou1.id
 }
 ```
 
 ```hcl
 # Create an OU.
-resource "cloudtamerio_ou" "ou1" {
+resource "kion_ou" "ou1" {
   name         = "sample-ou"
   description  = "Sample OU."
   parent_ou_id = 0
@@ -309,13 +309,13 @@ resource "cloudtamerio_ou" "ou1" {
 
 # Output the ID of the resource created.
 output "ou_id" {
-  value = cloudtamerio_ou.ou1.id
+  value = kion_ou.ou1.id
 }
 ```
 
 ```hcl
 # Create a User Group.
-resource "cloudtamerio_user_group" "ug1" {
+resource "kion_user_group" "ug1" {
   name        = "sample-user-group2"
   description = "This is a sample user group."
   idms_id     = 1
@@ -326,13 +326,13 @@ resource "cloudtamerio_user_group" "ug1" {
 
 # Output the ID of the resource created.
 output "user_group_id" {
-  value = cloudtamerio_user_group.ug1.id
+  value = kion_user_group.ug1.id
 }
 ```
 
 ```hcl
 # Create an association between a User Group and a SAML IDMS.
-resource "cloudtamerio_saml_group_association" "sa1" {
+resource "kion_saml_group_association" "sa1" {
   assertion_name         = "memberOf"
   assertion_regex        = "^cloudtamer-admins"
   idms_id                = 5
@@ -342,13 +342,13 @@ resource "cloudtamerio_saml_group_association" "sa1" {
 
 # Output the ID of the resource created.
 output "saml_group_assocation_id" {
-  value = cloudtamerio_saml_group_association.sa1.id
+  value = kion_saml_group_association.sa1.id
 }
 ```
 
 ```hcl
 # Create a Project.
-resource "cloudtamerio_project" "p1" {
+resource "kion_project" "p1" {
   ou_id = 1
   name = "Tech Project I"
   description = "This is a sample project."
@@ -365,13 +365,13 @@ resource "cloudtamerio_project" "p1" {
 
 # Output the ID of the resource created.
 output "project_id" {
-  value = cloudtamerio_project.p1.id
+  value = kion_project.p1.id
 }
 ```
 
 ```hcl
 # Create a GCP IAM role.
-resource "cloudtamerio_gcp_iam_role" "gr1" {
+resource "kion_gcp_iam_role" "gr1" {
   name = "Read permissions"
   description = "Allow user to list & get IAM roles."
   role_permissions = ["iam.roles.get", "iam.roles.list"]
@@ -381,13 +381,13 @@ resource "cloudtamerio_gcp_iam_role" "gr1" {
 
 # Output the ID of the resource created.
 output "gcp_role" {
-  value = cloudtamerio_gcp_iam_role.gr1.id
+  value = kion_gcp_iam_role.gr1.id
 }
 ```
 
 ```hcl
 # Create an AWS Service Control Policy.
-resource "cloudtamerio_service_control_policy" "scp1" {
+resource "kion_service_control_policy" "scp1" {
   name = "Test SCP"
   description  = "This is a sample SCP."
   policy = <<EOF
@@ -410,13 +410,13 @@ EOF
 
 # Output the ID of the resource created.
 output "scp_id" {
-  value = cloudtamerio_service_control_policy.scp1.id
+  value = kion_service_control_policy.scp1.id
 }
 ```
 
 ```hcl
 # Create an Azure ARM template.
-resource "cloudtamerio_azure_arm_template" "arm1" {
+resource "kion_azure_arm_template" "arm1" {
   name = "tf test"
   description  = "A test Azure ARM template created via our Terraform provider."
   resource_group_name = "3797RGI"
@@ -441,13 +441,13 @@ EOF
 
 # Output the ID of the resource created.
 output "arm_template_id" {
-  value = cloudtamerio_azure_arm_template.arm1.id
+  value = kion_azure_arm_template.arm1.id
 }
 ```
 
 ```hcl
 # Create an Azure Role Definition.
-resource "cloudtamerio_azure_role" "ar1" {
+resource "kion_azure_role" "ar1" {
   name = "Test Role"
   description = "A test role created by our Terraform provider."
   role_permissions = <<EOF
@@ -466,7 +466,7 @@ EOF
 
 # Output the ID of the resource created.
 output "ar_id" {
-  value = cloudtamerio_azure_role.ar1.id
+  value = kion_azure_role.ar1.id
 }
 ```
 
@@ -474,37 +474,37 @@ output "ar_id" {
 
 ```hcl
 # Declare a data source to get all IAM policies.
-data "cloudtamerio_aws_iam_policy" "p1" {}
+data "kion_aws_iam_policy" "p1" {}
 
 # Output the list of all policies.
 output "policies" {
-  value = data.cloudtamerio_aws_iam_policy.p1.list
+  value = data.kion_aws_iam_policy.p1.list
 }
 
 # Output the first policy (which by default is the newest policy).
 output "first" {
-  value = data.cloudtamerio_aws_iam_policy.p1.list[0]
+  value = data.kion_aws_iam_policy.p1.list[0]
 }
 
 # Output the first policy name.
 output "policy_name" {
-  value = data.cloudtamerio_aws_iam_policy.p1.list[0].name
+  value = data.kion_aws_iam_policy.p1.list[0].name
 }
 
 # Output a list of all policy names.
 output "policy_names" {
-  value = data.cloudtamerio_aws_iam_policy.p1.list.*.name
+  value = data.kion_aws_iam_policy.p1.list.*.name
 }
 
 # Output a list of all owner users for all policies.
 output "policy_owner_users" {
-  value = data.cloudtamerio_aws_iam_policy.p1.list.*.owner_users
+  value = data.kion_aws_iam_policy.p1.list.*.owner_users
 }
 ```
 
 ```hcl
 # Declare a data source to get 1 IAM policy that matches the name filter.
-data "cloudtamerio_aws_iam_policy" "p1" {
+data "kion_aws_iam_policy" "p1" {
   filter {
     name   = "name"
     values = ["SystemReadOnlyAccess"]
@@ -512,7 +512,7 @@ data "cloudtamerio_aws_iam_policy" "p1" {
 }
 
 # Declare a data source to get 2 IAM policies that matches the name filter.
-data "cloudtamerio_aws_iam_policy" "p1" {
+data "kion_aws_iam_policy" "p1" {
   filter {
     name   = "name"
     values = ["SystemReadOnlyAccess", "test-policy"]
@@ -521,7 +521,7 @@ data "cloudtamerio_aws_iam_policy" "p1" {
 
 # Declare a data source to get 1 IAM policy that matches both of the filters.
 # SystemReadOnlyAccess has the id of 1 so only that policy matches all of the filters.
-data "cloudtamerio_aws_iam_policy" "p1" {
+data "kion_aws_iam_policy" "p1" {
   filter {
     name   = "name"
     values = ["SystemReadOnlyAccess", "test-policy"]
@@ -535,7 +535,7 @@ data "cloudtamerio_aws_iam_policy" "p1" {
 
 # Declare a data source to get all IAM policies that matches the owner filter.
 # Syntax to filter on an array.
-data "cloudtamerio_aws_iam_policy" "p1" {
+data "kion_aws_iam_policy" "p1" {
   filter {
     name   = "owner_users.id"
     values = ["20"]
@@ -545,7 +545,7 @@ data "cloudtamerio_aws_iam_policy" "p1" {
 # Declare a data source to get all IAM policies that matches the id filter.
 # Notice that terraform will convert these to strings even though you
 # passed in an integer.
-data "cloudtamerio_aws_iam_policy" "p1" {
+data "kion_aws_iam_policy" "p1" {
   filter {
     name = "id"
     values = [1, "3"]
@@ -561,7 +561,7 @@ data "cloudtamerio_aws_iam_policy" "p1" {
 output "policy_access" {
   value = {
     # Loop through each policy
-    for c in data.cloudtamerio_aws_iam_policy.p1.list :
+    for c in data.kion_aws_iam_policy.p1.list :
     # Create a map with a key of: id
     c.id => c
     # Filter out an names that don't match the passed in variable
@@ -574,12 +574,12 @@ output "policy_access" {
 
 ```hcl
 # Declare a data source to get all IAM policies.
-data "cloudtamerio_aws_iam_policy" "p1" {}
+data "kion_aws_iam_policy" "p1" {}
 
 # Declare a local variable: local.owners
 locals {
   # Owners for multiple policies merged together.
-  owners = concat(data.cloudtamerio_aws_iam_policy.p1.list[0].owner_users, data.cloudtamerio_aws_iam_policy.p1.list[1].owner_users)
+  owners = concat(data.kion_aws_iam_policy.p1.list[0].owner_users, data.kion_aws_iam_policy.p1.list[1].owner_users)
 }
 
 # Output the local variable.
