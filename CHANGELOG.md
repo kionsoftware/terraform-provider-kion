@@ -2,12 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.3.0] - 2022-02-24
-### Changed
-- Rebrand to Kion.
-- Changed provider name, resource names, and environment variables.
-
-## [0.2.1] - 2021-12-06
+## [0.3.0] - 2022-02-25
 ### Added
 - Support creating, updating, and deleting resources for: AWS Service Control Policies.
 - Support adding and removing AWS Service Control Policies on Project and OU Cloud Rules.
@@ -17,7 +12,11 @@ All notable changes to this project will be documented in this file.
 - Support adding and removing Azure Role Definitions on Project and OU Cloud Rules.
 
 ### Changed
-- The 'created_by_user_id' field for Compliance Checks is now optional. This field will default to the requesting user's ID if not specified.
+- Rebrand from cloudtamer.io to Kion.
+- Change provider name: `cloudtamer-io/cloudtamerio` to `kionsoftware/kion`.
+- Change resource and data source names prefix: `cloudtamer_` to `kion_`.
+- Change environment variables: `CLOUDTAMERIO_URL` and `CLOUDTAMERIO_APIKEY` to `KION_URL` and `KION_APIKEY`, respectively.
+- Made the `created_by_user_id` field for Compliance Checks optional. This field will default to the requesting user's ID if not specified.
 
 ## [0.2.0] - 2021-11-19
 ### Added
