@@ -1,5 +1,5 @@
 """
-cloudtamer.io Terraform Provider Importer
+Kion Terraform Provider Importer
 
 This script imports existing cloud resources into a source control repository
 for management by the Terraform Provider.
@@ -17,8 +17,8 @@ import requests
 from json.decoder import JSONDecodeError
 
 PARSER = argparse.ArgumentParser(description='Import Cloud Resources into the Repo Module')
-PARSER.add_argument('--ct-url', type=str, required=True, help='URL to cloudtamer, without trailing slash. Example: https://cloudtamer.myorg.com')
-PARSER.add_argument('--ct-api-key', type=str, help='cloudtamer API key. Can be set via env variable CLOUDTAMERIO_APIKEY or CT_API_KEY instead (preferred).')
+PARSER.add_argument('--kion-url', type=str, required=True, help='URL to Kion, without trailing slash. Example: https://kion.example.com')
+PARSER.add_argument('--kion-api-key', type=str, help='Kion API key. Can be set via env variable KION_APIKEY or KION_API_KEY instead (preferred).')
 PARSER.add_argument('--import-dir', type=str, required=True, help='Path to the root of the target import directory, without trailing slash.')
 PARSER.add_argument('--skip-cfts', action='store_true', help='Skip importing AWS CloudFormation templates.')
 PARSER.add_argument('--skip-iams', action='store_true', help='Skip importing AWS IAM policies.')
@@ -30,21 +30,21 @@ PARSER.add_argument('--skip-ou-roles', action='store_true', help='Skip importing
 PARSER.add_argument('--skip-cloud-rules', action='store_true', help='Skip importing Cloud Rules.')
 PARSER.add_argument('--skip-checks', action='store_true', help='Skip importing Compliance Checks.')
 PARSER.add_argument('--skip-standards', action='store_true', help='Skip importing Compliance Standards.')
-PARSER.add_argument('--skip-ssl-verify', action='store_true', help='Skip SSL verification. Use if cloudtamer.io does not have a valid SSL certificate.')
+PARSER.add_argument('--skip-ssl-verify', action='store_true', help='Skip SSL verification. Use if Kion does not have a valid SSL certificate.')
 PARSER.add_argument('--overwrite', action='store_true', help='Overwrite existing files during import.')
-PARSER.add_argument('--import-aws-managed', action='store_true', help='Import AWS-managed resources (only those that were already imported into cloudtamer).')
+PARSER.add_argument('--import-aws-managed', action='store_true', help='Import AWS-managed resources (only those that were already imported into Kion).')
 PARSER.add_argument('--prepend-id', action='store_true', help='Prepend each resource\'s ID to its filenames. Useful for easily correlating IDs to resources')
 PARSER.add_argument('--clone-system-managed', action='store_true', help='Clone system-managed resources. Names of clones will be prefixed using --clone-prefix argument. Ownership of clones will be set with --clone-user-ids and/or --clone-user-group-ids')
 PARSER.add_argument('--clone-prefix', type=str, help='A prefix for the name of cloned system-managed resources. Use with --clone-system-managed.')
 PARSER.add_argument('--clone-user-ids', nargs='+', type=int, help='Space separated user IDs to set as owner users for cloned resources')
 PARSER.add_argument('--clone-user-group-ids', nargs='+', type=int, help='Space separated user group IDs to set as owner user groups for cloned resources')
 # PARSER.add_argument('--dry-run', action='store_true', help='Perform a dry run without writing any files.')
-# PARSER.add_argument('--sync', action='store_true',help='Sync repository resources into cloudtamer.')
+# PARSER.add_argument('--sync', action='store_true',help='Sync repository resources into Kion.')
 ARGS = PARSER.parse_args()
 
 # validate ct_url
 if not ARGS.ct_url:
-    sys.exit("Please provide the URL to cloudtamer. Example: --ct-url https://cloudtamer.myorg.com")
+    sys.exit("Please provide the URL to Kion. Example: --kion-url https://kion.example.com")
 # remove trailing slash if found
 elif re.compile(".+/$").match(ARGS.ct_url):
     ARGS.ct_url = re.sub(r'/$', '', ARGS.ct_url)
@@ -57,13 +57,13 @@ elif re.compile(".+/$").match(ARGS.import_dir):
     ARGS.import_dir = re.sub(r'/$', '', ARGS.import_dir)
 
 # validate API key
-if not ARGS.ct_api_key:
-    if os.environ.get('CLOUDTAMERIO_APIKEY'):
-        ARGS.ct_api_key = os.environ['CLOUDTAMERIO_APIKEY']
-    elif os.environ.get('CT_API_KEY'):
-        ARGS.ct_api_key = os.environ['CT_API_KEY']
+if not ARGS.kion_api_key:
+    if os.environ.get('KION_APIKEY'):
+        ARGS.kion_api_key = os.environ['KION_APIKEY']
+    elif os.environ.get('KION_API_KEY'):
+        ARGS.kion_api_key = os.environ['KION_API_KEY']
     else:
-        sys.exit("Did not find a cloudtamer API key supplied via CLI argument or environment variable (CLOUDTAMERIO_APIKEY or CT_API_KEY).")
+        sys.exit("Did not find a Kion API key supplied via CLI argument or environment variable (KION_APIKEY or KION_API_KEY).")
 
 # validate flags related to cloning
 if ARGS.clone_system_managed:
@@ -85,26 +85,26 @@ if ARGS.clone_system_managed:
             ARGS.clone_user_group_ids = []
 
 BASE_URL = "%s/api" % ARGS.ct_url
-HEADERS = {"accept": "application/json", "Authorization": "Bearer " + ARGS.ct_api_key}
+HEADERS = {"accept": "application/json", "Authorization": "Bearer " + ARGS.kion_api_key}
 
 MAX_UNAUTH_RETRIES = 15
 UNAUTH_RETRY_COUNTER = 0
 
-RESOURCE_PREFIX     = 'cloudtamerio'
+RESOURCE_PREFIX     = 'kion'
 IMPORTED_MODULES    = []
 IMPORTED_RESOURCES  = []
 
 PROVIDER_TEMPLATE = textwrap.dedent('''\
     terraform {
         required_providers {
-            cloudtamerio = {
-                source  = "cloudtamer-io/cloudtamerio"
+            kion = {
+                source  = "kionsoftware/kion"
                 version = "0.1.3"
             }
         }
     }
 
-    # provider "cloudtamerio" {
+    # provider "kion" {
         # Configuration options
     # }
     ''')
@@ -490,7 +490,7 @@ def import_iams():
             iam['owner_user_group_ids'] = []
             iam['policy']               = i['iam_policy']['policy'].rstrip()
 
-            # check for IAM path - requires cloudtamer > 2.23
+            # check for IAM path - requires Kion > 2.23
             if 'aws_iam_path' in i:
                 iam['aws_iam_path'] = i['aws_iam_path'].strip()
             else:
@@ -571,7 +571,7 @@ def import_project_roles():
 
     base_path = ARGS.import_dir + "/project-cloud-access-role/"
 
-    # first we need a list of all projects in cloudtamer
+    # first we need a list of all projects in Kion
     all_projects = get_projects()
 
     if all_projects:
@@ -742,7 +742,7 @@ def import_ou_roles():
 
     base_path = ARGS.import_dir + "/ou-cloud-access-role/"
 
-    # first we need a list of all ous in cloudtamer
+    # first we need a list of all ous in Kion
     all_ous = get_objects_or_ids('ous')
 
     if all_ous:
@@ -1052,7 +1052,7 @@ def import_compliance_checks():
         for c in CHECKS:
             system_managed = False
 
-            # skip cloudtamer managed checks unless toggled on
+            # skip Kion managed checks unless toggled on
             if c['ct_managed']:
                 if not ARGS.clone_system_managed:
                     print("Skipping System-managed Compliance Check - %s" % c['name'])
@@ -1888,7 +1888,7 @@ def get_projects(cloud_rule=False):
 
     Params:
         cloud_rule (dict) - cloud rule object for which to return project IDs where the cloud rule is applied locally
-                            if not set, it will return a list of all projects from cloudtamer
+                            if not set, it will return a list of all projects from Kion
     Return:
         success - list of project IDs or project objects (based on cloud_rule param)
         failure - False
@@ -1918,7 +1918,7 @@ def get_projects(cloud_rule=False):
         if projects:
             return projects
         else:
-            print("Could not get projects from cloudtamer.")
+            print("Could not get projects from Kion.")
             return False
 
 
@@ -1959,7 +1959,7 @@ def get_comp_checks(comp_standard=False):
         comp_standard (dict) -  compliance_standard object for which to return
                                 associated compliance standard IDs
                                 if not set, it will return a list of all compliance check
-                                objects from cloudtamer
+                                objects from Kion
     Return:
         ids (list) - list of compliance standard IDs
     """
@@ -1974,20 +1974,20 @@ def get_comp_checks(comp_standard=False):
         if checks:
             return checks
         else:
-            print("Could not get Compliance Checks from cloudtamer.")
+            print("Could not get Compliance Checks from Kion.")
             return False
 
 
 def get_objects_or_ids(object_type, cloud_rule=False, object_id=False):
     """
-    Generic helper function to either return all objects of object_type from cloudtamer
+    Generic helper function to either return all objects of object_type from Kion
 
     If cloud_rule is set, return a list of IDs of the associated object_type in cloud_rule
 
     If object_id is set, return only the object of object_type with that ID
 
     Params:
-        object_type     (str)   -   the type of object to get from the cloud rule, or out of cloudtamer
+        object_type     (str)   -   the type of object to get from the cloud rule, or out of Kion
                                     must be one of the keys of OBJECT_API_MAP
         cloud_rule      (dict)  -   the cloud_rule object to return IDs of object_type. If not set, this
                                     function will return all objects of object_type
@@ -2018,7 +2018,7 @@ def get_objects_or_ids(object_type, cloud_rule=False, object_id=False):
         if objects:
             return objects
         else:
-            print("Could not get return from %s endpoint from cloudtamer." % url)
+            print("Could not get return from %s endpoint from Kion." % url)
             return False
 
 
@@ -2160,7 +2160,7 @@ def create_resource(resource_type, resource):
 
 def search_resource(type, terms, match_key='name'):
     """
-    Helper function to search cloudtamer for objects of type using provided search terms
+    Helper function to search Kion for objects of type using provided search terms
 
     Params:
         type:       (str) - the type of resource to search for
@@ -2303,7 +2303,7 @@ def write_provider_file(file_name, content):
 
     If the file already exists, it will instead print out a
     provider.tf.example file with the text needed by the
-    cloudtamer.io TF provider
+    Kion TF provider
 
     Params:
         file_name   (str)   - full file name including path to write
@@ -2542,7 +2542,7 @@ def process_owners(input, text):
     required for the TF config files
 
     Param:
-        input   (list)  - list of owner user objects returned from cloudtamer, or just IDs
+        input   (list)  - list of owner user objects returned from Kion, or just IDs
         text    (str)   - text to prepend to each line in output
                             ('owner_users' or 'owner_user_groups')
 

@@ -1,12 +1,12 @@
-provider "cloudtamerio" {
+provider "kion" {
   # If these are commented out, they will be loaded from
   # environment variables.
-  # url = "https://cloudtamerio.example.com"
+  # url = "https://kion.example.com"
   # apikey = "key here"
 }
 
 # Create an IAM policy.
-resource "cloudtamerio_aws_iam_policy" "p1" {
+resource "kion_aws_iam_policy" "p1" {
   name         = "sample-resource"
   description  = "Provides read only access to Amazon EC2."
   aws_iam_path = ""
@@ -28,5 +28,5 @@ EOF
 
 # Output the ID of the resource created.
 output "policy_id" {
-  value = cloudtamerio_aws_iam_policy.p1.id
+  value = kion_aws_iam_policy.p1.id
 }

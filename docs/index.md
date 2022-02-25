@@ -1,26 +1,26 @@
 ---
 layout: ""
-page_title: "cloudtamerio Provider"
+page_title: "Kion Provider"
 description: |-
-  The cloudtamerio provider allows you to interact with an installation of cloudtamer.io.
+  The Kion provider allows you to interact with an installation of Kion.
 ---
 
-# cloudtamerio Provider
+# Kion Provider
 
-The cloudtamerio provider allows you to interact with an installation of cloudtamer.io.
+The Kion provider allows you to interact with an installation of Kion.
 
 ## Example Usage
 
 ```terraform
-provider "cloudtamerio" {
+provider "kion" {
   # If these are commented out, they will be loaded from
   # environment variables.
-  # url = "https://cloudtamerio.example.com"
+  # url = "https://kion.example.com"
   # apikey = "key here"
 }
 
 # Create an IAM policy.
-resource "cloudtamerio_aws_iam_policy" "p1" {
+resource "kion_aws_iam_policy" "p1" {
   name         = "sample-resource"
   description  = "Provides read only access to Amazon EC2."
   aws_iam_path = ""
@@ -42,7 +42,7 @@ EOF
 
 # Output the ID of the resource created.
 output "policy_id" {
-  value = cloudtamerio_aws_iam_policy.p1.id
+  value = kion_aws_iam_policy.p1.id
 }
 ```
 
@@ -51,8 +51,8 @@ output "policy_id" {
 
 ### Required
 
-- **apikey** (String, Sensitive) The API key generated from cloudtamer.io. Example: app_1_XXXXXXXXXXXX.
-- **url** (String) The URL of a cloudtamer.io installation. Example: https://cloudtamerio.example.com.
+- **apikey** (String, Sensitive) The API key generated from Kion. Example: app_1_XXXXXXXXXXXX.
+- **url** (String) The URL of a Kion installation. Example: https://kion.example.com.
 
 ### Optional
 
@@ -63,9 +63,9 @@ output "policy_id" {
 If you want to configure the provider via environment variables, you can use these below.
 
 ```bash
-export CLOUDTAMERIO_APIKEY="app_1_XXXXXXXXXXXX"
-export CLOUDTAMERIO_URL="https://cloudtamerio.example.com"
-export CLOUDTAMERIO_SKIPSSLVALIDATION="false"
+export KION_APIKEY="app_1_XXXXXXXXXXXX"
+export KION_URL="https://kion.example.com"
+export KION_SKIPSSLVALIDATION="false"
 ```
 
 ### Importing Resource State
@@ -78,8 +78,8 @@ terraform init
 
 # Import the resource from your environment - this assumes you have a module called
 # 'aws-cloudformation-template' and you are importing into a resource you defined as 'AuditLogging'.
-# The '20' at the end is the ID of the resource in cloudtamer.io.
-terraform import module.aws-cloudformation-template.cloudtamerio_aws_cloudformation_template.AuditLogging 20
+# The '20' at the end is the ID of the resource in Kion.
+terraform import module.aws-cloudformation-template.kion_aws_cloudformation_template.AuditLogging 20
 
 # Verify the state is correct - there shouldn't be any changes listed if you defined
 # the resources correctly.

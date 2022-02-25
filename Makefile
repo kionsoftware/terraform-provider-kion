@@ -1,11 +1,11 @@
 # This Makefile is an easy way to run common operations.
 
-VERSION=0.2.1
+VERSION=0.3.0
 
 TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=github.com
-NAMESPACE=cloudtamer-io
-NAME=cloudtamerio
+NAMESPACE=kionsoftware
+NAME=kion
 BINARY=terraform-provider-${NAME}
 OS_ARCH=darwin_amd64
 

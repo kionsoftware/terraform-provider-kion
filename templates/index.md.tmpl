@@ -1,13 +1,13 @@
 ---
 layout: ""
-page_title: "cloudtamerio Provider"
+page_title: "Kion Provider"
 description: |-
-  The cloudtamerio provider allows you to interact with an installation of cloudtamer.io.
+  The Kion provider allows you to interact with an installation of Kion.
 ---
 
-# cloudtamerio Provider
+# Kion Provider
 
-The cloudtamerio provider allows you to interact with an installation of cloudtamer.io.
+The Kion provider allows you to interact with an installation of Kion.
 
 ## Example Usage
 
@@ -20,9 +20,9 @@ The cloudtamerio provider allows you to interact with an installation of cloudta
 If you want to configure the provider via environment variables, you can use these below.
 
 ```bash
-export CLOUDTAMERIO_APIKEY="app_1_XXXXXXXXXXXX"
-export CLOUDTAMERIO_URL="https://cloudtamerio.example.com"
-export CLOUDTAMERIO_SKIPSSLVALIDATION="false"
+export KION_APIKEY="app_1_XXXXXXXXXXXX"
+export KION_URL="https://kion.example.com"
+export KION_SKIPSSLVALIDATION="false"
 ```
 
 ### Importing Resource State
@@ -35,8 +35,8 @@ terraform init
 
 # Import the resource from your environment - this assumes you have a module called
 # 'aws-cloudformation-template' and you are importing into a resource you defined as 'AuditLogging'.
-# The '20' at the end is the ID of the resource in cloudtamer.io.
-terraform import module.aws-cloudformation-template.cloudtamerio_aws_cloudformation_template.AuditLogging 20
+# The '20' at the end is the ID of the resource in Kion.
+terraform import module.aws-cloudformation-template.kion_aws_cloudformation_template.AuditLogging 20
 
 # Verify the state is correct - there shouldn't be any changes listed if you defined
 # the resources correctly.
