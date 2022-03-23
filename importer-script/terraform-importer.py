@@ -42,12 +42,12 @@ PARSER.add_argument('--clone-user-group-ids', nargs='+', type=int, help='Space s
 # PARSER.add_argument('--sync', action='store_true',help='Sync repository resources into Kion.')
 ARGS = PARSER.parse_args()
 
-# validate ct_url
-if not ARGS.ct_url:
+# validate kion_url
+if not ARGS.kion_url:
     sys.exit("Please provide the URL to Kion. Example: --kion-url https://kion.example.com")
 # remove trailing slash if found
-elif re.compile(".+/$").match(ARGS.ct_url):
-    ARGS.ct_url = re.sub(r'/$', '', ARGS.ct_url)
+elif re.compile(".+/$").match(ARGS.kion_url):
+    ARGS.kion_url = re.sub(r'/$', '', ARGS.kion_url)
 
 # validate import_dir
 if not ARGS.import_dir:
@@ -66,6 +66,8 @@ if not ARGS.kion_api_key:
         sys.exit("Did not find a Kion API key supplied via CLI argument or environment variable (KION_APIKEY or KION_API_KEY).")
 
 # validate flags related to cloning
+if not ARGS.clone_prefix:
+    ARGS.clone_prefix = ""
 if ARGS.clone_system_managed:
 
     # validate clone prefix
@@ -84,7 +86,7 @@ if ARGS.clone_system_managed:
         if not ARGS.clone_user_group_ids:
             ARGS.clone_user_group_ids = []
 
-BASE_URL = "%s/api" % ARGS.ct_url
+BASE_URL = "%s/api" % ARGS.kion_url
 HEADERS = {"accept": "application/json", "Authorization": "Bearer " + ARGS.kion_api_key}
 
 MAX_UNAUTH_RETRIES = 15
@@ -99,7 +101,7 @@ PROVIDER_TEMPLATE = textwrap.dedent('''\
         required_providers {
             kion = {
                 source  = "kionsoftware/kion"
-                version = "0.1.3"
+                version = "0.3.0"
             }
         }
     }
@@ -214,10 +216,10 @@ def main():
     """
 
     # Run some validations prior to starting
-    validate_connection(ARGS.ct_url)
+    validate_connection(ARGS.kion_url)
     validate_import_dir(ARGS.import_dir)
 
-    print("\nBeginning import from %s" % ARGS.ct_url)
+    print("\nBeginning import from %s" % ARGS.kion_url)
 
     if not ARGS.skip_cfts:
         import_cfts()
@@ -2469,7 +2471,7 @@ def validate_connection(url):
     Make sure that the supplied CT URL can be reached
 
     Params:
-        url (str) - the provided ct_url argument
+        url (str) - the provided kion_url argument
 
     Returns:
         success - True
