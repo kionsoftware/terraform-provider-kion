@@ -18,8 +18,6 @@ Here is an example:
 <path to this repo>/provider-migration-script/kion-provider-migration.sh <path to terraform root dir>
 ```
 
-
-
 ## Manual Migration
 
 1. Ensure the terraform state is in sync with your installation of Kion.
