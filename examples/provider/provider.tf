@@ -8,7 +8,7 @@ provider "kion" {
 # Create an IAM policy.
 resource "kion_aws_iam_policy" "p1" {
   name         = "sample-resource"
-  description  = "Provides read only access to Amazon EC2."
+  description  = "Provides AdministratorAccess to all AWS Services"
   aws_iam_path = ""
   owner_users { id = 1 }
   owner_user_groups { id = 1 }

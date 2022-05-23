@@ -43,7 +43,7 @@ provider "kion" {
 # Create an IAM policy.
 resource "kion_aws_iam_policy" "p1" {
   name         = "sample-resource"
-  description  = "Provides read only access to Amazon EC2 via the AWS Management Console."
+  description  = "Provides AdministratorAccess to all AWS Services"
   aws_iam_path = ""
   owner_users { id = 1 }
   owner_user_groups { id = 1 }
@@ -116,7 +116,7 @@ A few of the optional fields are commented out.
 # Create an IAM policy.
 resource "kion_aws_iam_policy" "p1" {
   name = "sample-resource"
-  # description  = "Provides read only access to Amazon EC2 via the AWS Management Console."
+  # description  = "Provides AdministratorAccess to all AWS Services"
   # aws_iam_path = ""
   owner_users { id = 1 }
   owner_user_groups { id = 1 }
@@ -360,7 +360,7 @@ resource "kion_project" "p1" {
   description = "This is a sample project."
   permission_scheme_id = 3
   owner_user_ids { id = 1 }
-  project_funding { 
+  project_funding {
     amount = 1000
     funding_order = 1
     funding_source_id = 1
