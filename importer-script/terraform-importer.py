@@ -626,19 +626,19 @@ def import_project_roles():
                     proj_details = api_call(url)
                     if proj_details:
 
-                      if proj_details['aws_iam_policies'] is not None:
+                      if 'aws_iam_policies' in proj_details and proj_details['aws_iam_policies'] is not None:
                         for i in proj_details['aws_iam_policies']:
                             role['aws_iam_policies'].append(i['id'])
 
-                      if proj_details['users'] is not None:
+                      if 'users' in proj_details and proj_details['users'] is not None:
                         for u in proj_details['users']:
                             role['user_ids'].append(u['id'])
 
-                      if proj_details['user_groups'] is not None:
+                      if 'user_groups' in proj_details and proj_details['user_groups'] is not None:
                         for g in proj_details['user_groups']:
                             role['user_group_ids'].append(g['id'])
 
-                      if proj_details['accounts'] is not None:
+                      if 'accounts' in proj_details and proj_details['accounts'] is not None:
                         for a in proj_details['accounts']:
                             role['account_ids'].append(a['id'])
 
