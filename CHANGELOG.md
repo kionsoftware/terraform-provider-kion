@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - TBD
+### Changed
+- Fix the description for IAM policies in the documentation to be more accurate.
+
 ## [0.3.0] - 2022-02-25
 ### Added
 - Support creating, updating, and deleting resources for: AWS Service Control Policies.
