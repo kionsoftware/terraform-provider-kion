@@ -18,7 +18,7 @@ from json.decoder import JSONDecodeError
 
 PARSER = argparse.ArgumentParser(description='Import Cloud Resources into the Repo Module')
 PARSER.add_argument('--kion-url', type=str, required=True, help='URL to Kion, without trailing slash. Example: https://kion.example.com')
-PARSER.add_argument('--kion-api-key', type=str, help='Kion API key. Can be set via env variable KION_APIKEY or KION_API_KEY instead (preferred).')
+PARSER.add_argument('--kion-api-key', type=str, help='Kion API key. Can be set via env variable KION_APIKEY instead (preferred).')
 PARSER.add_argument('--import-dir', type=str, required=True, help='Path to the root of the target import directory, without trailing slash.')
 PARSER.add_argument('--skip-cfts', action='store_true', help='Skip importing AWS CloudFormation templates.')
 PARSER.add_argument('--skip-iams', action='store_true', help='Skip importing AWS IAM policies.')
@@ -60,10 +60,8 @@ elif re.compile(".+/$").match(ARGS.import_dir):
 if not ARGS.kion_api_key:
     if os.environ.get('KION_APIKEY'):
         ARGS.kion_api_key = os.environ['KION_APIKEY']
-    elif os.environ.get('KION_API_KEY'):
-        ARGS.kion_api_key = os.environ['KION_API_KEY']
     else:
-        sys.exit("Did not find a Kion API key supplied via CLI argument or environment variable (KION_APIKEY or KION_API_KEY).")
+        sys.exit("Did not find a Kion API key supplied via CLI argument or environment variable (KION_APIKEY).")
 
 # validate flags related to cloning
 if not ARGS.clone_prefix:
@@ -626,28 +624,29 @@ def import_project_roles():
                     proj_details = api_call(url)
                     if proj_details:
 
-                      if proj_details['aws_iam_policies'] is not None:
-                        for i in proj_details['aws_iam_policies']:
-                            role['aws_iam_policies'].append(i['id'])
+                        if proj_details['aws_iam_policies'] is not None:
+                            for i in proj_details['aws_iam_policies']:
+                                role['aws_iam_policies'].append(i['id'])
 
-                      if proj_details['users'] is not None:
-                        for u in proj_details['users']:
-                            role['user_ids'].append(u['id'])
+                        if proj_details['users'] is not None:
+                            for u in proj_details['users']:
+                                role['user_ids'].append(u['id'])
 
-                      if proj_details['user_groups'] is not None:
-                        for g in proj_details['user_groups']:
-                            role['user_group_ids'].append(g['id'])
+                        if proj_details['user_groups'] is not None:
+                            for g in proj_details['user_groups']:
+                                role['user_group_ids'].append(g['id'])
 
-                      if proj_details['accounts'] is not None:
-                        for a in proj_details['accounts']:
-                            role['account_ids'].append(a['id'])
+                      
+                        if 'accounts' in proj_details:
+                            for a in proj_details['accounts']:
+                                role['account_ids'].append(a['id'])
 
-                      if 'aws_iam_permissions_boundary' in proj_details:
+                    if 'aws_iam_permissions_boundary' in proj_details:
                         # sys.exit(json.dumps(proj_details))
                         if proj_details['aws_iam_permissions_boundary'] is not None:
-                          role['aws_iam_permissions_boundary'] = proj_details['aws_iam_permissions_boundary']['id']
+                            role['aws_iam_permissions_boundary'] = proj_details['aws_iam_permissions_boundary']['id']
                         else:
-                          role['aws_iam_permissions_boundary'] = 'null'
+                            role['aws_iam_permissions_boundary'] = 'null'
                     else:
                         print("\tDetails for Project role %s weren't found. Data will be incomplete. Skipping" % r['name'])
                         print("\tReceived data: %s" % proj_details)
@@ -656,9 +655,9 @@ def import_project_roles():
 
                     # check for iam path
                     if 'aws_iam_path' in r:
-                      role['aws_iam_path'] = r['aws_iam_path']
+                        role['aws_iam_path'] = r['aws_iam_path']
                     else:
-                      role['aws_iam_path'] = ''
+                        role['aws_iam_path'] = ''
 
                     template = textwrap.dedent('''\
                         resource "{resource_type}" "{resource_id}" {{
