@@ -38,6 +38,10 @@ func resourceCloudRule() *schema.Resource {
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
+						"name": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
 					},
 				},
 				Type:     schema.TypeList,
