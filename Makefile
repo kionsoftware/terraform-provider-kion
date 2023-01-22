@@ -7,7 +7,35 @@ HOSTNAME=github.com
 NAMESPACE=kionsoftware
 NAME=kion
 BINARY=terraform-provider-${NAME}
-OS_ARCH=darwin_amd64
+
+# Detect os and arch for local development "Make install"
+ifeq ($(OS),Windows_NT)
+	OS_ARCH := windows
+	ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
+		OS_ARCH := $(OS_ARCH)_amd64
+	endif
+	ifeq ($(PROCESSOR_ARCHITECTURE),x86)
+		OS_ARCH := $(OS_ARCH)_386
+	endif
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		OS_ARCH := linux
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		OS_ARCH := darwin
+	endif
+	UNAME_P := $(shell uname -p)
+	ifeq ($(UNAME_P),x86_64)
+		OS_ARCH := $(OS_ARCH)_amd64
+	endif
+	ifneq ($(filter %86,$(UNAME_P)),)
+		OS_ARCH := $(OS_ARCH)_386
+	endif
+	ifneq ($(filter arm%,$(UNAME_P)),)
+		OS_ARCH := $(OS_ARCH)_arm64
+	endif
+endif
 
 default: install
 
