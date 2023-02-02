@@ -115,7 +115,71 @@ func resourceProject() *schema.Resource {
 					},
 				},
 				Type:     schema.TypeList,
-				Required: true,
+				Optional: true,
+			},
+			"budget": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"amount": {
+							Type: schema.TypeFloat,
+							Description: "Total amount for the budget. This is required if data is not specified. " +
+								"Budget entries are created between start_datecode and end_datecode (exclusive) with the amount evenly distributed across the months.",
+							Optional: true,
+						},
+						"data": {
+							Type: schema.TypeList,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"datecode": {
+										Type:        schema.TypeString,
+										Description: "Year and month for the budget data entry (i.e 2023-01).",
+										Required:    true,
+									},
+									"amount": {
+										Type:        schema.TypeFloat,
+										Description: "Amount of the budget entry in dollars.",
+										Required:    true,
+									},
+									"funding_source_id": {
+										Type:        schema.TypeInt,
+										Description: "ID of funding source for the budget entry.",
+										Optional:    true,
+									},
+									"priority": {
+										Type:        schema.TypeInt,
+										Description: "Priority order of the budget entry. This is required if funding_source_id is specified",
+										Optional:    true,
+									},
+								},
+							},
+							Description: "Total amount for the budget. This is required if data is not specified. " +
+								"Budget entries are created between start_datecode and end_datecode (exclusive) with the amount evenly distributed across the months.",
+							Optional: true,
+						},
+						"funding_source_ids": {
+							Type: schema.TypeList,
+							Elem: &schema.Schema{
+								Type: schema.TypeInt,
+							},
+							Description: "Funding source IDs to use when data is not specified. " +
+								"This value is ignored is data is specified. If specified, the amount is distributed evenly across months and funding sources. " +
+								"Funding sources will be processed in order from first to last.",
+							Optional: true,
+						},
+						"start_datecode": {
+							Type:        schema.TypeString,
+							Description: "Year and month the budget starts.",
+							Required:    true,
+						},
+						"end_datecode": {
+							Type:        schema.TypeString,
+							Description: "Year and month the budget ends. This is an exclusive date.",
+							Required:    true,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -136,26 +200,81 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 		PermissionSchemeID: d.Get("permission_scheme_id").(int),
 	}
 
+	projectCreateURLSuffix := "with-spend-plan"
+
+	// Get financial config settings
+	type FinancialConfig struct {
+		Data struct {
+			BudgetMode bool `json:"budget_mode"`
+		} `json:"data"`
+	}
+	var config FinancialConfig
+	err := c.GET("/v1/ct-config/financials-config", &config)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to retrieve financial config",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), post),
+		})
+		return diags
+	}
+
 	// Can't cast directly to []interface{}
 	// Must cast each element to map[string]interface{} & assign each value from the map to the POST object.
-	post.ProjectFunding = make([]hc.ProjectFundingCreate, len(d.Get("project_funding").([]interface{})))
+	if config.Data.BudgetMode {
+		projectCreateURLSuffix = "with-budget"
 
-	for i, genericValue := range d.Get("project_funding").([]interface{}) {
+		post.Budget = make([]hc.BudgetCreate, len(d.Get("budget").([]interface{})))
 
-		// Cast each generic interface{} value to a map of key/value pairs
-		projectFundingMap := genericValue.(map[string]interface{})
+		for i, genericValue := range d.Get("budget").([]interface{}) {
 
-		// Unpack struct values & assign them to the POST object
-		post.ProjectFunding[i] = hc.ProjectFundingCreate{
-			Amount:          projectFundingMap["amount"].(float64),
-			FundingOrder:    projectFundingMap["funding_order"].(int),
-			FundingSourceID: projectFundingMap["funding_source_id"].(int),
-			StartDatecode:   projectFundingMap["start_datecode"].(string),
-			EndDatecode:     projectFundingMap["end_datecode"].(string),
+			// Cast each generic interface{} value to a map of key/value pairs
+			budgetMap := genericValue.(map[string]interface{})
+
+			// Unpack struct values & assign them to the POST object
+			post.Budget[i] = hc.BudgetCreate{
+				Amount:           budgetMap["amount"].(float64),
+				FundingSourceIDs: hc.FlattenIntArrayPointer(budgetMap["funding_source_ids"].([]interface{})),
+				StartDatecode:    budgetMap["start_datecode"].(string),
+				EndDatecode:      budgetMap["end_datecode"].(string),
+			}
+
+			post.Budget[i].Data = make([]hc.BudgetDataCreate, len(budgetMap["data"].([]interface{})))
+
+			// fill out budget data as needed
+			for idx, genericValue2 := range budgetMap["data"].([]interface{}) {
+
+				// Cast each generic interface{} value to a map of key/value pairs
+				budgetDataMap := genericValue2.(map[string]interface{})
+
+				post.Budget[i].Data[idx] = hc.BudgetDataCreate{
+					Datecode:        budgetDataMap["datecode"].(string),
+					Amount:          budgetDataMap["amount"].(float64),
+					FundingSourceID: budgetDataMap["funding_source_id"].(int),
+					Priority:        budgetDataMap["priority"].(int),
+				}
+			}
+		}
+	} else {
+		post.ProjectFunding = make([]hc.ProjectFundingCreate, len(d.Get("project_funding").([]interface{})))
+
+		for i, genericValue := range d.Get("project_funding").([]interface{}) {
+
+			// Cast each generic interface{} value to a map of key/value pairs
+			projectFundingMap := genericValue.(map[string]interface{})
+
+			// Unpack struct values & assign them to the POST object
+			post.ProjectFunding[i] = hc.ProjectFundingCreate{
+				Amount:          projectFundingMap["amount"].(float64),
+				FundingOrder:    projectFundingMap["funding_order"].(int),
+				FundingSourceID: projectFundingMap["funding_source_id"].(int),
+				StartDatecode:   projectFundingMap["start_datecode"].(string),
+				EndDatecode:     projectFundingMap["end_datecode"].(string),
+			}
 		}
 	}
 
-	resp, err := c.POST("/v3/project", post)
+	resp, err := c.POST(fmt.Sprintf("/v3/project/%v", projectCreateURLSuffix), post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
