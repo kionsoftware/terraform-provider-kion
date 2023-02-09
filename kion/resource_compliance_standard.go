@@ -73,8 +73,9 @@ func resourceComplianceStandard() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:        schema.TypeList,
+				Description: "Must provide at least the owner_user_groups field or the owner_users field.",
+				Optional:    true,
 			},
 			"owner_users": {
 				Elem: &schema.Resource{
@@ -85,8 +86,9 @@ func resourceComplianceStandard() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:        schema.TypeList,
+				Description: "Must provide at least the owner_user_groups field or the owner_users field.",
+				Optional:    true,
 			},
 		},
 	}
