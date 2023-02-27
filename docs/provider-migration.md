@@ -44,8 +44,8 @@ Here is an example:
       - Reusing previous version of cloudtamer-io/cloudtamerio from the dependency lock file
       - Finding latest version of kionsoftware/kion...
       - Using previously-installed cloudtamer-io/cloudtamerio v0.2.0
-      - Installing kionsoftware/kion v0.3.0...
-      - Installed kionsoftware/kion v0.3.0 (signed by a HashiCorp partner, key ID B72EFDFAF07C8126)
+      - Installing kionsoftware/kion v0.3.1...
+      - Installed kionsoftware/kion v0.3.1 (signed by a HashiCorp partner, key ID B72EFDFAF07C8126)
 
       .
       .
