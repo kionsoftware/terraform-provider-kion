@@ -38,7 +38,8 @@ type ProjectCreate struct {
 	OwnerUserGroupIds  *[]int                 `json:"owner_user_group_ids"`
 	OwnerUserIds       *[]int                 `json:"owner_user_ids"`
 	PermissionSchemeID int                    `json:"permission_scheme_id"`
-	ProjectFunding     []ProjectFundingCreate `json:"project_funding"`
+	ProjectFunding     []ProjectFundingCreate `json:"project_funding,omitempty"`
+	Budget             []BudgetCreate         `json:"budget,omitempty"`
 }
 
 // ProjectUpdate for: PATCH /api/v3/project/{id}

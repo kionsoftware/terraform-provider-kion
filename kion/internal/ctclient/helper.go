@@ -83,15 +83,13 @@ func FlattenIntArray(items []interface{}) []int {
 }
 
 // FlattenIntArrayPointer -
-func FlattenIntArrayPointer(d *schema.ResourceData, key string) *[]int {
-	if i, ok := d.GetOk(key); ok {
-		v := i.([]int)
-		arr := make([]int, 0)
-		arr = append(arr, v...)
-		return &arr
+func FlattenIntArrayPointer(items []interface{}) *[]int {
+	arr := make([]int, 0)
+	for _, item := range items {
+		arr = append(arr, item.(int))
 	}
 
-	return nil
+	return &arr
 }
 
 // FlattenBoolArray -
