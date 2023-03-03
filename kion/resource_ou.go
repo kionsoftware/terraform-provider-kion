@@ -52,7 +52,7 @@ func resourceOU() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"owner_users": {
@@ -64,7 +64,7 @@ func resourceOU() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"parent_ou_id": {

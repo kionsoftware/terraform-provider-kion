@@ -49,7 +49,7 @@ func resourceOUCloudAccessRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"aws_iam_role_name": {
@@ -83,7 +83,7 @@ func resourceOUCloudAccessRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"users": {
@@ -95,7 +95,7 @@ func resourceOUCloudAccessRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"web_access": {

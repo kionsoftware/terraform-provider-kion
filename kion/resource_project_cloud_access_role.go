@@ -40,7 +40,7 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 						},
 					},
 				},
-				Type:        schema.TypeList, // Don't let codegen remove this.
+				Type:        schema.TypeSet, // Don't let codegen remove this.
 				Optional:    true,
 				Description: "This field will be ignored if 'apply_to_all_accounts' is set to: true.",
 				// If apply_to_all_accounts is true, then ignore the accounts.
@@ -71,7 +71,7 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"aws_iam_role_name": {
@@ -88,7 +88,7 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"future_accounts": {
@@ -121,7 +121,7 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"users": {
@@ -133,7 +133,7 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"web_access": {

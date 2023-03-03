@@ -56,7 +56,7 @@ func resourceAzureArmTemplate() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"owner_users": {
@@ -68,7 +68,7 @@ func resourceAzureArmTemplate() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"resource_group_name": {

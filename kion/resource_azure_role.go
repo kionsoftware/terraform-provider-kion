@@ -54,7 +54,7 @@ func resourceAzureRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"owner_users": {
@@ -66,7 +66,7 @@ func resourceAzureRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"role_permissions": {

@@ -16,7 +16,7 @@ func dataSourceAzureRole() *schema.Resource {
 		ReadContext: dataSourceAzureRoleRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -25,7 +25,7 @@ func dataSourceAzureRole() *schema.Resource {
 							Required: true,
 						},
 						"values": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Required: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
@@ -38,7 +38,7 @@ func dataSourceAzureRole() *schema.Resource {
 				},
 			},
 			"list": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -67,7 +67,7 @@ func dataSourceAzureRole() *schema.Resource {
 									},
 								},
 							},
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Computed: true,
 						},
 						"owner_users": {
@@ -79,7 +79,7 @@ func dataSourceAzureRole() *schema.Resource {
 									},
 								},
 							},
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Computed: true,
 						},
 						"role_permissions": {

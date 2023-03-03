@@ -57,7 +57,7 @@ func resourceAwsIamPolicy() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"owner_users": {
@@ -69,7 +69,7 @@ func resourceAwsIamPolicy() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"path_suffix": {

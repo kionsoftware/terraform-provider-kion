@@ -48,7 +48,7 @@ func resourceAwsCloudformationTemplate() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"owner_users": {
@@ -60,7 +60,7 @@ func resourceAwsCloudformationTemplate() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"policy": {
@@ -73,7 +73,7 @@ func resourceAwsCloudformationTemplate() *schema.Resource {
 			},
 			"regions": {
 				Elem:     &schema.Schema{Type: schema.TypeString},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: true,
 			},
 			"sns_arns": {

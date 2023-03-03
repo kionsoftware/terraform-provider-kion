@@ -99,7 +99,7 @@ func resourceComplianceCheck() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"owner_users": {
@@ -111,12 +111,12 @@ func resourceComplianceCheck() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"regions": {
 				Elem:     &schema.Schema{Type: schema.TypeString},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"severity_type_id": {

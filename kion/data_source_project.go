@@ -16,7 +16,7 @@ func dataSourceProject() *schema.Resource {
 		ReadContext: dataSourceProjectRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -25,7 +25,7 @@ func dataSourceProject() *schema.Resource {
 							Required: true,
 						},
 						"values": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Required: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
@@ -38,7 +38,7 @@ func dataSourceProject() *schema.Resource {
 				},
 			},
 			"list": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{

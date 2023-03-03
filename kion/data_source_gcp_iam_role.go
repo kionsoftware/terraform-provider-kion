@@ -16,7 +16,7 @@ func dataSourceGcpIamRole() *schema.Resource {
 		ReadContext: dataSourceGcpIamRoleRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -25,7 +25,7 @@ func dataSourceGcpIamRole() *schema.Resource {
 							Required: true,
 						},
 						"values": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Required: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
@@ -38,7 +38,7 @@ func dataSourceGcpIamRole() *schema.Resource {
 				},
 			},
 			"list": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -63,7 +63,7 @@ func dataSourceGcpIamRole() *schema.Resource {
 							Computed: true,
 						},
 						"role_permissions": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 							Computed: true,
 						},
@@ -84,7 +84,7 @@ func dataSourceGcpIamRole() *schema.Resource {
 									},
 								},
 							},
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Computed: true,
 						},
 						"owner_users": {
@@ -96,7 +96,7 @@ func dataSourceGcpIamRole() *schema.Resource {
 									},
 								},
 							},
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Computed: true,
 						},
 					},

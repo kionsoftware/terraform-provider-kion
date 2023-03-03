@@ -65,7 +65,7 @@ func resourceProject() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"owner_user_group_ids": {
@@ -77,7 +77,7 @@ func resourceProject() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"permission_scheme_id": {
@@ -114,11 +114,11 @@ func resourceProject() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"budget": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -129,7 +129,7 @@ func resourceProject() *schema.Resource {
 							Optional: true,
 						},
 						"data": {
-							Type: schema.TypeList,
+							Type: schema.TypeSet,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"datecode": {
@@ -159,7 +159,7 @@ func resourceProject() *schema.Resource {
 							Optional: true,
 						},
 						"funding_source_ids": {
-							Type: schema.TypeList,
+							Type: schema.TypeSet,
 							Elem: &schema.Schema{
 								Type: schema.TypeInt,
 							},
