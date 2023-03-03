@@ -2,7 +2,6 @@ package ctclient
 
 import (
 	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -128,9 +127,16 @@ func FlattenGenericIDArray(d *schema.ResourceData, key string) []int {
 
 // FlattenGenericIDPointer -
 func FlattenGenericIDPointer(d *schema.ResourceData, key string) *[]int {
-	uid := d.Get(key).([]interface{})
+	uid := d.Get(key)
+
+	// test for set
+	_, isSet := uid.(*schema.Set)
+	if isSet {
+		uid = uid.(*schema.Set).List()
+	}
+
 	uids := make([]int, 0)
-	for _, item := range uid {
+	for _, item := range uid.([]interface{}) {
 		v, ok := item.(map[string]interface{})
 		if ok {
 			uids = append(uids, v["id"].(int))
@@ -189,6 +195,14 @@ func AssociationChanged(d *schema.ResourceData, fieldname string) ([]int, []int,
 
 	// Get the owner users
 	io, in := d.GetChange(fieldname)
+
+	// test for set
+	_, isTypeSet := io.(*schema.Set)
+	if isTypeSet {
+		io = io.(*schema.Set).List()
+		in = in.(*schema.Set).List()
+	}
+
 	ownerOld := io.([]interface{})
 	oldIDs := make([]int, 0)
 	for _, item := range ownerOld {

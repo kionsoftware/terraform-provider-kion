@@ -116,7 +116,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"description": {
