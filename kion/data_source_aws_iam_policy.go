@@ -16,7 +16,7 @@ func dataSourceAwsIamPolicy() *schema.Resource {
 		ReadContext: dataSourceAwsIamPolicyRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -25,7 +25,7 @@ func dataSourceAwsIamPolicy() *schema.Resource {
 							Required: true,
 						},
 						"values": {
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Required: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
@@ -38,7 +38,7 @@ func dataSourceAwsIamPolicy() *schema.Resource {
 				},
 			},
 			"list": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -71,7 +71,7 @@ func dataSourceAwsIamPolicy() *schema.Resource {
 									},
 								},
 							},
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Computed: true,
 						},
 						"owner_users": {
@@ -83,7 +83,7 @@ func dataSourceAwsIamPolicy() *schema.Resource {
 									},
 								},
 							},
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Computed: true,
 						},
 						"path_suffix": {

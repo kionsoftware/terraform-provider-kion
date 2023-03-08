@@ -16,7 +16,7 @@ func dataSourceComplianceCheck() *schema.Resource {
 		ReadContext: dataSourceComplianceCheckRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -25,7 +25,7 @@ func dataSourceComplianceCheck() *schema.Resource {
 							Required: true,
 						},
 						"values": {
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Required: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
@@ -38,7 +38,7 @@ func dataSourceComplianceCheck() *schema.Resource {
 				},
 			},
 			"list": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -104,7 +104,7 @@ func dataSourceComplianceCheck() *schema.Resource {
 							Computed: true,
 						},
 						"regions": {
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 							Computed: true,
 						},

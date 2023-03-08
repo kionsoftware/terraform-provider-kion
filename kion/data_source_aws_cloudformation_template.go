@@ -16,7 +16,7 @@ func dataSourceAwsCloudformationTemplate() *schema.Resource {
 		ReadContext: dataSourceAwsCloudformationTemplateRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -25,7 +25,7 @@ func dataSourceAwsCloudformationTemplate() *schema.Resource {
 							Required: true,
 						},
 						"values": {
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Required: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
@@ -38,7 +38,7 @@ func dataSourceAwsCloudformationTemplate() *schema.Resource {
 				},
 			},
 			"list": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -63,7 +63,7 @@ func dataSourceAwsCloudformationTemplate() *schema.Resource {
 									},
 								},
 							},
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Computed: true,
 						},
 						"owner_users": {
@@ -75,7 +75,7 @@ func dataSourceAwsCloudformationTemplate() *schema.Resource {
 									},
 								},
 							},
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Computed: true,
 						},
 						"policy": {
@@ -87,7 +87,7 @@ func dataSourceAwsCloudformationTemplate() *schema.Resource {
 							Computed: true,
 						},
 						"regions": {
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 							Computed: true,
 						},
