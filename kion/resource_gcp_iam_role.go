@@ -99,7 +99,7 @@ func resourceGcpIamRoleCreate(ctx context.Context, d *schema.ResourceData, m int
 	post := hc.GCPRoleCreate{
 		Name:               d.Get("name").(string),
 		Description:        d.Get("description").(string),
-		RolePermissions:    hc.FlattenStringArray(d.Get("role_permissions").([]interface{})),
+		RolePermissions:    hc.FlattenStringArray(d.Get("role_permissions").(*schema.Set).List()),
 		OwnerUserIDs:       hc.FlattenGenericIDPointer(d, "owner_users"),
 		OwnerUGroupIDs:     hc.FlattenGenericIDPointer(d, "owner_user_groups"),
 		GCPRoleLaunchStage: d.Get("gcp_role_launch_stage").(int),
@@ -196,7 +196,7 @@ func resourceGcpIamRoleUpdate(ctx context.Context, d *schema.ResourceData, m int
 			Description:        d.Get("description").(string),
 			Name:               d.Get("name").(string),
 			GCPRoleLaunchStage: d.Get("gcp_role_launch_stage").(int),
-			RolePermissions:    hc.FlattenStringArray(d.Get("role_permissions").([]interface{})),
+			RolePermissions:    hc.FlattenStringArray(d.Get("role_permissions").(*schema.Set).List()),
 		}
 
 		err := c.PATCH(fmt.Sprintf("/v3/gcp-iam-role/%s", ID), req)
