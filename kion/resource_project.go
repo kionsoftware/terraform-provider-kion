@@ -67,6 +67,7 @@ func resourceProject() *schema.Resource {
 				},
 				Type:         schema.TypeList,
 				Optional:     true,
+				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
 				AtLeastOneOf: []string{"owner_user_group_ids", "owner_user_ids"},
 			},
 			"owner_user_group_ids": {
@@ -80,6 +81,7 @@ func resourceProject() *schema.Resource {
 				},
 				Type:         schema.TypeList,
 				Optional:     true,
+				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
 				AtLeastOneOf: []string{"owner_user_group_ids", "owner_user_ids"},
 			},
 			"permission_scheme_id": {

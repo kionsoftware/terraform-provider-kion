@@ -54,6 +54,7 @@ func resourceOU() *schema.Resource {
 				},
 				Type:         schema.TypeList,
 				Optional:     true,
+				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"owner_users": {
@@ -67,6 +68,7 @@ func resourceOU() *schema.Resource {
 				},
 				Type:         schema.TypeList,
 				Optional:     true,
+				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"parent_ou_id": {
