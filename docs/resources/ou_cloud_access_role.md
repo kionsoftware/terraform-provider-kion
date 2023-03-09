@@ -17,44 +17,47 @@ description: |-
 
 ### Required
 
-- **aws_iam_role_name** (String)
-- **name** (String)
-- **ou_id** (Number)
+- `aws_iam_role_name` (String)
+- `name` (String)
+- `ou_id` (Number)
 
 ### Optional
 
-- **aws_iam_path** (String)
-- **aws_iam_permissions_boundary** (Number)
-- **aws_iam_policies** (Block List) (see [below for nested schema](#nestedblock--aws_iam_policies))
-- **id** (String) The ID of this resource.
-- **last_updated** (String)
-- **long_term_access_keys** (Boolean)
-- **short_term_access_keys** (Boolean)
-- **user_groups** (Block List) (see [below for nested schema](#nestedblock--user_groups))
-- **users** (Block List) (see [below for nested schema](#nestedblock--users))
-- **web_access** (Boolean)
+- `aws_iam_path` (String)
+- `aws_iam_permissions_boundary` (Number)
+- `aws_iam_policies` (Block List) (see [below for nested schema](#nestedblock--aws_iam_policies))
+- `last_updated` (String)
+- `long_term_access_keys` (Boolean)
+- `short_term_access_keys` (Boolean)
+- `user_groups` (Block List) (see [below for nested schema](#nestedblock--user_groups))
+- `users` (Block List) (see [below for nested schema](#nestedblock--users))
+- `web_access` (Boolean)
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--aws_iam_policies"></a>
 ### Nested Schema for `aws_iam_policies`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--user_groups"></a>
 ### Nested Schema for `user_groups`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--users"></a>
 ### Nested Schema for `users`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 

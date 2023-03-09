@@ -17,44 +17,44 @@ description: |-
 
 ### Required
 
-- **idms_id** (Number)
-- **name** (String)
+- `idms_id` (Number)
+- `name` (String)
 
 ### Optional
 
-- **description** (String)
-- **id** (String) The ID of this resource.
-- **last_updated** (String)
-- **owner_groups** (Block List) (see [below for nested schema](#nestedblock--owner_groups))
-- **owner_users** (Block List) (see [below for nested schema](#nestedblock--owner_users))
-- **users** (Block List) (see [below for nested schema](#nestedblock--users))
+- `description` (String)
+- `last_updated` (String)
+- `owner_groups` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_groups))
+- `owner_users` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
+- `users` (Block List) (see [below for nested schema](#nestedblock--users))
 
 ### Read-Only
 
-- **created_at** (String)
-- **enabled** (Boolean)
+- `created_at` (String)
+- `enabled` (Boolean)
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--owner_groups"></a>
 ### Nested Schema for `owner_groups`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--owner_users"></a>
 ### Nested Schema for `owner_users`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--users"></a>
 ### Nested Schema for `users`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
