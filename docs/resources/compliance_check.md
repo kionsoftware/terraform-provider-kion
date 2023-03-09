@@ -17,46 +17,46 @@ description: |-
 
 ### Required
 
-- **cloud_provider_id** (Number)
-- **compliance_check_type_id** (Number)
-- **name** (String)
+- `cloud_provider_id` (Number)
+- `compliance_check_type_id` (Number)
+- `name` (String)
 
 ### Optional
 
-- **azure_policy_id** (Number)
-- **body** (String)
-- **created_by_user_id** (Number)
-- **description** (String)
-- **frequency_minutes** (Number)
-- **frequency_type_id** (Number)
-- **id** (String) The ID of this resource.
-- **is_all_regions** (Boolean)
-- **is_auto_archived** (Boolean)
-- **last_updated** (String)
-- **owner_user_groups** (Block List) (see [below for nested schema](#nestedblock--owner_user_groups))
-- **owner_users** (Block List) (see [below for nested schema](#nestedblock--owner_users))
-- **regions** (List of String)
-- **severity_type_id** (Number)
+- `azure_policy_id` (Number)
+- `body` (String)
+- `created_by_user_id` (Number)
+- `description` (String)
+- `frequency_minutes` (Number)
+- `frequency_type_id` (Number)
+- `is_all_regions` (Boolean)
+- `is_auto_archived` (Boolean)
+- `last_updated` (String)
+- `owner_user_groups` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
+- `owner_users` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
+- `regions` (List of String)
+- `severity_type_id` (Number)
 
 ### Read-Only
 
-- **created_at** (String)
-- **ct_managed** (Boolean)
-- **last_scan_id** (Number)
+- `created_at` (String)
+- `ct_managed` (Boolean)
+- `id` (String) The ID of this resource.
+- `last_scan_id` (Number)
 
 <a id="nestedblock--owner_user_groups"></a>
 ### Nested Schema for `owner_user_groups`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--owner_users"></a>
 ### Nested Schema for `owner_users`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 

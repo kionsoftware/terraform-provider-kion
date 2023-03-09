@@ -17,24 +17,24 @@ description: |-
 
 ### Optional
 
-- **filter** (Block List) (see [below for nested schema](#nestedblock--filter))
-- **id** (String) The ID of this resource.
+- `filter` (Block List) (see [below for nested schema](#nestedblock--filter))
 
 ### Read-Only
 
-- **list** (List of Object) (see [below for nested schema](#nestedatt--list))
+- `id` (String) The ID of this resource.
+- `list` (List of Object) (see [below for nested schema](#nestedatt--list))
 
 <a id="nestedblock--filter"></a>
 ### Nested Schema for `filter`
 
 Required:
 
-- **name** (String)
-- **values** (List of String)
+- `name` (String)
+- `values` (List of String)
 
 Optional:
 
-- **regex** (Boolean)
+- `regex` (Boolean)
 
 
 <a id="nestedatt--list"></a>
@@ -42,22 +42,22 @@ Optional:
 
 Read-Only:
 
-- **azure_policy_id** (Number)
-- **body** (String)
-- **cloud_provider_id** (Number)
-- **compliance_check_type_id** (Number)
-- **created_at** (String)
-- **created_by_user_id** (Number)
-- **ct_managed** (Boolean)
-- **description** (String)
-- **frequency_minutes** (Number)
-- **frequency_type_id** (Number)
-- **id** (Number)
-- **is_all_regions** (Boolean)
-- **is_auto_archived** (Boolean)
-- **last_scan_id** (Number)
-- **name** (String)
-- **regions** (List of String)
-- **severity_type_id** (Number)
+- `azure_policy_id` (Number)
+- `body` (String)
+- `cloud_provider_id` (Number)
+- `compliance_check_type_id` (Number)
+- `created_at` (String)
+- `created_by_user_id` (Number)
+- `ct_managed` (Boolean)
+- `description` (String)
+- `frequency_minutes` (Number)
+- `frequency_type_id` (Number)
+- `id` (Number)
+- `is_all_regions` (Boolean)
+- `is_auto_archived` (Boolean)
+- `last_scan_id` (Number)
+- `name` (String)
+- `regions` (List of String)
+- `severity_type_id` (Number)
 
 

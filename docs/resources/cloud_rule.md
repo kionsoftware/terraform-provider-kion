@@ -17,143 +17,143 @@ description: |-
 
 ### Required
 
-- **name** (String)
+- `name` (String)
 
 ### Optional
 
-- **aws_cloudformation_templates** (Block List) (see [below for nested schema](#nestedblock--aws_cloudformation_templates))
-- **aws_iam_policies** (Block List) (see [below for nested schema](#nestedblock--aws_iam_policies))
-- **azure_arm_template_definitions** (Block List) (see [below for nested schema](#nestedblock--azure_arm_template_definitions))
-- **azure_policy_definitions** (Block List) (see [below for nested schema](#nestedblock--azure_policy_definitions))
-- **azure_role_definitions** (Block List) (see [below for nested schema](#nestedblock--azure_role_definitions))
-- **compliance_standards** (Block List) (see [below for nested schema](#nestedblock--compliance_standards))
-- **description** (String)
-- **gcp_iam_roles** (Block List) (see [below for nested schema](#nestedblock--gcp_iam_roles))
-- **id** (String) The ID of this resource.
-- **internal_aws_amis** (Block List) (see [below for nested schema](#nestedblock--internal_aws_amis))
-- **internal_aws_service_catalog_portfolios** (Block List) (see [below for nested schema](#nestedblock--internal_aws_service_catalog_portfolios))
-- **last_updated** (String)
-- **ous** (Block List) (see [below for nested schema](#nestedblock--ous))
-- **owner_user_groups** (Block List) (see [below for nested schema](#nestedblock--owner_user_groups))
-- **owner_users** (Block List) (see [below for nested schema](#nestedblock--owner_users))
-- **post_webhook_id** (Number)
-- **pre_webhook_id** (Number)
-- **projects** (Block List) (see [below for nested schema](#nestedblock--projects))
-- **service_control_policies** (Block List) (see [below for nested schema](#nestedblock--service_control_policies))
+- `aws_cloudformation_templates` (Block List) (see [below for nested schema](#nestedblock--aws_cloudformation_templates))
+- `aws_iam_policies` (Block List) (see [below for nested schema](#nestedblock--aws_iam_policies))
+- `azure_arm_template_definitions` (Block List) (see [below for nested schema](#nestedblock--azure_arm_template_definitions))
+- `azure_policy_definitions` (Block List) (see [below for nested schema](#nestedblock--azure_policy_definitions))
+- `azure_role_definitions` (Block List) (see [below for nested schema](#nestedblock--azure_role_definitions))
+- `compliance_standards` (Block List) (see [below for nested schema](#nestedblock--compliance_standards))
+- `description` (String)
+- `gcp_iam_roles` (Block List) (see [below for nested schema](#nestedblock--gcp_iam_roles))
+- `internal_aws_amis` (Block List) (see [below for nested schema](#nestedblock--internal_aws_amis))
+- `internal_aws_service_catalog_portfolios` (Block List) (see [below for nested schema](#nestedblock--internal_aws_service_catalog_portfolios))
+- `last_updated` (String)
+- `ous` (Block List) (see [below for nested schema](#nestedblock--ous))
+- `owner_user_groups` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
+- `owner_users` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
+- `post_webhook_id` (Number)
+- `pre_webhook_id` (Number)
+- `projects` (Block List) (see [below for nested schema](#nestedblock--projects))
+- `service_control_policies` (Block List) (see [below for nested schema](#nestedblock--service_control_policies))
 
 ### Read-Only
 
-- **built_in** (Boolean)
+- `built_in` (Boolean)
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--aws_cloudformation_templates"></a>
 ### Nested Schema for `aws_cloudformation_templates`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--aws_iam_policies"></a>
 ### Nested Schema for `aws_iam_policies`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--azure_arm_template_definitions"></a>
 ### Nested Schema for `azure_arm_template_definitions`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--azure_policy_definitions"></a>
 ### Nested Schema for `azure_policy_definitions`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--azure_role_definitions"></a>
 ### Nested Schema for `azure_role_definitions`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--compliance_standards"></a>
 ### Nested Schema for `compliance_standards`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--gcp_iam_roles"></a>
 ### Nested Schema for `gcp_iam_roles`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--internal_aws_amis"></a>
 ### Nested Schema for `internal_aws_amis`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--internal_aws_service_catalog_portfolios"></a>
 ### Nested Schema for `internal_aws_service_catalog_portfolios`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--ous"></a>
 ### Nested Schema for `ous`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--owner_user_groups"></a>
 ### Nested Schema for `owner_user_groups`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--owner_users"></a>
 ### Nested Schema for `owner_users`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--projects"></a>
 ### Nested Schema for `projects`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--service_control_policies"></a>
 ### Nested Schema for `service_control_policies`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 

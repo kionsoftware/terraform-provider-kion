@@ -17,35 +17,38 @@ description: |-
 
 ### Required
 
-- **name** (String)
-- **policy** (String)
-- **regions** (List of String)
+- `name` (String)
+- `policy` (String)
+- `regions` (List of String)
 
 ### Optional
 
-- **description** (String)
-- **id** (String) The ID of this resource.
-- **last_updated** (String)
-- **owner_user_groups** (Block List) (see [below for nested schema](#nestedblock--owner_user_groups))
-- **owner_users** (Block List) (see [below for nested schema](#nestedblock--owner_users))
-- **region** (String)
-- **sns_arns** (String)
-- **template_parameters** (String)
-- **termination_protection** (Boolean)
+- `description` (String)
+- `last_updated` (String)
+- `owner_user_groups` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
+- `owner_users` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
+- `region` (String)
+- `sns_arns` (String)
+- `template_parameters` (String)
+- `termination_protection` (Boolean)
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--owner_user_groups"></a>
 ### Nested Schema for `owner_user_groups`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--owner_users"></a>
 ### Nested Schema for `owner_users`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 

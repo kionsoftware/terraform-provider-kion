@@ -17,37 +17,37 @@ description: |-
 
 ### Required
 
-- **gcp_role_launch_stage** (Number)
-- **name** (String)
-- **role_permissions** (List of String)
+- `gcp_role_launch_stage` (Number)
+- `name` (String)
+- `role_permissions` (List of String)
 
 ### Optional
 
-- **description** (String)
-- **id** (String) The ID of this resource.
-- **last_updated** (String)
-- **owner_user_groups** (Block List) (see [below for nested schema](#nestedblock--owner_user_groups))
-- **owner_users** (Block List) (see [below for nested schema](#nestedblock--owner_users))
-- **system_managed_policy** (Boolean)
+- `description` (String)
+- `last_updated` (String)
+- `owner_user_groups` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
+- `owner_users` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
+- `system_managed_policy` (Boolean)
 
 ### Read-Only
 
-- **gcp_id** (String)
-- **gcp_managed_policy** (Boolean)
+- `gcp_id` (String)
+- `gcp_managed_policy` (Boolean)
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--owner_user_groups"></a>
 ### Nested Schema for `owner_user_groups`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--owner_users"></a>
 ### Nested Schema for `owner_users`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 

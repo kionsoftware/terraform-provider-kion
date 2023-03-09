@@ -17,35 +17,35 @@ description: |-
 
 ### Required
 
-- **name** (String)
-- **role_permissions** (String)
+- `name` (String)
+- `role_permissions` (String)
 
 ### Optional
 
-- **description** (String)
-- **id** (String) The ID of this resource.
-- **last_updated** (String)
-- **owner_user_groups** (Block List) (see [below for nested schema](#nestedblock--owner_user_groups))
-- **owner_users** (Block List) (see [below for nested schema](#nestedblock--owner_users))
+- `description` (String)
+- `last_updated` (String)
+- `owner_user_groups` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
+- `owner_users` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
 
 ### Read-Only
 
-- **azure_managed_policy** (Boolean)
-- **system_managed_policy** (Boolean)
+- `azure_managed_policy` (Boolean)
+- `id` (String) The ID of this resource.
+- `system_managed_policy` (Boolean)
 
 <a id="nestedblock--owner_user_groups"></a>
 ### Nested Schema for `owner_user_groups`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--owner_users"></a>
 ### Nested Schema for `owner_users`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
