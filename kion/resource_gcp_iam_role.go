@@ -69,8 +69,9 @@ func resourceGcpIamRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:         schema.TypeList,
+				Optional:     true,
+				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"owner_users": {
 				Elem: &schema.Resource{
@@ -81,8 +82,9 @@ func resourceGcpIamRole() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:         schema.TypeList,
+				Optional:     true,
+				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 		},
 	}

@@ -52,8 +52,9 @@ func resourceOU() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:         schema.TypeList,
+				Optional:     true,
+				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"owner_users": {
 				Elem: &schema.Resource{
@@ -64,8 +65,9 @@ func resourceOU() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:         schema.TypeList,
+				Optional:     true,
+				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"parent_ou_id": {
 				Type:     schema.TypeInt,

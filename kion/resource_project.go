@@ -65,8 +65,9 @@ func resourceProject() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:         schema.TypeList,
+				Optional:     true,
+				AtLeastOneOf: []string{"owner_user_group_ids", "owner_user_ids"},
 			},
 			"owner_user_group_ids": {
 				Elem: &schema.Resource{
@@ -77,8 +78,9 @@ func resourceProject() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:         schema.TypeList,
+				Optional:     true,
+				AtLeastOneOf: []string{"owner_user_group_ids", "owner_user_ids"},
 			},
 			"permission_scheme_id": {
 				Type:     schema.TypeInt,

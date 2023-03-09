@@ -56,8 +56,9 @@ func resourceAzureArmTemplate() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:         schema.TypeList,
+				Optional:     true,
+				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"owner_users": {
 				Elem: &schema.Resource{
@@ -68,8 +69,9 @@ func resourceAzureArmTemplate() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:         schema.TypeList,
+				Optional:     true,
+				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"resource_group_name": {
 				Type:     schema.TypeString,
