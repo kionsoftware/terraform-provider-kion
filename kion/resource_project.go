@@ -65,7 +65,7 @@ func resourceProject() *schema.Resource {
 						},
 					},
 				},
-				Type:         schema.TypeList,
+				Type:         schema.TypeSet,
 				Optional:     true,
 				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
 				AtLeastOneOf: []string{"owner_user_group_ids", "owner_user_ids"},
@@ -79,7 +79,7 @@ func resourceProject() *schema.Resource {
 						},
 					},
 				},
-				Type:         schema.TypeList,
+				Type:         schema.TypeSet,
 				Optional:     true,
 				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
 				AtLeastOneOf: []string{"owner_user_group_ids", "owner_user_ids"},
@@ -118,11 +118,11 @@ func resourceProject() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"budget": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -133,7 +133,7 @@ func resourceProject() *schema.Resource {
 							Optional: true,
 						},
 						"data": {
-							Type: schema.TypeList,
+							Type: schema.TypeSet,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"datecode": {
@@ -163,7 +163,7 @@ func resourceProject() *schema.Resource {
 							Optional: true,
 						},
 						"funding_source_ids": {
-							Type: schema.TypeList,
+							Type: schema.TypeSet,
 							Elem: &schema.Schema{
 								Type: schema.TypeInt,
 							},

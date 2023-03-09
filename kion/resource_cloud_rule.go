@@ -40,7 +40,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"aws_iam_policies": {
@@ -52,7 +52,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"azure_arm_template_definitions": {
@@ -64,7 +64,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"azure_policy_definitions": {
@@ -76,7 +76,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"azure_role_definitions": {
@@ -88,7 +88,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"gcp_iam_roles": {
@@ -100,7 +100,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"built_in": {
@@ -116,7 +116,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"description": {
@@ -132,7 +132,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"internal_aws_service_catalog_portfolios": {
@@ -144,7 +144,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"name": {
@@ -160,7 +160,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"owner_user_groups": {
@@ -172,7 +172,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:         schema.TypeList,
+				Type:         schema.TypeSet,
 				Optional:     true,
 				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
@@ -186,7 +186,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:         schema.TypeList,
+				Type:         schema.TypeSet,
 				Optional:     true,
 				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
@@ -208,7 +208,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 			"service_control_policies": {
@@ -220,7 +220,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 			},
 		},

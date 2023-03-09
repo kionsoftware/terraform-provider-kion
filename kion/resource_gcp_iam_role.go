@@ -41,7 +41,7 @@ func resourceGcpIamRole() *schema.Resource {
 			},
 			"role_permissions": {
 				Elem:     &schema.Schema{Type: schema.TypeString},
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: true,
 			},
 			"gcp_role_launch_stage": {
@@ -69,7 +69,7 @@ func resourceGcpIamRole() *schema.Resource {
 						},
 					},
 				},
-				Type:         schema.TypeList,
+				Type:         schema.TypeSet,
 				Optional:     true,
 				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
@@ -83,7 +83,7 @@ func resourceGcpIamRole() *schema.Resource {
 						},
 					},
 				},
-				Type:         schema.TypeList,
+				Type:         schema.TypeSet,
 				Optional:     true,
 				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
