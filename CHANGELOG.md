@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2] - 2023-03-09
+### Added
+- Added documentation that clarifies that either an owner user or owner group must be defined for some resources. 
+- Added better error handling when a user attempts to create a Kion resource without an owner user or owner group.
+
+### Changed
+- Fixed a bug where Terraform expected resources to be in a specific order on unordered resources.
+
 ## [0.3.1] - 2023-02-27
 ### Changed
 - Fix the description for IAM policies in the documentation to be more accurate.

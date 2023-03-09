@@ -238,7 +238,7 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 			// Unpack struct values & assign them to the POST object
 			post.Budget[i] = hc.BudgetCreate{
 				Amount:           budgetMap["amount"].(float64),
-				FundingSourceIDs: hc.FlattenIntArrayPointer(budgetMap["funding_source_ids"].([]interface{})),
+				FundingSourceIDs: hc.FlattenIntArrayPointer(budgetMap["funding_source_ids"].(*schema.Set).List()),
 				StartDatecode:    budgetMap["start_datecode"].(string),
 				EndDatecode:      budgetMap["end_datecode"].(string),
 			}
