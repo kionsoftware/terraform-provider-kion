@@ -17,24 +17,24 @@ description: |-
 
 ### Optional
 
-- **filter** (Block List) (see [below for nested schema](#nestedblock--filter))
-- **id** (String) The ID of this resource.
+- `filter` (Block List) (see [below for nested schema](#nestedblock--filter))
 
 ### Read-Only
 
-- **list** (List of Object) (see [below for nested schema](#nestedatt--list))
+- `id` (String) The ID of this resource.
+- `list` (List of Object) (see [below for nested schema](#nestedatt--list))
 
 <a id="nestedblock--filter"></a>
 ### Nested Schema for `filter`
 
 Required:
 
-- **name** (String)
-- **values** (List of String)
+- `name` (String)
+- `values` (List of String)
 
 Optional:
 
-- **regex** (Boolean)
+- `regex` (Boolean)
 
 
 <a id="nestedatt--list"></a>
@@ -42,23 +42,23 @@ Optional:
 
 Read-Only:
 
-- **aws_iam_path** (String)
-- **aws_managed_policy** (Boolean)
-- **description** (String)
-- **id** (Number)
-- **name** (String)
-- **owner_user_groups** (List of Object) (see [below for nested schema](#nestedobjatt--list--owner_user_groups))
-- **owner_users** (List of Object) (see [below for nested schema](#nestedobjatt--list--owner_users))
-- **path_suffix** (String)
-- **policy** (String)
-- **system_managed_policy** (Boolean)
+- `aws_iam_path` (String)
+- `aws_managed_policy` (Boolean)
+- `description` (String)
+- `id` (Number)
+- `name` (String)
+- `owner_user_groups` (List of Object) (see [below for nested schema](#nestedobjatt--list--owner_user_groups))
+- `owner_users` (List of Object) (see [below for nested schema](#nestedobjatt--list--owner_users))
+- `path_suffix` (String)
+- `policy` (String)
+- `system_managed_policy` (Boolean)
 
 <a id="nestedobjatt--list--owner_user_groups"></a>
 ### Nested Schema for `list.owner_user_groups`
 
 Read-Only:
 
-- **id** (Number)
+- `id` (Number)
 
 
 <a id="nestedobjatt--list--owner_users"></a>
@@ -66,6 +66,6 @@ Read-Only:
 
 Read-Only:
 
-- **id** (Number)
+- `id` (Number)
 
 

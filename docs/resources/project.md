@@ -17,50 +17,80 @@ description: |-
 
 ### Required
 
-- **name** (String)
-- **ou_id** (Number)
-- **permission_scheme_id** (Number)
-- **project_funding** (Block List, Min: 1) (see [below for nested schema](#nestedblock--project_funding))
+- `name` (String)
+- `ou_id` (Number)
+- `permission_scheme_id` (Number)
 
 ### Optional
 
-- **auto_pay** (Boolean)
-- **default_aws_region** (String)
-- **description** (String)
-- **id** (String) The ID of this resource.
-- **last_updated** (String)
-- **owner_user_group_ids** (Block List) (see [below for nested schema](#nestedblock--owner_user_group_ids))
-- **owner_user_ids** (Block List) (see [below for nested schema](#nestedblock--owner_user_ids))
+- `auto_pay` (Boolean)
+- `budget` (Block List) (see [below for nested schema](#nestedblock--budget))
+- `default_aws_region` (String)
+- `description` (String)
+- `last_updated` (String)
+- `owner_user_group_ids` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_group_ids))
+- `owner_user_ids` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_ids))
+- `project_funding` (Block List) (see [below for nested schema](#nestedblock--project_funding))
 
 ### Read-Only
 
-- **archived** (Boolean)
+- `archived` (Boolean)
+- `id` (String) The ID of this resource.
+
+<a id="nestedblock--budget"></a>
+### Nested Schema for `budget`
+
+Required:
+
+- `end_datecode` (String) Year and month the budget ends. This is an exclusive date.
+- `start_datecode` (String) Year and month the budget starts.
+
+Optional:
+
+- `amount` (Number) Total amount for the budget. This is required if data is not specified. Budget entries are created between start_datecode and end_datecode (exclusive) with the amount evenly distributed across the months.
+- `data` (Block List) Total amount for the budget. This is required if data is not specified. Budget entries are created between start_datecode and end_datecode (exclusive) with the amount evenly distributed across the months. (see [below for nested schema](#nestedblock--budget--data))
+- `funding_source_ids` (List of Number) Funding source IDs to use when data is not specified. This value is ignored is data is specified. If specified, the amount is distributed evenly across months and funding sources. Funding sources will be processed in order from first to last.
+
+<a id="nestedblock--budget--data"></a>
+### Nested Schema for `budget.data`
+
+Required:
+
+- `amount` (Number) Amount of the budget entry in dollars.
+- `datecode` (String) Year and month for the budget data entry (i.e 2023-01).
+
+Optional:
+
+- `funding_source_id` (Number) ID of funding source for the budget entry.
+- `priority` (Number) Priority order of the budget entry. This is required if funding_source_id is specified
+
+
+
+<a id="nestedblock--owner_user_group_ids"></a>
+### Nested Schema for `owner_user_group_ids`
+
+Read-Only:
+
+- `id` (Number) The ID of this resource.
+
+
+<a id="nestedblock--owner_user_ids"></a>
+### Nested Schema for `owner_user_ids`
+
+Read-Only:
+
+- `id` (Number) The ID of this resource.
+
 
 <a id="nestedblock--project_funding"></a>
 ### Nested Schema for `project_funding`
 
 Optional:
 
-- **amount** (Number)
-- **end_datecode** (String)
-- **funding_order** (Number)
-- **funding_source_id** (Number)
-- **start_datecode** (String)
-
-
-<a id="nestedblock--owner_user_group_ids"></a>
-### Nested Schema for `owner_user_group_ids`
-
-Optional:
-
-- **id** (Number) The ID of this resource.
-
-
-<a id="nestedblock--owner_user_ids"></a>
-### Nested Schema for `owner_user_ids`
-
-Optional:
-
-- **id** (Number) The ID of this resource.
+- `amount` (Number)
+- `end_datecode` (String)
+- `funding_order` (Number)
+- `funding_source_id` (Number)
+- `start_datecode` (String)
 
 

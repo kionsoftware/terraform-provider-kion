@@ -60,8 +60,10 @@ func resourceUserGroup() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeSet,
-				Optional: true,
+				Type:         schema.TypeSet,
+				Optional:     true,
+				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				AtLeastOneOf: []string{"owner_groups", "owner_users"},
 			},
 			"owner_users": {
 				Elem: &schema.Resource{
@@ -72,8 +74,10 @@ func resourceUserGroup() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeSet,
-				Optional: true,
+				Type:         schema.TypeSet,
+				Optional:     true,
+				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				AtLeastOneOf: []string{"owner_groups", "owner_users"},
 			},
 			"users": {
 				Elem: &schema.Resource{

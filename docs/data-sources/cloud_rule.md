@@ -17,24 +17,24 @@ description: |-
 
 ### Optional
 
-- **filter** (Block List) (see [below for nested schema](#nestedblock--filter))
-- **id** (String) The ID of this resource.
+- `filter` (Block List) (see [below for nested schema](#nestedblock--filter))
 
 ### Read-Only
 
-- **list** (List of Object) (see [below for nested schema](#nestedatt--list))
+- `id` (String) The ID of this resource.
+- `list` (List of Object) (see [below for nested schema](#nestedatt--list))
 
 <a id="nestedblock--filter"></a>
 ### Nested Schema for `filter`
 
 Required:
 
-- **name** (String)
-- **values** (List of String)
+- `name` (String)
+- `values` (List of String)
 
 Optional:
 
-- **regex** (Boolean)
+- `regex` (Boolean)
 
 
 <a id="nestedatt--list"></a>
@@ -42,11 +42,11 @@ Optional:
 
 Read-Only:
 
-- **built_in** (Boolean)
-- **description** (String)
-- **id** (Number)
-- **name** (String)
-- **post_webhook_id** (Number)
-- **pre_webhook_id** (Number)
+- `built_in` (Boolean)
+- `description` (String)
+- `id` (Number)
+- `name` (String)
+- `post_webhook_id` (Number)
+- `pre_webhook_id` (Number)
 
 

@@ -17,17 +17,17 @@ description: |-
 
 ### Optional
 
-- **assertion_name** (String)
-- **assertion_regex** (String)
-- **id** (String) The ID of this resource.
-- **idms_id** (Number)
-- **last_updated** (String)
-- **update_on_login** (Boolean)
-- **user_group_id** (Number)
+- `assertion_name` (String)
+- `assertion_regex` (String)
+- `idms_id` (Number)
+- `last_updated` (String)
+- `update_on_login` (Boolean)
+- `user_group_id` (Number)
 
 ### Read-Only
 
-- **idms_saml_id** (Number)
-- **should_update_on_login** (Boolean)
+- `id` (String) The ID of this resource.
+- `idms_saml_id` (Number)
+- `should_update_on_login` (Boolean)
 
 

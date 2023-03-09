@@ -172,8 +172,10 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeSet,
-				Optional: true,
+				Type:         schema.TypeSet,
+				Optional:     true,
+				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"owner_users": {
 				Elem: &schema.Resource{
@@ -184,8 +186,10 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeSet,
-				Optional: true,
+				Type:         schema.TypeSet,
+				Optional:     true,
+				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"post_webhook_id": {
 				Type:     schema.TypeInt,

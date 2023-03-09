@@ -17,39 +17,39 @@ description: |-
 
 ### Required
 
-- **deployment_mode** (Number)
-- **name** (String)
-- **resource_group_name** (String)
-- **resource_group_region_id** (Number)
-- **template** (String)
+- `deployment_mode` (Number)
+- `name` (String)
+- `resource_group_name` (String)
+- `resource_group_region_id` (Number)
+- `template` (String)
 
 ### Optional
 
-- **description** (String)
-- **id** (String) The ID of this resource.
-- **last_updated** (String)
-- **owner_user_groups** (Block List) (see [below for nested schema](#nestedblock--owner_user_groups))
-- **owner_users** (Block List) (see [below for nested schema](#nestedblock--owner_users))
-- **template_parameters** (String)
+- `description` (String)
+- `last_updated` (String)
+- `owner_user_groups` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
+- `owner_users` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
+- `template_parameters` (String)
 
 ### Read-Only
 
-- **ct_managed** (Boolean)
-- **version** (Number)
+- `ct_managed` (Boolean)
+- `id` (String) The ID of this resource.
+- `version` (Number)
 
 <a id="nestedblock--owner_user_groups"></a>
 ### Nested Schema for `owner_user_groups`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
 <a id="nestedblock--owner_users"></a>
 ### Nested Schema for `owner_users`
 
-Optional:
+Read-Only:
 
-- **id** (Number) The ID of this resource.
+- `id` (Number) The ID of this resource.
 
 
