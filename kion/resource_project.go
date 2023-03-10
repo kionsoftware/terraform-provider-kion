@@ -228,9 +228,9 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 	if config.Data.BudgetMode {
 		projectCreateURLSuffix = "with-budget"
 
-		post.Budget = make([]hc.BudgetCreate, len(d.Get("budget").([]interface{})))
+		post.Budget = make([]hc.BudgetCreate, len(d.Get("budget").(*schema.Set).List()))
 
-		for i, genericValue := range d.Get("budget").([]interface{}) {
+		for i, genericValue := range d.Get("budget").(*schema.Set).List() {
 
 			// Cast each generic interface{} value to a map of key/value pairs
 			budgetMap := genericValue.(map[string]interface{})
@@ -243,10 +243,10 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 				EndDatecode:      budgetMap["end_datecode"].(string),
 			}
 
-			post.Budget[i].Data = make([]hc.BudgetDataCreate, len(budgetMap["data"].([]interface{})))
+			post.Budget[i].Data = make([]hc.BudgetDataCreate, len(budgetMap["data"].(*schema.Set).List()))
 
 			// fill out budget data as needed
-			for idx, genericValue2 := range budgetMap["data"].([]interface{}) {
+			for idx, genericValue2 := range budgetMap["data"].(*schema.Set).List() {
 
 				// Cast each generic interface{} value to a map of key/value pairs
 				budgetDataMap := genericValue2.(map[string]interface{})
@@ -260,9 +260,9 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 			}
 		}
 	} else {
-		post.ProjectFunding = make([]hc.ProjectFundingCreate, len(d.Get("project_funding").([]interface{})))
+		post.ProjectFunding = make([]hc.ProjectFundingCreate, len(d.Get("project_funding").(*schema.Set).List()))
 
-		for i, genericValue := range d.Get("project_funding").([]interface{}) {
+		for i, genericValue := range d.Get("project_funding").(*schema.Set).List() {
 
 			// Cast each generic interface{} value to a map of key/value pairs
 			projectFundingMap := genericValue.(map[string]interface{})
