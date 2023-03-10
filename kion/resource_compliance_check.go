@@ -150,7 +150,7 @@ func resourceComplianceCheckCreate(ctx context.Context, d *schema.ResourceData, 
 		Name:                  d.Get("name").(string),
 		OwnerUserGroupIds:     hc.FlattenGenericIDPointer(d, "owner_user_groups"),
 		OwnerUserIds:          hc.FlattenGenericIDPointer(d, "owner_users"),
-		Regions:               hc.FlattenStringArray(d.Get("regions").([]interface{})),
+		Regions:               hc.FlattenStringArray(d.Get("regions").(*schema.Set).List()),
 		SeverityTypeID:        hc.FlattenIntPointer(d, "severity_type_id"),
 	}
 
@@ -272,7 +272,7 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 			IsAllRegions:          d.Get("is_all_regions").(bool),
 			IsAutoArchived:        d.Get("is_auto_archived").(bool),
 			Name:                  d.Get("name").(string),
-			Regions:               hc.FlattenStringArray(d.Get("regions").([]interface{})),
+			Regions:               hc.FlattenStringArray(d.Get("regions").(*schema.Set).List()),
 			SeverityTypeID:        hc.FlattenIntPointer(d, "severity_type_id"),
 		}
 
