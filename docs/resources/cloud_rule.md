@@ -21,24 +21,24 @@ description: |-
 
 ### Optional
 
-- `aws_cloudformation_templates` (Block List) (see [below for nested schema](#nestedblock--aws_cloudformation_templates))
-- `aws_iam_policies` (Block List) (see [below for nested schema](#nestedblock--aws_iam_policies))
-- `azure_arm_template_definitions` (Block List) (see [below for nested schema](#nestedblock--azure_arm_template_definitions))
-- `azure_policy_definitions` (Block List) (see [below for nested schema](#nestedblock--azure_policy_definitions))
-- `azure_role_definitions` (Block List) (see [below for nested schema](#nestedblock--azure_role_definitions))
-- `compliance_standards` (Block List) (see [below for nested schema](#nestedblock--compliance_standards))
+- `aws_cloudformation_templates` (Block Set) (see [below for nested schema](#nestedblock--aws_cloudformation_templates))
+- `aws_iam_policies` (Block Set) (see [below for nested schema](#nestedblock--aws_iam_policies))
+- `azure_arm_template_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_arm_template_definitions))
+- `azure_policy_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_policy_definitions))
+- `azure_role_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_role_definitions))
+- `compliance_standards` (Block Set) (see [below for nested schema](#nestedblock--compliance_standards))
 - `description` (String)
-- `gcp_iam_roles` (Block List) (see [below for nested schema](#nestedblock--gcp_iam_roles))
-- `internal_aws_amis` (Block List) (see [below for nested schema](#nestedblock--internal_aws_amis))
-- `internal_aws_service_catalog_portfolios` (Block List) (see [below for nested schema](#nestedblock--internal_aws_service_catalog_portfolios))
+- `gcp_iam_roles` (Block Set) (see [below for nested schema](#nestedblock--gcp_iam_roles))
+- `internal_aws_amis` (Block Set) (see [below for nested schema](#nestedblock--internal_aws_amis))
+- `internal_aws_service_catalog_portfolios` (Block Set) (see [below for nested schema](#nestedblock--internal_aws_service_catalog_portfolios))
 - `last_updated` (String)
-- `ous` (Block List) (see [below for nested schema](#nestedblock--ous))
-- `owner_user_groups` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
-- `owner_users` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
+- `ous` (Block Set) (see [below for nested schema](#nestedblock--ous))
+- `owner_user_groups` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
+- `owner_users` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
 - `post_webhook_id` (Number)
 - `pre_webhook_id` (Number)
-- `projects` (Block List) (see [below for nested schema](#nestedblock--projects))
-- `service_control_policies` (Block List) (see [below for nested schema](#nestedblock--service_control_policies))
+- `projects` (Block Set) (see [below for nested schema](#nestedblock--projects))
+- `service_control_policies` (Block Set) (see [below for nested schema](#nestedblock--service_control_policies))
 
 ### Read-Only
 

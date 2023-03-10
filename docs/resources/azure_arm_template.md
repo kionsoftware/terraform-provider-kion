@@ -27,8 +27,8 @@ description: |-
 
 - `description` (String)
 - `last_updated` (String)
-- `owner_user_groups` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
-- `owner_users` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
+- `owner_user_groups` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
+- `owner_users` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
 - `template_parameters` (String)
 
 ### Read-Only

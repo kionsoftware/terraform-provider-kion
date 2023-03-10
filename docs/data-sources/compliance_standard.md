@@ -22,19 +22,19 @@ description: |-
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `list` (List of Object) (see [below for nested schema](#nestedatt--list))
+- `list` (List of Object) This is where Kion makes the discovered data available as a list of resources. (see [below for nested schema](#nestedatt--list))
 
 <a id="nestedblock--filter"></a>
 ### Nested Schema for `filter`
 
 Required:
 
-- `name` (String)
-- `values` (List of String)
+- `name` (String) The field name whose values you wish to filter by.
+- `values` (List of String) The values of the field name you specified.
 
 Optional:
 
-- `regex` (Boolean)
+- `regex` (Boolean) Dictates if the values provided should be treated as regular expressions.
 
 
 <a id="nestedatt--list"></a>

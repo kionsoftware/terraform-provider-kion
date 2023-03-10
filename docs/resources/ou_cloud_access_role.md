@@ -25,12 +25,12 @@ description: |-
 
 - `aws_iam_path` (String)
 - `aws_iam_permissions_boundary` (Number)
-- `aws_iam_policies` (Block List) (see [below for nested schema](#nestedblock--aws_iam_policies))
+- `aws_iam_policies` (Block Set) (see [below for nested schema](#nestedblock--aws_iam_policies))
 - `last_updated` (String)
 - `long_term_access_keys` (Boolean)
 - `short_term_access_keys` (Boolean)
-- `user_groups` (Block List) (see [below for nested schema](#nestedblock--user_groups))
-- `users` (Block List) (see [below for nested schema](#nestedblock--users))
+- `user_groups` (Block Set) (see [below for nested schema](#nestedblock--user_groups))
+- `users` (Block Set) (see [below for nested schema](#nestedblock--users))
 - `web_access` (Boolean)
 
 ### Read-Only

@@ -21,25 +21,29 @@ func dataSourceComplianceStandard() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
-							Type:     schema.TypeString,
-							Required: true,
+							Description: "The field name whose values you wish to filter by.",
+							Type:        schema.TypeString,
+							Required:    true,
 						},
 						"values": {
-							Type:     schema.TypeList,
-							Required: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
+							Description: "The values of the field name you specified.",
+							Type:        schema.TypeList,
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 						"regex": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
+							Description: "Dictates if the values provided should be treated as regular expressions.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
 						},
 					},
 				},
 			},
 			"list": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "This is where Kion makes the discovered data available as a list of resources.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"created_at": {
