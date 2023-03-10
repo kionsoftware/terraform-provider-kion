@@ -19,14 +19,14 @@ description: |-
 
 - `name` (String)
 - `policy` (String)
-- `regions` (List of String)
+- `regions` (Set of String)
 
 ### Optional
 
 - `description` (String)
 - `last_updated` (String)
-- `owner_user_groups` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
-- `owner_users` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
+- `owner_user_groups` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
+- `owner_users` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
 - `region` (String)
 - `sns_arns` (String)
 - `template_parameters` (String)

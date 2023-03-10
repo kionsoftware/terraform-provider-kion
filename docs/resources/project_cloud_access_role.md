@@ -23,18 +23,18 @@ description: |-
 
 ### Optional
 
-- `accounts` (Block List) This field will be ignored if 'apply_to_all_accounts' is set to: true. (see [below for nested schema](#nestedblock--accounts))
+- `accounts` (Block Set) This field will be ignored if 'apply_to_all_accounts' is set to: true. (see [below for nested schema](#nestedblock--accounts))
 - `apply_to_all_accounts` (Boolean)
 - `aws_iam_path` (String)
 - `aws_iam_permissions_boundary` (Number)
-- `aws_iam_policies` (Block List) (see [below for nested schema](#nestedblock--aws_iam_policies))
-- `azure_role_definitions` (Block List) (see [below for nested schema](#nestedblock--azure_role_definitions))
+- `aws_iam_policies` (Block Set) (see [below for nested schema](#nestedblock--aws_iam_policies))
+- `azure_role_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_role_definitions))
 - `future_accounts` (Boolean)
 - `last_updated` (String)
 - `long_term_access_keys` (Boolean)
 - `short_term_access_keys` (Boolean)
-- `user_groups` (Block List) (see [below for nested schema](#nestedblock--user_groups))
-- `users` (Block List) (see [below for nested schema](#nestedblock--users))
+- `user_groups` (Block Set) (see [below for nested schema](#nestedblock--user_groups))
+- `users` (Block Set) (see [below for nested schema](#nestedblock--users))
 - `web_access` (Boolean)
 
 ### Read-Only

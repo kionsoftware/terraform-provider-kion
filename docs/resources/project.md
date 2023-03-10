@@ -24,13 +24,13 @@ description: |-
 ### Optional
 
 - `auto_pay` (Boolean)
-- `budget` (Block List) (see [below for nested schema](#nestedblock--budget))
+- `budget` (Block Set) (see [below for nested schema](#nestedblock--budget))
 - `default_aws_region` (String)
 - `description` (String)
 - `last_updated` (String)
-- `owner_user_group_ids` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_group_ids))
-- `owner_user_ids` (Block List) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_ids))
-- `project_funding` (Block List) (see [below for nested schema](#nestedblock--project_funding))
+- `owner_user_group_ids` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_group_ids))
+- `owner_user_ids` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_ids))
+- `project_funding` (Block Set) (see [below for nested schema](#nestedblock--project_funding))
 
 ### Read-Only
 
@@ -48,8 +48,8 @@ Required:
 Optional:
 
 - `amount` (Number) Total amount for the budget. This is required if data is not specified. Budget entries are created between start_datecode and end_datecode (exclusive) with the amount evenly distributed across the months.
-- `data` (Block List) Total amount for the budget. This is required if data is not specified. Budget entries are created between start_datecode and end_datecode (exclusive) with the amount evenly distributed across the months. (see [below for nested schema](#nestedblock--budget--data))
-- `funding_source_ids` (List of Number) Funding source IDs to use when data is not specified. This value is ignored is data is specified. If specified, the amount is distributed evenly across months and funding sources. Funding sources will be processed in order from first to last.
+- `data` (Block Set) Total amount for the budget. This is required if data is not specified. Budget entries are created between start_datecode and end_datecode (exclusive) with the amount evenly distributed across the months. (see [below for nested schema](#nestedblock--budget--data))
+- `funding_source_ids` (Set of Number) Funding source IDs to use when data is not specified. This value is ignored is data is specified. If specified, the amount is distributed evenly across months and funding sources. Funding sources will be processed in order from first to last.
 
 <a id="nestedblock--budget--data"></a>
 ### Nested Schema for `budget.data`
