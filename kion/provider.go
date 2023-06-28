@@ -40,6 +40,7 @@ func Provider() *schema.Provider {
 			"kion_cloud_rule":                  resourceCloudRule(),
 			"kion_compliance_check":            resourceComplianceCheck(),
 			"kion_compliance_standard":         resourceComplianceStandard(),
+			"kion_funding_source":              resourceFundingSource(),
 			"kion_ou_cloud_access_role":        resourceOUCloudAccessRole(),
 			"kion_project_cloud_access_role":   resourceProjectCloudAccessRole(),
 			"kion_ou":                          resourceOU(),
