@@ -59,6 +59,7 @@ func Provider() *schema.Provider {
 			"kion_cloud_rule":                  dataSourceCloudRule(),
 			"kion_compliance_check":            dataSourceComplianceCheck(),
 			"kion_compliance_standard":         dataSourceComplianceStandard(),
+			"kion_funding_source":              dataSourceFundingSource(),
 			"kion_ou":                          dataSourceOU(),
 			"kion_user_group":                  dataSourceUserGroup(),
 			"kion_saml_group_association":      dataSourceSamlGroupAssociation(),
