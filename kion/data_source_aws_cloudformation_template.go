@@ -99,6 +99,11 @@ func dataSourceAwsCloudformationTemplate() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"tags": {
+							Elem:     &schema.Schema{Type: schema.TypeString},
+							Type:     schema.TypeMap,
+							Computed: true,
+						},
 						"template_parameters": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -118,7 +123,7 @@ func dataSourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.Reso
 	var diags diag.Diagnostics
 	c := m.(*hc.Client)
 
-	resp := new(hc.CFTListResponseWithOwners)
+	resp := new(hc.CFTListResponseWithOwnersAndTags)
 	err := c.GET("/v3/cft", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -143,6 +148,7 @@ func dataSourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.Reso
 		data["region"] = item.Cft.Region
 		data["regions"] = hc.FilterStringArray(item.Cft.Regions)
 		data["sns_arns"] = item.Cft.SnsArns
+		data["tags"] = hc.InflateTags(item.Tags)
 		data["template_parameters"] = item.Cft.TemplateParameters
 		data["termination_protection"] = item.Cft.TerminationProtection
 

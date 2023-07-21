@@ -92,6 +92,12 @@ func resourceAwsCloudformationTemplate() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"tags": {
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: "Stack-level tags will apply to all supported resources in a CloudFormation stack.  Requires Kion >= 3.7.1.",
+			},
 		},
 	}
 }
@@ -109,6 +115,7 @@ func resourceAwsCloudformationTemplateCreate(ctx context.Context, d *schema.Reso
 		Region:                d.Get("region").(string),
 		Regions:               hc.FlattenStringArray(d.Get("regions").(*schema.Set).List()),
 		SnsArns:               d.Get("sns_arns").(string),
+		Tags:                  hc.FlattenTags(d, "tags"),
 		TemplateParameters:    d.Get("template_parameters").(string),
 		TerminationProtection: d.Get("termination_protection").(bool),
 	}
@@ -142,7 +149,7 @@ func resourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.Resour
 	c := m.(*hc.Client)
 	ID := d.Id()
 
-	resp := new(hc.CFTResponseWithOwners)
+	resp := new(hc.CFTResponseWithOwnersAndTags)
 	err := c.GET(fmt.Sprintf("/v3/cft/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -167,6 +174,7 @@ func resourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.Resour
 	data["region"] = item.Cft.Region
 	data["regions"] = hc.FilterStringArray(item.Cft.Regions)
 	data["sns_arns"] = item.Cft.SnsArns
+	data["tags"] = hc.InflateTags(item.Tags)
 	data["template_parameters"] = item.Cft.TemplateParameters
 	data["termination_protection"] = item.Cft.TerminationProtection
 
@@ -201,6 +209,7 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 		"region",
 		"regions",
 		"sns_arns",
+		"tags",
 		"template_parameters",
 		"termination_protection") {
 		hasChanged++
@@ -211,6 +220,7 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 			Region:                d.Get("region").(string),
 			Regions:               hc.FlattenStringArray(d.Get("regions").(*schema.Set).List()),
 			SnsArns:               d.Get("sns_arns").(string),
+			Tags:                  hc.FlattenTags(d, "tags"),
 			TemplateParameters:    d.Get("template_parameters").(string),
 			TerminationProtection: d.Get("termination_protection").(bool),
 		}

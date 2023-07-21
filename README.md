@@ -191,6 +191,10 @@ resource "kion_aws_cloudformation_template" "t1" {
     }
 }
 EOF
+  tags = {
+    Owner      = "jdoe"
+    Department = "DevOps"
+  }
 }
 
 # Output the ID of the resource created.
