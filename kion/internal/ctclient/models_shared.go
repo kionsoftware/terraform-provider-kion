@@ -43,10 +43,3 @@ type ChangeOwners struct {
 	OwnerUserGroupIds *[]int `json:"owner_user_group_ids"`
 	OwnerUserIds      *[]int `json:"owner_user_ids"`
 }
-
-// FundingSourcePermissionMapping
-type FundingSourcePermissionMapping struct {
-	AppRoleID    int    `json:"app_role_id"`
-	UserGroupIds *[]int `json:"user_group_ids"`
-	UserIds      *[]int `json:"user_ids"`
-}
