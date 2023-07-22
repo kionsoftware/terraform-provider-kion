@@ -53,3 +53,18 @@ type FundingSourceUpdate struct {
 	OUID          int    `json:"ou_id"`
 	StartDatecode string `json:"start_datecode"`
 }
+
+// FundingSourcePermissionMapping
+type FundingSourcePermissionMapping struct {
+	AppRoleID    int    `json:"app_role_id"`
+	UserGroupIds *[]int `json:"user_groups_ids"`
+	UserIds      *[]int `json:"user_ids"`
+}
+
+type FSUserMappingListResponse struct {
+	Data []struct {
+		AppRoleId    int    `json:"app_role_id"`
+		UserGroupIds *[]int `json:"user_groups_ids"`
+		UserIds      *[]int `json:"user_ids"`
+	}
+}

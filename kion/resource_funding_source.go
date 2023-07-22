@@ -156,6 +156,28 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 	data["start_datecode"] = item.StartDatecode
 	data["end_datecode"] = item.EndDatecode
 
+	permissionResp := new(hc.FSUserMappingListResponse)
+	err = c.GET(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), permissionResp)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to read Funding Source permissions",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	for _, permissionItem := range permissionResp.Data {
+		if permissionItem.AppRoleId == 1 {
+			if permissionItem.UserGroupIds != nil {
+				data["owner_user_groups"] = hc.InflateArrayOfIDs(*permissionItem.UserGroupIds)
+			}
+			if permissionItem.UserIds != nil {
+				data["owner_users"] = hc.InflateArrayOfIDs(*permissionItem.UserIds)
+			}
+		}
+	}
+
 	for k, v := range data {
 		if err := d.Set(k, v); err != nil {
 			diags = append(diags, diag.Diagnostic{
