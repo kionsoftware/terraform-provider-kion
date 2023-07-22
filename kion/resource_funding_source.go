@@ -55,7 +55,7 @@ func resourceFundingSource() *schema.Resource {
 				Type:     schema.TypeInt,
 				Required: true,
 			},
-			"owner_user_ids": {
+			"owner_users": {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
@@ -67,9 +67,9 @@ func resourceFundingSource() *schema.Resource {
 				Type:         schema.TypeSet,
 				Optional:     true,
 				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
-				AtLeastOneOf: []string{"owner_user_group_ids", "owner_user_ids"},
+				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
-			"owner_user_group_ids": {
+			"owner_user_groups": {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
@@ -81,7 +81,7 @@ func resourceFundingSource() *schema.Resource {
 				Type:         schema.TypeSet,
 				Optional:     true,
 				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
-				AtLeastOneOf: []string{"owner_user_group_ids", "owner_user_ids"},
+				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"permission_scheme_id": {
 				Type:     schema.TypeInt,
@@ -103,8 +103,8 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 		EndDatecode:        d.Get("end_datecode").(string),
 		PermissionSchemeID: d.Get("permission_scheme_id").(int),
 		OUID:               d.Get("ou_id").(int),
-		OwnerUserIds:       hc.FlattenGenericIDPointer(d, "owner_user_ids"),
-		OwnerUserGroupIds:  hc.FlattenGenericIDPointer(d, "owner_user_group_ids"),
+		OwnerUserIds:       hc.FlattenGenericIDPointer(d, "owner_users"),
+		OwnerUserGroupIds:  hc.FlattenGenericIDPointer(d, "owner_user_groups"),
 	}
 
 	resp, err := c.POST("/v3/funding-source", post)
@@ -209,11 +209,11 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	// Determine if the owners have changed.
-	if d.HasChanges("owner_user_ids",
-		"owner_user_group_ids") {
+	if d.HasChanges("owner_users",
+		"owner_user_groups") {
 		hasChanged++
-		arrAddOwnerUserGroupIds, arrRemoveOwnerUserGroupIds, _, _ := hc.AssociationChanged(d, "owner_user_group_ids")
-		arrAddOwnerUserIds, arrRemoveOwnerUserIds, _, _ := hc.AssociationChanged(d, "owner_user_ids")
+		arrAddOwnerUserGroupIds, arrRemoveOwnerUserGroupIds, _, _ := hc.AssociationChanged(d, "owner_user_groups")
+		arrAddOwnerUserIds, arrRemoveOwnerUserIds, _, _ := hc.AssociationChanged(d, "owner_users")
 
 		patch := []hc.FundingSourcePermissionMapping{
 			{
