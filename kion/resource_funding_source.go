@@ -218,8 +218,8 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 		patch := []hc.FundingSourcePermissionMapping{
 			{
 				AppRoleID:    1,
-				UserGroupIds: &arrAddOwnerUserGroupIds,
-				UserIds:      &arrAddOwnerUserIds,
+				UserGroupIds: hc.FlattenGenericIDPointer(d, "owner_user_groups"),
+				UserIds:      hc.FlattenGenericIDPointer(d, "owner_users"),
 			},
 		}
 
