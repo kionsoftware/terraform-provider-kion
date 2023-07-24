@@ -26,6 +26,12 @@ func Provider() *schema.Provider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("KION_APIKEY", nil),
 			},
+			"apipath": {
+				Description: "The base path of the API.  Defaults to /api",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "/api",
+			},
 			"skipsslvalidation": {
 				Description: "If true, will skip SSL validation.",
 				Type:        schema.TypeBool,
@@ -74,6 +80,7 @@ func Provider() *schema.Provider {
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	ctURL := d.Get("url").(string)
 	ctAPIKey := d.Get("apikey").(string)
+	ctAPIPath := d.Get("apipath").(string)
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
@@ -85,7 +92,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		skipSSLValidation = t
 	}
 
-	c := ctclient.NewClient(ctURL, ctAPIKey, skipSSLValidation)
+	c := ctclient.NewClient(ctURL, ctAPIKey, ctAPIPath, skipSSLValidation)
 	err := c.GET("/v3/me/cloud-access-role", nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
