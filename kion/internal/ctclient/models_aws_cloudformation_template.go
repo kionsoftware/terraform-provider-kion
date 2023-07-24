@@ -1,7 +1,7 @@
 package ctclient
 
-// CFTListResponseWithOwners for: GET /api/v3/cft
-type CFTListResponseWithOwners struct {
+// CFTListResponseWithOwnersAndTags for: GET /api/v3/cft
+type CFTListResponseWithOwnersAndTags struct {
 	Data []struct {
 		Cft struct {
 			Description           string   `json:"description"`
@@ -16,12 +16,13 @@ type CFTListResponseWithOwners struct {
 		} `json:"cft"`
 		OwnerUserGroups []ObjectWithID `json:"owner_user_groups"`
 		OwnerUsers      []ObjectWithID `json:"owner_users"`
+		Tags            []Tag          `json:"tags"`
 	} `json:"data"`
 	Status int `json:"status"`
 }
 
-// CFTResponseWithOwners for: GET /api/v3/cft/{id}
-type CFTResponseWithOwners struct {
+// CFTResponseWithOwnersAndTags for: GET /api/v3/cft/{id}
+type CFTResponseWithOwnersAndTags struct {
 	Data struct {
 		Cft struct {
 			Description           string   `json:"description"`
@@ -36,6 +37,7 @@ type CFTResponseWithOwners struct {
 		} `json:"cft"`
 		OwnerUserGroups []ObjectWithID `json:"owner_user_groups"`
 		OwnerUsers      []ObjectWithID `json:"owner_users"`
+		Tags            []Tag          `json:"tags"`
 	} `json:"data"`
 	Status int `json:"status"`
 }
@@ -50,6 +52,7 @@ type CFTCreate struct {
 	Region                string   `json:"region"`
 	Regions               []string `json:"regions"`
 	SnsArns               string   `json:"sns_arns"`
+	Tags                  *[]Tag   `json:"tags"`
 	TemplateParameters    string   `json:"template_parameters"`
 	TerminationProtection bool     `json:"termination_protection"`
 }
@@ -62,6 +65,7 @@ type CFTUpdate struct {
 	Region                string   `json:"region"`
 	Regions               []string `json:"regions"`
 	SnsArns               string   `json:"sns_arns"`
+	Tags                  *[]Tag   `json:"tags"`
 	TemplateParameters    string   `json:"template_parameters"`
 	TerminationProtection bool     `json:"termination_protection"`
 }

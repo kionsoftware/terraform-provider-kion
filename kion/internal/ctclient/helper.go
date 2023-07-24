@@ -146,6 +146,20 @@ func FlattenGenericIDPointer(d *schema.ResourceData, key string) *[]int {
 	return &uids
 }
 
+func FlattenTags(d *schema.ResourceData, key string) *[]Tag {
+	tagMap := d.Get(key).(map[string]interface{})
+
+	tags := make([]Tag, 0)
+	for k, v := range tagMap {
+		tags = append(tags, Tag{
+			Key:   k,
+			Value: v.(string),
+		})
+	}
+
+	return &tags
+}
+
 // InflateObjectWithID -
 func InflateObjectWithID(arr []ObjectWithID) []interface{} {
 	if arr != nil {
@@ -169,6 +183,20 @@ func InflateObjectWithID(arr []ObjectWithID) []interface{} {
 func InflateSingleObjectWithID(single *ObjectWithID) interface{} {
 	if single != nil {
 		return single.ID
+	}
+
+	return nil
+}
+
+func InflateTags(arr []Tag) map[string]string {
+	if arr != nil {
+		final := make(map[string]string, 0)
+
+		for _, item := range arr {
+			final[item.Key] = item.Value
+		}
+
+		return final
 	}
 
 	return nil

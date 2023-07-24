@@ -43,3 +43,8 @@ type ChangeOwners struct {
 	OwnerUserGroupIds *[]int `json:"owner_user_group_ids"`
 	OwnerUserIds      *[]int `json:"owner_user_ids"`
 }
+
+type Tag struct {
+	Key   string `json:"tag_key"`
+	Value string `json:"tag_value"`
+}
