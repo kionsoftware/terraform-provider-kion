@@ -39,7 +39,7 @@ func NewClient(ctURL string, ctAPIKey string, ctAPIPath string, skipSSLValidatio
 	if err != nil {
 		log.Fatalln("The URL is not valid:", ctURL, err.Error())
 	}
-	u.Path = path.Join(u.Path, ctAPIPath)
+	u.Path = path.Join(strings.TrimRight(u.Path, "/"), strings.TrimRight(ctAPIPath, "/"))
 	c.HostURL = u.String()
 
 	c.Token = ctAPIKey
