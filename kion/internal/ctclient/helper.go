@@ -199,7 +199,7 @@ func InflateTags(arr []Tag) map[string]string {
 		return final
 	}
 
-	return make(map[string]string, 0)
+	return nil
 }
 
 // FieldsChanged -
