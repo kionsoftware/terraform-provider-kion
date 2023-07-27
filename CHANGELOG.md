@@ -2,10 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.3.4] - (unreleased)
+## [0.3.4] - 2023-03-27
+
+### Added
+- Added tags support to Cloudformation template resource (#24)
 
 ### Changed
-- Added tags support to Cloudformation template resource
+- Fix KeyError bug in import script (#7)
 
 
 ## [0.3.3] - 2023-03-10
