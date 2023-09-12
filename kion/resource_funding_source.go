@@ -273,7 +273,7 @@ func resourceFundingSourceDelete(ctx context.Context, d *schema.ResourceData, m 
 	c := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v1/funding-source/%s", ID), nil)
+	err := c.DELETE(fmt.Sprintf("/v3/funding-source/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
