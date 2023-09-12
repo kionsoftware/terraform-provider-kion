@@ -51,6 +51,7 @@ Read-Only:
 - `region` (String)
 - `regions` (List of String)
 - `sns_arns` (String)
+- `tags` (Map)
 - `template_parameters` (String)
 - `termination_protection` (Boolean)
 

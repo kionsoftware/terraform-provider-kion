@@ -24,7 +24,7 @@ type Client struct {
 }
 
 // NewClient .
-func NewClient(ctURL string, ctAPIKey string, skipSSLValidation bool) *Client {
+func NewClient(ctURL string, ctAPIKey string, ctAPIPath string, skipSSLValidation bool) *Client {
 	customTransport := http.DefaultTransport.(*http.Transport).Clone()
 	customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: skipSSLValidation}
 
@@ -34,12 +34,12 @@ func NewClient(ctURL string, ctAPIKey string, skipSSLValidation bool) *Client {
 		},
 	}
 
-	// Append '/api' to the URL.
+	// Append the path to the URL.
 	u, err := url.Parse(ctURL)
 	if err != nil {
 		log.Fatalln("The URL is not valid:", ctURL, err.Error())
 	}
-	u.Path = path.Join(u.Path, "api")
+	u.Path = path.Join(strings.TrimRight(u.Path, "/"), strings.TrimRight(ctAPIPath, "/"))
 	c.HostURL = u.String()
 
 	c.Token = ctAPIKey
