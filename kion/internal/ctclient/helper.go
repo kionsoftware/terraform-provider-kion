@@ -189,6 +189,25 @@ func InflateSingleObjectWithID(single *ObjectWithID) interface{} {
 	return nil
 }
 
+// InflateArrayOfIDs - Transforms an array of IDs into a map with an "id" key
+func InflateArrayOfIDs(arr []int) []interface{} {
+	if arr != nil {
+		final := make([]interface{}, 0)
+
+		for _, item := range arr {
+			it := make(map[string]interface{})
+
+			it["id"] = item
+
+			final = append(final, it)
+		}
+
+		return final
+	}
+
+	return make([]interface{}, 0)
+}
+
 func InflateTags(arr []Tag) map[string]string {
 	if arr != nil {
 		final := make(map[string]string, 0)
