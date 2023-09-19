@@ -150,6 +150,26 @@ func (c *Client) PATCH(urlPath string, sendData interface{}) error {
 	return nil
 }
 
+// PUT - updates an element in CT.
+func (c *Client) PUT(urlPath string, sendData interface{}) error {
+	rb, err := json.Marshal(sendData)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s%s", c.HostURL, urlPath), strings.NewReader(string(rb)))
+	if err != nil {
+		return err
+	}
+
+	_, _, err = c.doRequest(req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DELETE - removes an element from CT. sendData can be nil.
 func (c *Client) DELETE(urlPath string, sendData interface{}) error {
 	var req *http.Request
