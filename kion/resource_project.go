@@ -185,6 +185,11 @@ func resourceProject() *schema.Resource {
 					},
 				},
 			},
+			"labels": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -336,6 +341,33 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 			})
 			return diags
 		}
+	}
+
+	// Fetch labels
+	labels_resp := new(hc.ProjectLabelsResponse)
+	err = c.GET(fmt.Sprintf("/v3/project/%s/labels", ID), labels_resp)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to fetch labels for Project",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+	}
+
+	label_items := labels_resp.Data
+	label_data := make(map[string]interface{}, 0)
+	app_label_ids := make([]int, 0)
+	for _, label_item := range label_items {
+		label_data[label_item.Key] = label_item.Value
+		app_label_ids = append(app_label_ids, label_item.ID)
+	}
+
+	if err := d.Set("labels", label_data); err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set labels for Project",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
 	}
 
 	return diags
