@@ -437,6 +437,58 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
+	if d.HasChanges("labels") {
+		hasChanged++
+		label_resp := new(hc.LabelListResponse)
+		err := c.GET("/v1/app-label", label_resp)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to read Labels",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
+			})
+			return diags
+		}
+
+		app_label_ids := make([]int, 0)
+		labels := d.Get("labels").(map[string]interface{})
+		for k, v := range labels {
+			match, err := func(k string, v string) (int, error) {
+				for _, item := range label_resp.Data.Items {
+					if k == item.Key && v == item.Value {
+						return item.ID, nil
+					}
+				}
+				return -1, errors.New(fmt.Sprintf("A label with the key %s and value %s does not yet exist", k, v))
+			}(k, v.(string))
+
+			if err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Label does not exist",
+					Detail:   fmt.Sprintf("Error: %v", err.Error()),
+				})
+				return diags
+			} else {
+				app_label_ids = append(app_label_ids, match)
+			}
+		}
+
+		req := hc.AppLabelIdsCreate{
+			LabelIDs: app_label_ids,
+		}
+
+		err = c.PUT(fmt.Sprintf("/v1/project/%s/label", ID), req)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to update Project labels",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			})
+			return diags
+		}
+	}
+
 	if hasChanged > 0 {
 		d.Set("last_updated", time.Now().Format(time.RFC850))
 	}

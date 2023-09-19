@@ -51,3 +51,15 @@ type ProjectUpdate struct {
 	Name               string `json:"name"`
 	PermissionSchemeID int    `json:"permission_scheme_id"`
 }
+
+// ProjectLabelsResponse for: GET /api/v3/project/{id}/labels
+type ProjectLabelsResponse struct {
+	Data []struct {
+		Color     string `json:"color"`
+		ID        int    `json:"id"`
+		Key       string `json:"key"`
+		ProjectID int    `json:"project_id"`
+		Value     string `json:"value"`
+	} `json:"data"`
+	Status int `json:"status"`
+}
