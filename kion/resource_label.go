@@ -28,8 +28,9 @@ func resourceLabel() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			// Notice there is no 'id' field specified because it will be created.
 			"color": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The color of the label in hex format, (#123abc)",
 				ValidateFunc: validation.StringMatch(
 					regexp.MustCompile("^#[0-9a-fA-F]{6}$"),
 					"must be a valid hex color code with leading #",

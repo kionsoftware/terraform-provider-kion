@@ -186,9 +186,10 @@ func resourceProject() *schema.Resource {
 				},
 			},
 			"labels": {
-				Type:     schema.TypeMap,
-				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "A map of labels to assign to the project. The labels must already exist in Kion.",
 			},
 		},
 	}
