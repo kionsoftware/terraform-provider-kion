@@ -345,25 +345,20 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Fetch labels
-	labels_resp := new(hc.ProjectLabelsResponse)
-	err = c.GET(fmt.Sprintf("/v3/project/%s/labels", ID), labels_resp)
+	labelData, err := hc.ReadResourceLabels(c, "project", ID)
+
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Unable to fetch labels for Project",
+			Summary:  "Unable to read Project labels",
 			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 		})
+		return diags
 	}
 
-	label_items := labels_resp.Data
-	label_data := make(map[string]interface{}, 0)
-	app_label_ids := make([]int, 0)
-	for _, label_item := range label_items {
-		label_data[label_item.Key] = label_item.Value
-		app_label_ids = append(app_label_ids, label_item.ID)
-	}
-
-	if err := d.Set("labels", label_data); err != nil {
+	// Set labels
+	err = d.Set("labels", labelData)
+	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to set labels for Project",
@@ -440,46 +435,20 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 	if d.HasChanges("labels") {
 		hasChanged++
-		label_resp := new(hc.LabelListResponse)
-		err := c.GET("/v1/app-label", label_resp)
+
+		appLabelIDs, err := hc.BuildAppLabelIDs(c, d)
+
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Unable to read Labels",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
+				Summary:  "Unable to build Project labels",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 			})
 			return diags
 		}
 
-		app_label_ids := make([]int, 0)
-		labels := d.Get("labels").(map[string]interface{})
-		for k, v := range labels {
-			match, err := func(k string, v string) (int, error) {
-				for _, item := range label_resp.Data.Items {
-					if k == item.Key && v == item.Value {
-						return item.ID, nil
-					}
-				}
-				return -1, errors.New(fmt.Sprintf("A label with the key %s and value %s does not yet exist", k, v))
-			}(k, v.(string))
+		err = hc.PutAppLabelIDs(c, appLabelIDs, "project", ID)
 
-			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Label does not exist",
-					Detail:   fmt.Sprintf("Error: %v", err.Error()),
-				})
-				return diags
-			} else {
-				app_label_ids = append(app_label_ids, match)
-			}
-		}
-
-		req := hc.AppLabelIdsCreate{
-			LabelIDs: app_label_ids,
-		}
-
-		err = c.PUT(fmt.Sprintf("/v1/project/%s/label", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
