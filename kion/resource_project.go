@@ -303,6 +303,30 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 	d.SetId(strconv.Itoa(resp.RecordID))
 
+	ID := d.Id()
+
+	appLabelIDs, err := hc.BuildAppLabelIDs(c, d)
+
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to build Project labels",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	err = hc.PutAppLabelIDs(c, appLabelIDs, "project", ID)
+
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to update Project labels",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
 	resourceProjectRead(ctx, d, m)
 
 	return diags
