@@ -48,3 +48,23 @@ type Tag struct {
 	Key   string `json:"tag_key"`
 	Value string `json:"tag_value"`
 }
+
+// AppLabelIdsCreate for: PUT /api/v1/{account|cloud-rule|funding-source|ou|project}/{id}/label
+type AppLabelIdsCreate struct {
+	LabelIDs []int `json:"app_label_ids"`
+}
+
+type AppLabelIdsResponse struct {
+	Data []struct {
+		ID       int `json:"id"`
+		AppLabel struct {
+			ID      int    `json:"id"`
+			KeyID   int    `json:"key_id"`
+			Key     string `json:"key"`
+			ValueID int    `json:"value_id"`
+			Value   string `json:"value"`
+			Color   string `json:"color"`
+		} `json:"app_label"`
+	} `json:"data"`
+	Status int `json:"status"`
+}
