@@ -68,3 +68,13 @@ type AppLabelIdsResponse struct {
 	} `json:"data"`
 	Status int `json:"status"`
 }
+
+type ResourceLabelsResponse struct {
+	Data []struct {
+		Color string `json:"color"`
+		ID    int    `json:"id"`
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	} `json:"data"`
+	Status int `json:"status"`
+}
