@@ -49,29 +49,18 @@ type Tag struct {
 	Value string `json:"tag_value"`
 }
 
-// AppLabelIdsCreate for: PUT /api/v1/{account|cloud-rule|funding-source|ou|project}/{id}/label
-type AppLabelIdsCreate struct {
-	LabelIDs []int `json:"app_label_ids"`
+type AssociateLabels struct {
+	Labels *[]AssociateLabel `json:"labels"`
 }
 
-type AppLabelIdsResponse struct {
-	Data []struct {
-		ID       int `json:"id"`
-		AppLabel struct {
-			ID      int    `json:"id"`
-			KeyID   int    `json:"key_id"`
-			Key     string `json:"key"`
-			ValueID int    `json:"value_id"`
-			Value   string `json:"value"`
-			Color   string `json:"color"`
-		} `json:"app_label"`
-	} `json:"data"`
-	Status int `json:"status"`
+type AssociateLabel struct {
+	ID    int    `json:"id"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
-type ResourceLabelsResponse struct {
+type AssociatedLabelsResponse struct {
 	Data []struct {
-		Color string `json:"color"`
 		ID    int    `json:"id"`
 		Key   string `json:"key"`
 		Value string `json:"value"`

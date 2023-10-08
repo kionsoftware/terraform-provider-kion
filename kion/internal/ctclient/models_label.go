@@ -7,7 +7,7 @@ type Label struct {
 	Color string `json:"color"`
 }
 
-// LabelListResponse for: GET /api/v1/app-label
+// LabelListResponse for: GET /api/v3/label
 type LabelListResponse struct {
 	Data struct {
 		Items []Label `json:"items"`
@@ -16,7 +16,7 @@ type LabelListResponse struct {
 	Status int `json:"status"`
 }
 
-// LabelResponse for: GET /api/v1/app-label/{id}
+// LabelResponse for: GET /api/v3/label/{id}
 type LabelResponse struct {
 	Data   Label `json:"data"`
 	Status int   `json:"status"`
