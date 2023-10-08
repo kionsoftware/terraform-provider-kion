@@ -38,6 +38,7 @@ func resourceProject() *schema.Resource {
 			"auto_pay": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  true,
 			},
 			"default_aws_region": {
 				Type:     schema.TypeString,
