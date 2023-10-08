@@ -1,12 +1,10 @@
 package ctclient
 
 type Label struct {
-	ID      int    `json:"id"`
-	KeyID   int    `json:"key_id"`
-	Key     string `json:"key"`
-	ValueID int    `json:"value_id"`
-	Value   string `json:"value"`
-	Color   string `json:"color"`
+	ID    int    `json:"id"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
+	Color string `json:"color"`
 }
 
 // LabelListResponse for: GET /api/v1/app-label
