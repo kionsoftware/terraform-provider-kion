@@ -88,7 +88,7 @@ func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{
 	ID := d.Id()
 
 	resp := new(hc.LabelResponse)
-	err := c.GET(fmt.Sprintf("/v1/app-label/%s", ID), resp)
+	err := c.GET(fmt.Sprintf("/v3/label/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -101,7 +101,7 @@ func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{
 
 	d.Set("key", label.Key)
 	d.Set("value", label.Value)
-	d.Set("color", fmt.Sprintf("#%s", label.Color)) // v1 API returns color without leading #
+	d.Set("color", label.Color)
 
 	return diags
 }
@@ -142,7 +142,7 @@ func resourceLabelDelete(ctx context.Context, d *schema.ResourceData, m interfac
 	c := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/label?key=%s&value=%s", d.Get("key").(string), d.Get("value").(string)), nil)
+	err := c.DELETE(fmt.Sprintf("/v3/label/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

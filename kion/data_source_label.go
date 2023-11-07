@@ -74,7 +74,7 @@ func dataSourceLabelRead(ctx context.Context, d *schema.ResourceData, m interfac
 	c := m.(*hc.Client)
 
 	resp := new(hc.LabelListResponse)
-	err := c.GET("/v1/app-label", resp)
+	err := c.GET("/v3/label", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -91,7 +91,7 @@ func dataSourceLabelRead(ctx context.Context, d *schema.ResourceData, m interfac
 		data := make(map[string]interface{})
 
 		data["id"] = item.ID
-		data["color"] = fmt.Sprintf("#%s", item.Color) // v1 api returns color without leading #
+		data["color"] = item.Color
 		data["key"] = item.Key
 		data["value"] = item.Value
 

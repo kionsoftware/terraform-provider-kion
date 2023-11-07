@@ -1,15 +1,13 @@
 package ctclient
 
 type Label struct {
-	ID      int    `json:"id"`
-	KeyID   int    `json:"key_id"`
-	Key     string `json:"key"`
-	ValueID int    `json:"value_id"`
-	Value   string `json:"value"`
-	Color   string `json:"color"`
+	ID    int    `json:"id"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
+	Color string `json:"color"`
 }
 
-// LabelListResponse for: GET /api/v1/app-label
+// LabelListResponse for: GET /api/v3/label
 type LabelListResponse struct {
 	Data struct {
 		Items []Label `json:"items"`
@@ -18,7 +16,7 @@ type LabelListResponse struct {
 	Status int `json:"status"`
 }
 
-// LabelResponse for: GET /api/v1/app-label/{id}
+// LabelResponse for: GET /api/v3/label/{id}
 type LabelResponse struct {
 	Data   Label `json:"data"`
 	Status int   `json:"status"`
