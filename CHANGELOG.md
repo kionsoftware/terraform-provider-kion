@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2023-09-22
+
+### Added
+- Added Funding Source resource ([#25](https://github.com/kionsoftware/terraform-provider-kion/pull/25))
+
 ## [0.3.4] - 2023-03-27
 
 ### Added
