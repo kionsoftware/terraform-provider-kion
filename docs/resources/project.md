@@ -93,5 +93,3 @@ Optional:
 - `funding_order` (Number)
 - `funding_source_id` (Number)
 - `start_datecode` (String)
-
-

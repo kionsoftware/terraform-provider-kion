@@ -29,5 +29,3 @@ description: |-
 - `id` (String) The ID of this resource.
 - `idms_saml_id` (Number)
 - `should_update_on_login` (Boolean)
-
-

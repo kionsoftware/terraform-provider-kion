@@ -48,5 +48,3 @@ Read-Only:
 - `id` (Number)
 - `idms_id` (Number)
 - `name` (String)
-
-

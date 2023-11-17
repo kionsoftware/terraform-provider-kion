@@ -49,5 +49,3 @@ Read-Only:
 - `id` (Number)
 - `name` (String)
 - `ou_id` (Number)
-
-

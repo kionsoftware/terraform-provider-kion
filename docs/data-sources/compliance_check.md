@@ -59,5 +59,3 @@ Read-Only:
 - `name` (String)
 - `regions` (List of String)
 - `severity_type_id` (Number)
-
-

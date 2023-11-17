@@ -29,6 +29,7 @@ description: |-
 - `owner_users` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
 - `region` (String)
 - `sns_arns` (String)
+- `tags` (Map of String) Stack-level tags will apply to all supported resources in a CloudFormation stack.  Requires Kion >= 3.7.1.
 - `template_parameters` (String)
 - `termination_protection` (Boolean)
 
@@ -50,5 +51,3 @@ Read-Only:
 Read-Only:
 
 - `id` (Number) The ID of this resource.
-
-

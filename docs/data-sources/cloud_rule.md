@@ -48,5 +48,3 @@ Read-Only:
 - `name` (String)
 - `post_webhook_id` (Number)
 - `pre_webhook_id` (Number)
-
-
