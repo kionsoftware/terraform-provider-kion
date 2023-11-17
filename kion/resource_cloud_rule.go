@@ -223,6 +223,12 @@ func resourceCloudRule() *schema.Resource {
 				Type:     schema.TypeSet,
 				Optional: true,
 			},
+			"labels": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "A map of labels to assign to the cloud rule. The labels must already exist in Kion.",
+			},
 		},
 	}
 }
@@ -270,6 +276,20 @@ func resourceCloudRuleCreate(ctx context.Context, d *schema.ResourceData, m inte
 	}
 
 	d.SetId(strconv.Itoa(resp.RecordID))
+
+	if d.Get("labels") != nil {
+		ID := d.Id()
+		err = hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "cloud-rule", ID)
+
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to update cloud rule labels",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			})
+			return diags
+		}
+	}
 
 	resourceCloudRuleRead(ctx, d, m)
 
@@ -355,6 +375,28 @@ func resourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m interf
 			})
 			return diags
 		}
+	}
+
+	// Fetch labels
+	labelData, err := hc.ReadResourceLabels(c, "cloud-rule", ID)
+
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to read cloud rule labels",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	// Set labels
+	err = d.Set("labels", labelData)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set labels for cloud rule",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
 	}
 
 	return diags
@@ -531,6 +573,21 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 				})
 				return diags
 			}
+		}
+	}
+
+	if d.HasChanges("labels") {
+		hasChanged++
+
+		err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "cloud-rule", ID)
+
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to update cloud rule labels",
+				Detail:   fmt.Sprintf("Error: %v\nCloud rule ID: %v", err.Error(), ID),
+			})
+			return diags
 		}
 	}
 
