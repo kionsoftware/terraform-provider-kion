@@ -161,6 +161,20 @@ func FlattenTags(d *schema.ResourceData, key string) *[]Tag {
 	return &tags
 }
 
+func FlattenAssociateLabels(d *schema.ResourceData, key string) *[]AssociateLabel {
+	labelMap := d.Get(key).(map[string]interface{})
+
+	labels := make([]AssociateLabel, len(labelMap))
+	var idx int
+	for k, v := range labelMap {
+		labels[idx].Key = k
+		labels[idx].Value = v.(string)
+		idx++
+	}
+
+	return &labels
+}
+
 // InflateObjectWithID -
 func InflateObjectWithID(arr []ObjectWithID) []interface{} {
 	if arr != nil {

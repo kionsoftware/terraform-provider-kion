@@ -87,6 +87,12 @@ func resourceFundingSource() *schema.Resource {
 				Type:     schema.TypeInt,
 				Required: true,
 			},
+			"labels": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "A map of labels to assign to the funding source. The labels must already exist in Kion.",
+			},
 		},
 	}
 }
@@ -125,6 +131,20 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	d.SetId(strconv.Itoa(resp.RecordID))
+
+	if d.Get("labels") != nil {
+		ID := d.Id()
+		err = hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
+
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to update funding source labels",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			})
+			return diags
+		}
+	}
 
 	resourceFundingSourceRead(ctx, d, m)
 
@@ -187,6 +207,28 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 			})
 			return diags
 		}
+	}
+
+	// Fetch labels
+	labelData, err := hc.ReadResourceLabels(c, "funding-source", ID)
+
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to read funding source labels",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	// Set labels
+	err = d.Set("labels", labelData)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set labels for funding source",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
 	}
 
 	return diags
@@ -263,6 +305,21 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 	if hasChanged > 0 {
 		d.Set("last_updated", time.Now().Format(time.RFC850))
+	}
+
+	if d.HasChanges("labels") {
+		hasChanged++
+
+		err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
+
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to update funding source labels",
+				Detail:   fmt.Sprintf("Error: %v\nFunding source ID: %v", err.Error(), ID),
+			})
+			return diags
+		}
 	}
 
 	return resourceFundingSourceRead(ctx, d, m)

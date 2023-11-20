@@ -48,5 +48,3 @@ Read-Only:
 - `description` (String)
 - `id` (Number)
 - `name` (String)
-
-

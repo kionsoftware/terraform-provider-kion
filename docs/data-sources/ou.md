@@ -48,5 +48,3 @@ Read-Only:
 - `name` (String)
 - `parent_ou_id` (Number)
 - `permission_scheme_id` (Number)
-
-

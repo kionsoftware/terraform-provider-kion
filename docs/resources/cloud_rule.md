@@ -31,6 +31,7 @@ description: |-
 - `gcp_iam_roles` (Block Set) (see [below for nested schema](#nestedblock--gcp_iam_roles))
 - `internal_aws_amis` (Block Set) (see [below for nested schema](#nestedblock--internal_aws_amis))
 - `internal_aws_service_catalog_portfolios` (Block Set) (see [below for nested schema](#nestedblock--internal_aws_service_catalog_portfolios))
+- `labels` (Map of String) A map of labels to assign to the cloud rule. The labels must already exist in Kion.
 - `last_updated` (String)
 - `ous` (Block Set) (see [below for nested schema](#nestedblock--ous))
 - `owner_user_groups` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
@@ -155,5 +156,3 @@ Read-Only:
 Read-Only:
 
 - `id` (Number) The ID of this resource.
-
-

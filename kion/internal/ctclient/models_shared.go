@@ -48,3 +48,22 @@ type Tag struct {
 	Key   string `json:"tag_key"`
 	Value string `json:"tag_value"`
 }
+
+type AssociateLabels struct {
+	Labels *[]AssociateLabel `json:"labels"`
+}
+
+type AssociateLabel struct {
+	ID    int    `json:"id"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type AssociatedLabelsResponse struct {
+	Data []struct {
+		ID    int    `json:"id"`
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	} `json:"data"`
+	Status int `json:"status"`
+}

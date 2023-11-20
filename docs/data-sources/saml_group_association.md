@@ -49,5 +49,3 @@ Read-Only:
 - `idms_saml_id` (Number)
 - `should_update_on_login` (Boolean)
 - `user_group_id` (Number)
-
-

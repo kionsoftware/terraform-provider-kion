@@ -24,6 +24,7 @@ description: |-
 ### Optional
 
 - `description` (String)
+- `labels` (Map of String) A map of labels to assign to the OU. The labels must already exist in Kion.
 - `last_updated` (String)
 - `owner_user_groups` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
 - `owner_users` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
@@ -47,5 +48,3 @@ Read-Only:
 Read-Only:
 
 - `id` (Number) The ID of this resource.
-
-

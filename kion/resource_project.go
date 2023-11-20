@@ -38,6 +38,7 @@ func resourceProject() *schema.Resource {
 			"auto_pay": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  true,
 			},
 			"default_aws_region": {
 				Type:     schema.TypeString,
@@ -185,6 +186,12 @@ func resourceProject() *schema.Resource {
 					},
 				},
 			},
+			"labels": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "A map of labels to assign to the project. The labels must already exist in Kion.",
+			},
 		},
 	}
 }
@@ -297,6 +304,20 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 	d.SetId(strconv.Itoa(resp.RecordID))
 
+	if d.Get("labels") != nil {
+		ID := d.Id()
+		err = hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
+
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to update Project labels",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			})
+			return diags
+		}
+	}
+
 	resourceProjectRead(ctx, d, m)
 
 	return diags
@@ -336,6 +357,28 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 			})
 			return diags
 		}
+	}
+
+	// Fetch labels
+	labelData, err := hc.ReadResourceLabels(c, "project", ID)
+
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to read Project labels",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	// Set labels
+	err = d.Set("labels", labelData)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set labels for Project",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
 	}
 
 	return diags
@@ -402,6 +445,21 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 				})
 				return diags
 			}
+		}
+	}
+
+	if d.HasChanges("labels") {
+		hasChanged++
+
+		err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
+
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to update Project labels",
+				Detail:   fmt.Sprintf("Error: %v\nProject ID: %v", err.Error(), ID),
+			})
+			return diags
 		}
 	}
 

@@ -47,5 +47,3 @@ Read-Only:
 Read-Only:
 
 - `id` (Number) The ID of this resource.
-
-

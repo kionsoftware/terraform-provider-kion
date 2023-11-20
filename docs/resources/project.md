@@ -27,6 +27,7 @@ description: |-
 - `budget` (Block Set) (see [below for nested schema](#nestedblock--budget))
 - `default_aws_region` (String)
 - `description` (String)
+- `labels` (Map of String) A map of labels to assign to the project. The labels must already exist in Kion.
 - `last_updated` (String)
 - `owner_user_group_ids` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_group_ids))
 - `owner_user_ids` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_ids))
@@ -92,5 +93,3 @@ Optional:
 - `funding_order` (Number)
 - `funding_source_id` (Number)
 - `start_datecode` (String)
-
-

@@ -69,5 +69,3 @@ Read-Only:
 Read-Only:
 
 - `id` (Number)
-
-

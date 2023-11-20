@@ -247,6 +247,15 @@ output "standard_id" {
 ```
 
 ```hcl
+# Create a label.
+resource "kion_label" "env_staging" {
+  key   = "Environment"
+  value = "Staging"
+  color = "#FFA601"
+}
+```
+
+```hcl
 # Create a cloud rule.
 resource "kion_cloud_rule" "cr1" {
   name        = "sample-resource"
@@ -254,6 +263,11 @@ resource "kion_cloud_rule" "cr1" {
   aws_iam_policies { id = 1 }
   owner_users { id = 1 }
   owner_user_groups { id = 1 }
+
+  #labels = {
+  #  (kion_label.env_staging.key) = kion_label.env_staging.value
+  #  "Owner" = "jdoe"
+  #}
 }
 
 # Output the ID of the resource created.
@@ -315,6 +329,11 @@ resource "kion_ou" "ou1" {
   permission_scheme_id = 2
   owner_users { id = 1 }
   owner_user_groups { id = 1 }
+
+  #labels = {
+  #  (kion_label.env_staging.key) = kion_label.env_staging.value
+  #  "Owner" = "jdoe"
+  #}
 }
 
 # Output the ID of the resource created.
@@ -371,6 +390,11 @@ resource "kion_project" "p1" {
     start_datecode = "2021-01"
     end_datecode = "2022-01"
   }
+
+  #labels = {
+  #  (kion_label.env_staging.key) = kion_label.env_staging.value
+  #  "Owner" = "jdoe"
+  #}
 }
 
 # Output the ID of the resource created.
@@ -492,6 +516,11 @@ resource "kion_funding_source" "fs1" {
   permission_scheme_id = 4
   owner_users          { id = 1 }
   owner_user_groups    { id = 3 }
+
+  #labels = {
+  #  (kion_label.env_staging.key) = kion_label.env_staging.value
+  #  "Owner" = "jdoe"
+  #}
 }
 
 # Output the ID of the created funding source.

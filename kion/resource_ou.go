@@ -80,6 +80,12 @@ func resourceOU() *schema.Resource {
 				Type:     schema.TypeInt,
 				Required: true,
 			},
+			"labels": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "A map of labels to assign to the OU. The labels must already exist in Kion.",
+			},
 		},
 	}
 }
@@ -115,6 +121,20 @@ func resourceOUCreate(ctx context.Context, d *schema.ResourceData, m interface{}
 	}
 
 	d.SetId(strconv.Itoa(resp.RecordID))
+
+	if d.Get("labels") != nil {
+		ID := d.Id()
+		err = hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "ou", ID)
+
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to update OU labels",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			})
+			return diags
+		}
+	}
 
 	resourceOURead(ctx, d, m)
 
@@ -160,6 +180,28 @@ func resourceOURead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			})
 			return diags
 		}
+	}
+
+	// Fetch labels
+	labelData, err := hc.ReadResourceLabels(c, "ou", ID)
+
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to read OU labels",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	// Set labels
+	err = d.Set("labels", labelData)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set labels for OU",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
 	}
 
 	return diags
@@ -241,6 +283,21 @@ func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 				})
 				return diags
 			}
+		}
+	}
+
+	if d.HasChanges("labels") {
+		hasChanged++
+
+		err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "ou", ID)
+
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to update OU labels",
+				Detail:   fmt.Sprintf("Error: %v\nOU ID: %v", err.Error(), ID),
+			})
+			return diags
 		}
 	}
 
