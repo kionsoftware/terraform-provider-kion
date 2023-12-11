@@ -16,6 +16,22 @@ import (
 	"strings"
 )
 
+type RequestError struct {
+	StatusCode int
+	Err        error
+}
+
+func (r RequestError) Error() string {
+	return r.Err.Error()
+}
+
+func NewRequestError(statusCode int, err error) error {
+	requestError := new(RequestError)
+	requestError.Err = err
+	requestError.StatusCode = statusCode
+	return requestError
+}
+
 // Client -
 type Client struct {
 	HostURL    string
@@ -52,20 +68,20 @@ func (c *Client) doRequest(req *http.Request) ([]byte, int, error) {
 
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, NewRequestError(0, err)
 	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, 0, err
+		return nil, res.StatusCode, NewRequestError(res.StatusCode, err)
 	}
 
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
-		return nil, res.StatusCode, fmt.Errorf("url: %s, method: %s, status: %d, body: %s", req.URL.String(), req.Method, res.StatusCode, body)
+		return nil, res.StatusCode, NewRequestError(res.StatusCode, fmt.Errorf("url: %s, method: %s, status: %d, body: %s", req.URL.String(), req.Method, res.StatusCode, body))
 	}
 
-	return body, res.StatusCode, err
+	return body, res.StatusCode, nil
 }
 
 // GET - Returns an element from CT.
@@ -83,7 +99,7 @@ func (c *Client) GET(urlPath string, returnData interface{}) error {
 		return err
 	}
 
-	body, _, err := c.doRequest(req)
+	body, statusCode, err := c.doRequest(req)
 	if err != nil {
 		return err
 	}
@@ -91,7 +107,7 @@ func (c *Client) GET(urlPath string, returnData interface{}) error {
 	if returnData != nil {
 		err = json.Unmarshal(body, returnData)
 		if err != nil {
-			return fmt.Errorf("could not unmarshal response body: %v", string(body))
+			return &RequestError{StatusCode: statusCode, Err: fmt.Errorf("could not unmarshal response body: %v", string(body))}
 		}
 	}
 
@@ -172,6 +188,10 @@ func (c *Client) PUT(urlPath string, sendData interface{}) error {
 
 // DELETE - removes an element from CT. sendData can be nil.
 func (c *Client) DELETE(urlPath string, sendData interface{}) error {
+	return c.DeleteWithResponse(urlPath, sendData, nil)
+}
+
+func (c *Client) DeleteWithResponse(urlPath string, sendData interface{}, returnData interface{}) error {
 	var req *http.Request
 	var err error
 
@@ -192,9 +212,16 @@ func (c *Client) DELETE(urlPath string, sendData interface{}) error {
 		}
 	}
 
-	_, _, err = c.doRequest(req)
+	body, statusCode, err := c.doRequest(req)
 	if err != nil {
 		return err
+	}
+
+	if returnData != nil {
+		err = json.Unmarshal(body, returnData)
+		if err != nil {
+			return &RequestError{StatusCode: statusCode, Err: fmt.Errorf("could not unmarshal response body: %v", string(body))}
+		}
 	}
 
 	return nil
