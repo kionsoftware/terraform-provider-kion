@@ -11,6 +11,10 @@ type ObjectWithID struct {
 	ID int `json:"id"`
 }
 
+type MappableResponse interface {
+	ToMap(resource string) map[string]interface{}
+}
+
 // OwnerUser -
 type OwnerUser struct {
 	ID int `json:"id"`

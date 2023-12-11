@@ -1,0 +1,419 @@
+package kion
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+)
+
+func resourceAwsAccount() *schema.Resource {
+	return &schema.Resource{
+		CreateContext: resourceAwsAccountCreate,
+		ReadContext:   resourceAwsAccountRead,
+		UpdateContext: resourceAwsAccountUpdate,
+		DeleteContext: resourceAwsAccountDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				resourceAwsAccountRead(ctx, d, m)
+				return []*schema.ResourceData{d}, nil
+			},
+		},
+		Schema: map[string]*schema.Schema{
+			// Notice there is no 'id' field specified because it will be created.
+			"name": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"email": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"account_number": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The account number of the AWS account to import.  If account_number is provided, the existing account will be imported into Kion.  If account_number is ommitted, a new account will be created.",
+				ForceNew:    true,
+			},
+			"linked_account_number": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"commercial_account_name": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"gov_account_name": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"create_govcloud": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"linked_role": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "OrganizationAccountAccessRole",
+			},
+			"payer_id": {
+				Type:     schema.TypeInt,
+				Required: true,
+			},
+			"project_id": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"created_at": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"account_type_id": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+			"start_datecode": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"skip_access_checking": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
+			"use_org_account_info": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
+			"include_linked_account_spend": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
+			"car_external_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"service_external_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"aws_organizational_unit": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"org_unit_id": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
+			},
+			"move_project_settings": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"financials": {
+							Type:         schema.TypeString,
+							Default:      "move",
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"preserve", "move"}, false),
+						},
+						"move_datecode": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+					},
+				},
+			},
+			"location": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Where the account is attached.  Either \"project\" or \"cache\".",
+			},
+			"labels": {
+				Type:         schema.TypeMap,
+				Optional:     true,
+				RequiredWith: []string{"project_id"},
+				Elem:         &schema.Schema{Type: schema.TypeString},
+				Description:  "A map of labels to assign to the account. The labels must already exist in Kion.",
+			},
+		},
+		CustomizeDiff: customdiff.All(
+			// schema validators don't support multi-attribute validations, so we use CustomizeDiff instead
+			validateAwsAccountStartDatecode,
+			customDiffComputedAccountLocation,
+		),
+	}
+}
+
+func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+	c := m.(*hc.Client)
+
+	accountLocation := getKionAccountLocation(d)
+
+	if _, ok := d.GetOk("account_number"); ok {
+		// Import an existing AWS account
+
+		// Default to AWS commercial if not otherwise set
+		// TODO: Why is this required for cache import, but not project import??
+		accountTypeId := int(hc.AWSStandard)
+		if v, ok := d.GetOk("account_type_id"); ok {
+			accountTypeId = v.(int)
+		}
+
+		var postAccountData interface{}
+		var accountUrl string
+		switch accountLocation {
+		case CacheLocation:
+			accountUrl = "/v3/account-cache?account-type=aws"
+			postAccountData = hc.AccountCacheNewAWSImport{
+				AccountEmail:              d.Get("email").(string),
+				Name:                      d.Get("name").(string),
+				AccountNumber:             d.Get("account_number").(string),
+				AccountTypeID:             &accountTypeId,
+				IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
+				LinkedAccountNumber:       d.Get("linked_account_number").(string),
+				LinkedRole:                d.Get("linked_role").(string),
+				PayerID:                   d.Get("payer_id").(int),
+				SkipAccessChecking:        hc.OptionalBool(d, "skip_access_checking"),
+			}
+
+		case ProjectLocation:
+			fallthrough
+		default:
+			accountUrl = "/v3/account?account-type=aws"
+			postAccountData = hc.AccountNewAWSImport{
+				AccountEmail:              d.Get("email").(string),
+				Name:                      d.Get("name").(string),
+				AccountNumber:             d.Get("account_number").(string),
+				AccountTypeID:             hc.OptionalInt(d, "account_type_id"),
+				IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
+				LinkedAccountNumber:       d.Get("linked_account_number").(string),
+				LinkedRole:                d.Get("linked_role").(string),
+				PayerID:                   d.Get("payer_id").(int),
+				ProjectID:                 d.Get("project_id").(int),
+				SkipAccessChecking:        hc.OptionalBool(d, "skip_access_checking"),
+				StartDatecode:             d.Get("start_datecode").(string),
+				UseOrgAccountInfo:         hc.OptionalBool(d, "use_org_account_info"),
+			}
+		}
+
+		if rb, err := json.Marshal(postAccountData); err == nil {
+			tflog.Debug(ctx, fmt.Sprintf("Importing exiting AWS account via POST %s", accountUrl), map[string]interface{}{"postData": string(rb)})
+		}
+		resp, err := c.POST(accountUrl, postAccountData)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to import AWS Account",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), postAccountData),
+			})
+			return diags
+		} else if resp.RecordID == 0 {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to import AWS Account",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), postAccountData),
+			})
+			return diags
+		}
+
+		d.Set("location", accountLocation)
+		d.SetId(strconv.Itoa(resp.RecordID))
+
+	} else {
+		// Create a new AWS account
+
+		postCacheData := hc.AccountCacheNewAWSCreate{
+			AccountEmail:              d.Get("email").(string),
+			Name:                      d.Get("name").(string),
+			CommercialAccountName:     d.Get("commercial_account_name").(string),
+			CreateGovcloud:            hc.OptionalBool(d, "create_govcloud"),
+			GovAccountName:            d.Get("gov_account_name").(string),
+			IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
+			LinkedRole:                d.Get("linked_role").(string),
+			PayerID:                   d.Get("payer_id").(int),
+		}
+
+		if v, exists := d.GetOk("aws_organizational_unit"); exists {
+			orgUnitSet := v.(*schema.Set)
+			for _, item := range orgUnitSet.List() {
+				if orgUnitMap, ok := item.(map[string]interface{}); ok {
+					postCacheData.OrganizationalUnit = &hc.PayerOrganizationalUnit{
+						Name:      orgUnitMap["name"].(string),
+						OrgUnitId: orgUnitMap["org_unit_id"].(string),
+					}
+				}
+			}
+		}
+
+		if rb, err := json.Marshal(postCacheData); err == nil {
+			tflog.Debug(ctx, "Creating new AWS account via POST /v3/account-cache/create?account-type=aws", map[string]interface{}{"postData": string(rb)})
+		}
+		respCache, err := c.POST("/v3/account-cache/create?account-type=aws", postCacheData)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to create AWS Account",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), postCacheData),
+			})
+			return diags
+		} else if respCache.RecordID == 0 {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to create AWS Account",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), postCacheData),
+			})
+			return diags
+		}
+
+		accountCacheId := respCache.RecordID
+
+		// Wait for account to be created
+		createStateConf := &resource.StateChangeConf{
+			Refresh: func() (interface{}, string, error) {
+				resp := new(hc.AccountResponse)
+				err := c.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
+				if err != nil {
+					if resErr, ok := err.(*hc.RequestError); ok {
+						if resErr.StatusCode == http.StatusNotFound {
+							// StateChangeConf handles 404s differently than errors, so return nil instead of err
+							tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d not found", accountCacheId))
+							return nil, "NotFound", nil
+						}
+					}
+					tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d error", accountCacheId), map[string]interface{}{"error": err})
+					return nil, "Error", err
+				}
+				if resp.Data.AccountNumber == "" {
+					tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d missing account number", accountCacheId))
+					return resp, "MissingAccountNumber", nil
+				}
+				return resp, "AccountCreated", nil
+			},
+			Pending: []string{
+				"MissingAccountNumber",
+			},
+			Target: []string{
+				"AccountCreated",
+			},
+			Timeout: d.Timeout(schema.TimeoutCreate),
+		}
+		_, err = createStateConf.WaitForState()
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to create AWS Account",
+				Detail:   fmt.Sprintf("Error: %v", err.Error()),
+			})
+			return diags
+		}
+
+		switch accountLocation {
+		case ProjectLocation:
+			// Move cached account to the requested project
+			projectId := d.Get("project_id").(int)
+			startDatecode := time.Now().Format("200601")
+
+			newId, err := convertCacheAccountToProjectAccount(c, accountCacheId, projectId, startDatecode)
+			if err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Unable to convert AWS cached account to project account",
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), accountCacheId),
+				})
+				diags = append(diags, resourceAwsAccountRead(ctx, d, m)...)
+				return diags
+			}
+
+			d.Set("location", accountLocation)
+			d.SetId(strconv.Itoa(newId))
+
+		case CacheLocation:
+			// Track the cached account
+			d.Set("location", accountLocation)
+			d.SetId(strconv.Itoa(accountCacheId))
+		}
+	}
+
+	// Labels are only supported on project accounts, not cached accounts
+	if accountLocation == ProjectLocation {
+		if _, ok := d.GetOk("labels"); ok {
+			ID := d.Id()
+			err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
+
+			if err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Unable to update AWS account labels",
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+				})
+				diags = append(diags, resourceAwsAccountRead(ctx, d, m)...)
+				return diags
+			}
+		}
+	}
+
+	return append(diags, resourceAwsAccountRead(ctx, d, m)...)
+}
+
+func resourceAwsAccountRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	return resourceAccountRead("kion_aws_account", ctx, d, m)
+}
+
+func resourceAwsAccountUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	diags := resourceAccountUpdate(ctx, d, m)
+	return append(diags, resourceAwsAccountRead(ctx, d, m)...)
+}
+
+func resourceAwsAccountDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	return resourceAccountDelete(ctx, d, m)
+}
+
+// Require startDatecode if adding to a new project, unless we are creating the account.
+func validateAwsAccountStartDatecode(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+	// if start date is already set, nothing to do
+	if _, ok := d.GetOk("start_datecode"); ok {
+		return nil
+	}
+
+	// if not adding to project, we don't care about start date
+	if _, ok := d.GetOk("project_id"); !ok {
+		return nil
+	}
+
+	// if there is no account_number, then we are are creating a new Account and
+	// start date isn't required since it will be set to the current month
+	if _, ok := d.GetOk("account_number"); !ok {
+		return nil
+	}
+
+	// otherwise, start_datecode is required
+	return fmt.Errorf("start_datecode is required when adding an existing AWS account to a project")
+}
