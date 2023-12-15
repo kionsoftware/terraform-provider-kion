@@ -21,6 +21,15 @@ import (
 
 func resourceGcpAccount() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates or imports a Google Cloud Project and adds it to a Kion project or the Kion account cache.\n\n" +
+			"If `create_mode` is set to import, an existing project will be imported into Kion, otherwise if " +
+			"`create_mode` is set to create, a new GCP Project will be created.  If `project_id` is provided " +
+			"the account will be added " +
+			"to the corresponding project, otherwise the account will be added to the account cache.\n\n" +
+			"Once added, an account can be moved between projects or in and out of the account cache by " +
+			"changing the `project_id`.  When moving accounts between projects, use `move_project_settings` " +
+			"to control how financials will be treated between the old and new project.\n\n" +
+			"**NOTE:** This resource requires Kion v3.8.4 or greater.",
 		CreateContext: resourceGcpAccountCreate,
 		ReadContext:   resourceGcpAccountRead,
 		UpdateContext: resourceGcpAccountUpdate,

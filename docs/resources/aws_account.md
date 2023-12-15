@@ -3,12 +3,21 @@
 page_title: "kion_aws_account Resource - terraform-provider-kion"
 subcategory: ""
 description: |-
-  
+  Creates or imports an AWS Account and adds it to a Kion project or the Kion account cache.
+  If account_number is provided, an existing account will be imported into Kion, otherwise a new AWS account will be created.  If project_id is provided the account will be added to the corresponding project, otherwise the account will be added to the account cache.
+  Once added, an account can be moved between projects or in and out of the account cache by changing the project_id.  When moving accounts between projects, use move_project_settings to control how financials will be treated between the old and new project.
+  NOTE: This resource requires Kion v3.8.4 or greater.
 ---
 
 # kion_aws_account (Resource)
 
+Creates or imports an AWS Account and adds it to a Kion project or the Kion account cache.
 
+If `account_number` is provided, an existing account will be imported into Kion, otherwise a new AWS account will be created.  If `project_id` is provided the account will be added to the corresponding project, otherwise the account will be added to the account cache.
+
+Once added, an account can be moved between projects or in and out of the account cache by changing the `project_id`.  When moving accounts between projects, use `move_project_settings` to control how financials will be treated between the old and new project.
+
+**NOTE:** This resource requires Kion v3.8.4 or greater.
 
 
 

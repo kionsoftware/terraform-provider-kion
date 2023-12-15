@@ -20,6 +20,14 @@ import (
 
 func resourceAwsAccount() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates or imports an AWS Account and adds it to a Kion project or the Kion account cache.\n\n" +
+			"If `account_number` is provided, an existing account will be imported into Kion, otherwise " +
+			"a new AWS account will be created.  If `project_id` is provided the account will be added " +
+			"to the corresponding project, otherwise the account will be added to the account cache.\n\n" +
+			"Once added, an account can be moved between projects or in and out of the account cache by " +
+			"changing the `project_id`.  When moving accounts between projects, use `move_project_settings` " +
+			"to control how financials will be treated between the old and new project.\n\n" +
+			"**NOTE:** This resource requires Kion v3.8.4 or greater.",
 		CreateContext: resourceAwsAccountCreate,
 		ReadContext:   resourceAwsAccountRead,
 		UpdateContext: resourceAwsAccountUpdate,
