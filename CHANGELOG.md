@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.7] - TODO
+- Added `kion_aws_account`, `kion_gcp_account` and `kion_azure_account` resources ([#32](https://github.com/kionsoftware/terraform-provider-kion/pull/32))
+- Added `kion_account` and `kion_cached_account` data sources
+
 ## [0.3.6] - 2023-11-20
 - Added a `kion_label` resource ([#31](https://github.com/kionsoftware/terraform-provider-kion/pull/31))
 - Added a `labels` attribute to OUs, Projects, Funding sources and cloud rules

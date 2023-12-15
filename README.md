@@ -404,6 +404,78 @@ output "project_id" {
 ```
 
 ```hcl
+# Import an existing AWS account to a project:
+resource "kion_aws_account" "test1" {
+  name = "Terraform Imported AWS Account - 1"
+  account_number = "111122223333"
+  payer_id = 1
+  project_id = kion_project.test1.id
+  start_datecode = "2023-01"
+}
+```
+
+```hcl
+# Create a new AWS account and place it in the account cache:
+resource "kion_aws_account" "test2" {
+  name = "Terraform Created AWS Account - 2"
+  payer_id = 1
+  commercial_account_name = "Test Account"
+  create_govcloud = false
+
+  aws_organizational_unit {
+    name = "test name"
+    org_unit_id = "123456"
+  }
+}
+```
+
+```hcl
+# Import an existing GCP project to the account cache:
+resource "kion_gcp_account" "test3" {
+  create_mode = "import"
+  name = "Terraform Imported GCP Project - 3"
+  google_cloud_project_id = "terraform-test-import"
+  payer_id = 2
+}
+```
+
+```hcl
+# Create a new GCP project and place it in a Kion project:
+resource "kion_gcp_account" "test4" {
+  create_mode = "create"
+  name = "Terraform Created GCP Project - 4"
+  google_cloud_project_id = "terraform-test-create"
+  payer_id = 2
+  project_id = kion_project.test1.id
+  start_datecode = "2023-01"
+}
+```
+
+```hcl
+# Import an existing Azure subscription to a project:
+resource "kion_azure_account" "test5" {
+  name = "Terraform Imported Azure Subscription - 5"
+  subscription_uuid = "f000bcb3-ba32-47e8-a8dd-111122223333"
+  payer_id = 3
+  project_id = kion_project.test1.id
+  start_datecode = "2023-01"
+}
+```
+
+```hcl
+# Create a new Azure subscription and place in the account cache:
+resource "kion_azure_account" "test6" {
+  name = "Terraform Created Azure Subscription - 5"
+  subscription_name = "terraform-test-create"
+  payer_id = 3
+  mca {
+    billing_account = "5e98e158-xxxx-xxxx-xxxx-xxxxxxxxxxxx:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx_xxxx-xx-xx"
+    billing_profile = "AW4F-xxxx-xxx-xxx"
+    billing_profile_invoice = "SH3V-xxxx-xxx-xxx"
+  }
+```
+
+```hcl
 # Create a GCP IAM role.
 resource "kion_gcp_iam_role" "gr1" {
   name = "Read permissions"
