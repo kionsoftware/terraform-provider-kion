@@ -37,7 +37,7 @@ else
 	endif
 endif
 
-default: install
+default: build
 
 build:
 	go build -o ${BINARY}
