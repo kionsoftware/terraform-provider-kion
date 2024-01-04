@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.8] - 2024-01-03
+- Fixed an issue that prevented importing existing Kion accounts into the terraform state.  When importing existing accounts, the user should specify the account ID using an `account_id=` or `account_cache_id=` prefix to tell the terraform provider whether the provided ID is an account ID or a cached account ID.  See the README for more information.
+
 ## [0.3.7] - 2023-12-21
 - Added `kion_aws_account`, `kion_gcp_account` and `kion_azure_account` resources ([#32](https://github.com/kionsoftware/terraform-provider-kion/pull/32))
 - Added `kion_account` and `kion_cached_account` data sources

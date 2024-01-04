@@ -6,6 +6,11 @@ description: |-
   Creates or imports an Azure Subscription and adds it to a Kion project or the Kion account cache.
   If subscription_uuid is provided, an existing subscription will be imported into Kion, otherwise a new Azure subscription will be created.  If project_id is provided the account will be added to the corresponding project, otherwise the account will be added to the account cache.
   Once added, an account can be moved between projects or in and out of the account cache by changing the project_id.  When moving accounts between projects, use move_project_settings to control how financials will be treated between the old and new project.
+  When importing an existing Kion account into terraform state (different from using terraform to import an existing Azure subscription into Kion), you must use the account_id= or account_cache_id= ID prefix to indicate whether the ID is an account ID or a cached account ID.
+  For example:
+  terraform import kion_azure_account.test-account account_id=123
+  terraform import kion_azure_account.test-cached-account account_cache_id=321
+  
   NOTE: This resource requires Kion v3.8.4 or greater.
 ---
 
@@ -16,6 +21,13 @@ Creates or imports an Azure Subscription and adds it to a Kion project or the Ki
 If `subscription_uuid` is provided, an existing subscription will be imported into Kion, otherwise a new Azure subscription will be created.  If `project_id` is provided the account will be added to the corresponding project, otherwise the account will be added to the account cache.
 
 Once added, an account can be moved between projects or in and out of the account cache by changing the `project_id`.  When moving accounts between projects, use `move_project_settings` to control how financials will be treated between the old and new project.
+
+When importing an existing Kion account into terraform state (different from using terraform to import an existing Azure subscription into Kion), you must use the `account_id=` or `account_cache_id=` ID prefix to indicate whether the ID is an account ID or a cached account ID.
+
+For example:
+
+    terraform import kion_azure_account.test-account account_id=123
+    terraform import kion_azure_account.test-cached-account account_cache_id=321
 
 **NOTE:** This resource requires Kion v3.8.4 or greater.
 

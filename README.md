@@ -429,6 +429,18 @@ resource "kion_aws_account" "test2" {
 }
 ```
 
+Special note:  When importing an existing Kion account into your terraform state file, you must
+use the `account_id=` or `account_cache_id=` ID prefix to indicate whether the ID is an account ID
+or a cached account ID.
+
+For example:
+
+    ```
+    terraform import kion_aws_account.test1 account_id=123
+    terraform import kion_aws_account.test2 account_cache_id=321
+    ```
+
+
 ```hcl
 # Import an existing GCP project to the account cache:
 resource "kion_gcp_account" "test3" {
@@ -450,6 +462,17 @@ resource "kion_gcp_account" "test4" {
   start_datecode = "2023-01"
 }
 ```
+
+Special note:  When importing an existing Kion account into your terraform state file, you must
+use the `account_id=` or `account_cache_id=` ID prefix to indicate whether the ID is an account ID
+or a cached account ID.
+
+For example:
+
+    ```
+    terraform import kion_gcp_account.test3 account_id=123
+    terraform import kion_gcp_account.test4 account_cache_id=321
+    ```
 
 ```hcl
 # Import an existing Azure subscription to a project:
@@ -474,6 +497,17 @@ resource "kion_azure_account" "test6" {
     billing_profile_invoice = "SH3V-xxxx-xxx-xxx"
   }
 ```
+
+Special note:  When importing an existing Kion account into your terraform state file, you must
+use the `account_id=` or `account_cache_id=` ID prefix to indicate whether the ID is an account ID
+or a cached account ID.
+
+For example:
+
+    ```
+    terraform import kion_azure_account.test5 account_id=123
+    terraform import kion_azure_account.test6 account_cache_id=321
+    ```
 
 ```hcl
 # Create a GCP IAM role.

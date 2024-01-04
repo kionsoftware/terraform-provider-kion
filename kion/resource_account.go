@@ -24,7 +24,29 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 	c := m.(*hc.Client)
 	ID := d.Id()
 
-	accountLocation := getKionAccountLocation(d)
+	// HACK: Special case when importing existing accounts
+	// When importing accounts we only have an ID and we don't know whether the
+	// ID is an account ID or account_cache ID. To work around this, we allow the
+	// user to import using an `account_id=` or `account_cache_id=` prefix.
+	// For example:
+	//   terraform import kion_aws_account.test-account account_id=123
+	//   terraform import kion_aws_account.test-account account_cache_id=321
+	//
+	// TODO: Find a better way to determine if the imported ID is an account
+	// or account cache by reading the resource value
+	var accountLocation string
+	locationChanged := false
+	if strings.HasPrefix(ID, "account_id=") {
+		ID = strings.TrimPrefix(ID, "account_id=")
+		accountLocation = ProjectLocation
+		locationChanged = true
+	} else if strings.HasPrefix(ID, "account_cache_id=") {
+		ID = strings.TrimPrefix(ID, "account_cache_id=")
+		accountLocation = CacheLocation
+		locationChanged = true
+	} else {
+		accountLocation = getKionAccountLocation(d)
+	}
 
 	// Fetch data from account or account-cache URL
 	var resp hc.MappableResponse
@@ -47,6 +69,11 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 		})
 		return diags
+	}
+
+	if locationChanged {
+		d.SetId(ID)
+		d.Set("location", accountLocation)
 	}
 
 	data := resp.ToMap(resource)

@@ -29,6 +29,12 @@ func resourceGcpAccount() *schema.Resource {
 			"Once added, an account can be moved between projects or in and out of the account cache by " +
 			"changing the `project_id`.  When moving accounts between projects, use `move_project_settings` " +
 			"to control how financials will be treated between the old and new project.\n\n" +
+			"When importing an existing Kion account into terraform state (different from using terraform to " +
+			"import an existing GCP Project into Kion), you must use the `account_id=` or `account_cache_id=` " +
+			"ID prefix to indicate whether the ID is an account ID or a cached account ID.\n\n" +
+			"For example:\n\n" +
+			"    terraform import kion_gcp_account.test-account account_id=123\n" +
+			"    terraform import kion_gcp_account.test-cached-account account_cache_id=321\n\n" +
 			"**NOTE:** This resource requires Kion v3.8.4 or greater.",
 		CreateContext: resourceGcpAccountCreate,
 		ReadContext:   resourceGcpAccountRead,
