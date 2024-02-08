@@ -41,11 +41,11 @@ func resourceAzurePolicy() *schema.Resource {
 			},
 			"description": {
 				Type:     schema.TypeString,
-				Computed: true,
+				Optional: true,
 			},
 			"name": {
 				Type:     schema.TypeString,
-				Computed: true,
+				Required: true,
 			},
 			"owner_user_groups": {
 				Elem: &schema.Resource{
@@ -77,11 +77,11 @@ func resourceAzurePolicy() *schema.Resource {
 			},
 			"parameters": {
 				Type:     schema.TypeString,
-				Computed: true,
+				Optional: true,
 			},
 			"policy": {
 				Type:     schema.TypeString,
-				Computed: true,
+				Required: true,
 			},
 		},
 	}
