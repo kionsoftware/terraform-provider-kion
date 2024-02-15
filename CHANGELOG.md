@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.9] - 2024-02-15
+- Fixed an issue where users were unable to create Kion Azure Policy resources due to certain attributes (`name`, `description`, `policy`, `parameters`) being set to "Read-Only" in the Terraform Kion Provider. This fix involves changing the `Computed: true` parameter for these attributes to either `Required` or `Optional`, based on the API documentation for azure-policy. This change allows for the proper creation and management of Azure Policy resources within Terraform.
+
 ## [0.3.8] - 2024-01-03
 - Fixed an issue that prevented importing existing Kion accounts into the terraform state.  When importing existing accounts, the user should specify the account ID using an `account_id=` or `account_cache_id=` prefix to tell the terraform provider whether the provided ID is an account ID or a cached account ID.  See the README for more information.
 
@@ -38,7 +41,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.3.2] - 2023-03-09
 ### Added
-- Added documentation that clarifies that either an owner user or owner group must be defined for some resources. 
+- Added documentation that clarifies that either an owner user or owner group must be defined for some resources.
 - Added better error handling when a user attempts to create a Kion resource without an owner user or owner group.
 
 ### Changed
