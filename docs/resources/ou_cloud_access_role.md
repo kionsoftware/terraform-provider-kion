@@ -26,6 +26,7 @@ description: |-
 - `aws_iam_path` (String)
 - `aws_iam_permissions_boundary` (Number)
 - `aws_iam_policies` (Block Set) (see [below for nested schema](#nestedblock--aws_iam_policies))
+- `azure_role_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_role_definitions))
 - `last_updated` (String)
 - `long_term_access_keys` (Boolean)
 - `short_term_access_keys` (Boolean)
@@ -39,6 +40,14 @@ description: |-
 
 <a id="nestedblock--aws_iam_policies"></a>
 ### Nested Schema for `aws_iam_policies`
+
+Read-Only:
+
+- `id` (Number) The ID of this resource.
+
+
+<a id="nestedblock--azure_role_definitions"></a>
+### Nested Schema for `azure_role_definitions`
 
 Read-Only:
 

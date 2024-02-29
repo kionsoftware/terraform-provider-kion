@@ -266,6 +266,7 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 		if arrAddAwsIamPermissionsBoundary != nil ||
 			len(arrAddAwsIamPolicies) > 0 ||
 			len(arrAddUserGroupIds) > 0 ||
+			len(arrAddAzureRoleDefinitions) > 0 ||
 			len(arrAddUserIds) > 0 {
 			_, err := c.POST(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), hc.OUCloudAccessRoleAssociationsAdd{
 				AwsIamPermissionsBoundary: arrAddAwsIamPermissionsBoundary,
@@ -277,7 +278,7 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  "Unable to add owners on OUCloudAccessRole",
+					Summary:  "Unable to add associations on OUCloudAccessRole",
 					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 				})
 				return diags
