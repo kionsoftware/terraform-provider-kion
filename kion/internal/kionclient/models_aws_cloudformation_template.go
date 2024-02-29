@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // CFTListResponseWithOwnersAndTags for: GET /api/v3/cft
 type CFTListResponseWithOwnersAndTags struct {

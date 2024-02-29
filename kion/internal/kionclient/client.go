@@ -1,6 +1,6 @@
-// Package ctclient provides a client for interacting with the Kion
+// Package kionclient provides a client for interacting with the Kion
 // application.
-package ctclient
+package kionclient
 
 import (
 	"crypto/tls"
@@ -40,7 +40,7 @@ type Client struct {
 }
 
 // NewClient .
-func NewClient(ctURL string, ctAPIKey string, ctAPIPath string, skipSSLValidation bool) *Client {
+func NewClient(kionURL string, kionAPIKey string, kionAPIPath string, skipSSLValidation bool) *Client {
 	customTransport := http.DefaultTransport.(*http.Transport).Clone()
 	customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: skipSSLValidation}
 
@@ -51,14 +51,14 @@ func NewClient(ctURL string, ctAPIKey string, ctAPIPath string, skipSSLValidatio
 	}
 
 	// Append the path to the URL.
-	u, err := url.Parse(ctURL)
+	u, err := url.Parse(kionURL)
 	if err != nil {
-		log.Fatalln("The URL is not valid:", ctURL, err.Error())
+		log.Fatalln("The URL is not valid:", kionURL, err.Error())
 	}
-	u.Path = path.Join(strings.TrimRight(u.Path, "/"), strings.TrimRight(ctAPIPath, "/"))
+	u.Path = path.Join(strings.TrimRight(u.Path, "/"), strings.TrimRight(kionAPIPath, "/"))
 	c.HostURL = u.String()
 
-	c.Token = ctAPIKey
+	c.Token = kionAPIKey
 
 	return &c
 }
@@ -84,7 +84,7 @@ func (c *Client) doRequest(req *http.Request) ([]byte, int, error) {
 	return body, res.StatusCode, nil
 }
 
-// GET - Returns an element from CT.
+// GET - Returns an element from Kion.
 func (c *Client) GET(urlPath string, returnData interface{}) error {
 	if returnData != nil {
 		// Ensure the correct returnData was passed in.
@@ -114,7 +114,7 @@ func (c *Client) GET(urlPath string, returnData interface{}) error {
 	return nil
 }
 
-// POST - creates an element in CT.
+// POST - creates an element in Kion.
 func (c *Client) POST(urlPath string, sendData interface{}) (*Creation, error) {
 	//return nil, fmt.Errorf("test error: %v %v %#v", c.HostURL, urlPath, sendData)
 	rb, err := json.Marshal(sendData)
@@ -146,7 +146,7 @@ func (c *Client) POST(urlPath string, sendData interface{}) (*Creation, error) {
 	return &data, nil
 }
 
-// PATCH - updates an element in CT.
+// PATCH - updates an element in Kion.
 func (c *Client) PATCH(urlPath string, sendData interface{}) error {
 	rb, err := json.Marshal(sendData)
 	if err != nil {
@@ -166,7 +166,7 @@ func (c *Client) PATCH(urlPath string, sendData interface{}) error {
 	return nil
 }
 
-// PUT - updates an element in CT.
+// PUT - updates an element in Kion.
 func (c *Client) PUT(urlPath string, sendData interface{}) error {
 	rb, err := json.Marshal(sendData)
 	if err != nil {
@@ -186,7 +186,7 @@ func (c *Client) PUT(urlPath string, sendData interface{}) error {
 	return nil
 }
 
-// DELETE - removes an element from CT. sendData can be nil.
+// DELETE - removes an element from Kion. sendData can be nil.
 func (c *Client) DELETE(urlPath string, sendData interface{}) error {
 	return c.DeleteWithResponse(urlPath, sendData, nil)
 }

@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // FundingSourceListResponse for: GET /api/v3/funding-source
 type FundingSourceListResponse struct {

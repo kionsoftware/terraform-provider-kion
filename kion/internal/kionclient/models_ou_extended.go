@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // OUPermissionAdd for: POST /v3/ou/{id}/permission-mapping
 type OUPermissionAdd struct {

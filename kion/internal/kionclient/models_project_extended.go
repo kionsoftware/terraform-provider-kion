@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // ProjectFundingCreate for: POST /v3/project
 type ProjectFundingCreate struct {

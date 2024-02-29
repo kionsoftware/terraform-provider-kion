@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // AzurePolicyListResponse for: GET /api/v3/azure-policy
 type AzurePolicyListResponse struct {

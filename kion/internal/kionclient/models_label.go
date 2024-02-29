@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 type Label struct {
 	ID    int    `json:"id"`

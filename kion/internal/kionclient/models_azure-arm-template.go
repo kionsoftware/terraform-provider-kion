@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // AzureARMTemplateListResponse for: GET /api/v3/azure-arm-template
 type AzureARMTemplateListResponse struct {

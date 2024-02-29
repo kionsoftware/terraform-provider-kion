@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // UGroupListResponse for: GET /api/v3/user-group
 type UGroupListResponse struct {

@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	"github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 // Provider -
@@ -87,9 +87,9 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	ctURL := d.Get("url").(string)
-	ctAPIKey := d.Get("apikey").(string)
-	ctAPIPath := d.Get("apipath").(string)
+	kionURL := d.Get("url").(string)
+	kionAPIKey := d.Get("apikey").(string)
+	kionAPIPath := d.Get("apipath").(string)
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
@@ -101,7 +101,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		skipSSLValidation = t
 	}
 
-	c := ctclient.NewClient(ctURL, ctAPIKey, ctAPIPath, skipSSLValidation)
+	c := kionclient.NewClient(kionURL, kionAPIKey, kionAPIPath, skipSSLValidation)
 	err := c.GET("/v3/me/cloud-access-role", nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{

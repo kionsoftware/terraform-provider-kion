@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // AzureRoleListResponse for: GET /api/v3/azure-role
 type AzureRoleListResponse struct {

@@ -1,43 +1,46 @@
-package ctclient
+package kionclient
 
-// ServiceControlPolicyListResponse for: GET /api/v3/service-control-policy
-type ServiceControlPolicyListResponse struct {
+// IAMPolicyListResponse for: GET /api/v3/iam-policy
+type IAMPolicyListResponse struct {
 	Data []struct {
-		OwnerUserGroups      []ObjectWithID `json:"owner_user_groups"`
-		OwnerUsers           []ObjectWithID `json:"owner_users"`
-		ServiceControlPolicy struct {
+		IamPolicy struct {
+			AwsIamPath          string `json:"aws_iam_path"`
 			AwsManagedPolicy    bool   `json:"aws_managed_policy"`
-			CreatedByUserID     int    `json:"created_by_user_id"`
 			Description         string `json:"description"`
 			ID                  int    `json:"id"`
 			Name                string `json:"name"`
+			PathSuffix          string `json:"path_suffix"`
 			Policy              string `json:"policy"`
 			SystemManagedPolicy bool   `json:"system_managed_policy"`
-		} `json:"service_control_policy"`
+		} `json:"iam_policy"`
+		OwnerUserGroups []ObjectWithID `json:"owner_user_groups"`
+		OwnerUsers      []ObjectWithID `json:"owner_users"`
 	} `json:"data"`
 	Status int `json:"status"`
 }
 
-// ServiceControlPolicyResponse for: GET /api/v3/service-control-policy/{id}
-type ServiceControlPolicyResponse struct {
+// IAMPolicyResponse for: GET /api/v3/iam-policy/{id}
+type IAMPolicyResponse struct {
 	Data struct {
-		OwnerUserGroups      []ObjectWithID `json:"owner_user_groups"`
-		OwnerUsers           []ObjectWithID `json:"owner_users"`
-		ServiceControlPolicy struct {
+		IamPolicy struct {
+			AwsIamPath          string `json:"aws_iam_path"`
 			AwsManagedPolicy    bool   `json:"aws_managed_policy"`
-			CreatedByUserID     int    `json:"created_by_user_id"`
 			Description         string `json:"description"`
 			ID                  int    `json:"id"`
 			Name                string `json:"name"`
+			PathSuffix          string `json:"path_suffix"`
 			Policy              string `json:"policy"`
 			SystemManagedPolicy bool   `json:"system_managed_policy"`
-		} `json:"service_control_policy"`
+		} `json:"iam_policy"`
+		OwnerUserGroups []ObjectWithID `json:"owner_user_groups"`
+		OwnerUsers      []ObjectWithID `json:"owner_users"`
 	} `json:"data"`
 	Status int `json:"status"`
 }
 
-// ServiceControlPolicyCreate for: POST /api/v3/service-control-policy
-type ServiceControlPolicyCreate struct {
+// IAMPolicyCreate for: POST /api/v3/iam-policy
+type IAMPolicyCreate struct {
+	AwsIamPath        string `json:"aws_iam_path"`
 	Description       string `json:"description"`
 	Name              string `json:"name"`
 	OwnerUserGroupIds *[]int `json:"owner_user_group_ids"`
@@ -45,8 +48,8 @@ type ServiceControlPolicyCreate struct {
 	Policy            string `json:"policy"`
 }
 
-// ServiceControlPolicyUpdate for: PATCH /api/v3/service-control-policy/{id}
-type ServiceControlPolicyUpdate struct {
+// IAMPolicyUpdate for: PATCH /api/v3/iam-policy/{id}
+type IAMPolicyUpdate struct {
 	Description string `json:"description"`
 	Name        string `json:"name"`
 	Policy      string `json:"policy"`
