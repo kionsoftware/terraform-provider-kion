@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.10] - 2024-02-29
+- Added support for `azure_role_definitions` in OU Cloud Access Roles. This enhancement includes the ability to define and manage Azure role definitions directly within Terraform.
+
 ## [0.3.9] - 2024-02-15
 - Fixed an issue where users were unable to create Kion Azure Policy resources due to certain attributes (`name`, `description`, `policy`, `parameters`) being set to "Read-Only" in the Terraform Kion Provider. This fix involves changing the `Computed: true` parameter for these attributes to either `Required` or `Optional`, based on the API documentation for azure-policy. This change allows for the proper creation and management of Azure Policy resources within Terraform.
 
