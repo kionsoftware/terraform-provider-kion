@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -419,6 +420,23 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 	}
 
 	return append(diags, resourceAwsAccountRead(ctx, d, m)...)
+}
+
+func retryConvertCacheAccountToProjectAccountForAWS(c *hc.Client, accountCacheId, projectId int, startDatecode string, retries int, delay time.Duration) (int, error) {
+	var lastErr error
+	for i := 0; i < retries; i++ {
+		id, err := convertCacheAccountToProjectAccount(c, accountCacheId, projectId, startDatecode)
+		if err == nil {
+			return id, nil
+		}
+		if strings.Contains(err.Error(), "Rule is already in progress") && i < retries-1 {
+			time.Sleep(delay)
+			continue
+		}
+		lastErr = err
+		break
+	}
+	return 0, lastErr
 }
 
 func resourceAwsAccountRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
