@@ -376,8 +376,10 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			// Move cached account to the requested project
 			projectId := d.Get("project_id").(int)
 			startDatecode := time.Now().Format("200601")
+			retries := 3              // Number of retries
+			delay := 30 * time.Second // Delay between retries
 
-			newId, err := convertCacheAccountToProjectAccount(c, accountCacheId, projectId, startDatecode)
+			newId, err := retryConvertCacheAccountToProjectAccountForAWS(c, accountCacheId, projectId, startDatecode, retries, delay)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
