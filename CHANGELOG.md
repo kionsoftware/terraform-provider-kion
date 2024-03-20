@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.11] - 2024-03-20
+- Introduced retry logic in the AWS account creation process within the Terraform Provider for Kion. This improvement is designed to handle scenarios where the account creation is temporarily hindered by ongoing AWS service operations. The logic includes a default retry count of three attempts with a delay of 30 seconds between each attempt, enhancing the robustness of the account creation process in fluctuating AWS service conditions.
+
 ## [0.3.10] - 2024-02-29
 - Added support for `azure_role_definitions` in OU Cloud Access Roles. This enhancement includes the ability to define and manage Azure role definitions directly within Terraform.
 
