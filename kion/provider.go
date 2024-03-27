@@ -3,11 +3,14 @@ package kion
 
 import (
 	"context"
+	"sync"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
 )
+
+var awsAccountCreationMux sync.Mutex
 
 // Provider -
 func Provider() *schema.Provider {
