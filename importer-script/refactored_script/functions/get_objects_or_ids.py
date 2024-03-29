@@ -1,3 +1,8 @@
+import get_api_endpoint
+import api_call
+from constants import BASE_URL
+
+
 def get_objects_or_ids(object_type, cloud_rule=False, object_id=False):
     """
     Generic helper function to either return all objects of object_type from Kion
@@ -40,5 +45,3 @@ def get_objects_or_ids(object_type, cloud_rule=False, object_id=False):
         else:
             print("Could not get return from %s endpoint from Kion." % url)
             return False
-
-

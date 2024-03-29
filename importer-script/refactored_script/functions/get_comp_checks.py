@@ -1,3 +1,7 @@
+import api_call
+from constants import BASE_URL
+
+
 def get_comp_checks(comp_standard=False):
     """
     Get Compliance Checks
@@ -23,5 +27,3 @@ def get_comp_checks(comp_standard=False):
         else:
             print("Could not get Compliance Checks from Kion.")
             return False
-
-

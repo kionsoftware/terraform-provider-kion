@@ -9,9 +9,11 @@ import write_file
 import write_provider_file
 import process_template
 from constants import RESOURCE_PREFIX
+from constants import BASE_URL
 from constants import IMPORTED_MODULES
 from constants import IMPORTED_RESOURCES
-from constants import PROVIDER_TEMPLATE
+from templates import PROVIDER_TEMPLATE
+from parsers import ARGS
 
 
 def import_ou_roles():

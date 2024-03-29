@@ -1,3 +1,4 @@
+import re
 import normalize_string
 import process_string
 import process_owners
@@ -10,7 +11,9 @@ import process_template
 from constants import RESOURCE_PREFIX
 from constants import IMPORTED_MODULES
 from constants import IMPORTED_RESOURCES
-from constants import PROVIDER_TEMPLATE
+from templates import PROVIDER_TEMPLATE
+
+from parsers import ARGS
 
 
 def import_cfts():

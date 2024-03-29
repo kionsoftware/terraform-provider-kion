@@ -1,3 +1,7 @@
+import api_call
+from constants import BASE_URL
+
+
 def get_projects(cloud_rule=False):
     """
     Get Projects
@@ -36,5 +40,3 @@ def get_projects(cloud_rule=False):
         else:
             print("Could not get projects from Kion.")
             return False
-
-

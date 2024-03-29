@@ -15,7 +15,8 @@ import import_compliance_standards
 import write_resource_import_script
 from constants import IMPORTED_MODULES
 from constants import IMPORTED_RESOURCES
-from constants import PROVIDER_TEMPLATE
+from templates import PROVIDER_TEMPLATE
+from parsers import ARGS
 
 
 def main():

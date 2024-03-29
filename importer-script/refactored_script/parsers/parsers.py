@@ -3,52 +3,59 @@ import os
 import sys
 import re
 
-PARSER = argparse.ArgumentParser(
-    description='Import Cloud Resources into the Repo Module')
-PARSER.add_argument('--kion-url', type=str, required=True,
-                    help='URL to Kion, without trailing slash. Example: https://kion.example.com')
-PARSER.add_argument('--kion-api-key', type=str,
-                    help='Kion API key. Can be set via env variable KION_APIKEY instead (preferred).')
-PARSER.add_argument('--import-dir', type=str, required=True,
-                    help='Path to the root of the target import directory, without trailing slash.')
-PARSER.add_argument('--skip-cfts', action='store_true',
-                    help='Skip importing AWS CloudFormation templates.')
-PARSER.add_argument('--skip-iams', action='store_true',
-                    help='Skip importing AWS IAM policies.')
-# PARSER.add_argument('--skip-arms', action='store_true', help='Skip importing Azure ARM templates.')
-PARSER.add_argument('--skip-azure-policies', action='store_true',
-                    help='Skip importing Azure Policies.')
-PARSER.add_argument('--skip-azure-roles', action='store_true',
-                    help='Skip importing Azure Roles.')
-PARSER.add_argument('--skip-project-roles', action='store_true',
-                    help='Skip importing Project Cloud Access Roles.')
-PARSER.add_argument('--skip-ou-roles', action='store_true',
-                    help='Skip importing OU Cloud Access Roles.')
-PARSER.add_argument('--skip-cloud-rules', action='store_true',
-                    help='Skip importing Cloud Rules.')
-PARSER.add_argument('--skip-checks', action='store_true',
-                    help='Skip importing Compliance Checks.')
-PARSER.add_argument('--skip-standards', action='store_true',
-                    help='Skip importing Compliance Standards.')
-PARSER.add_argument('--skip-ssl-verify', action='store_true',
-                    help='Skip SSL verification. Use if Kion does not have a valid SSL certificate.')
-PARSER.add_argument('--overwrite', action='store_true',
-                    help='Overwrite existing files during import.')
-PARSER.add_argument('--import-aws-managed', action='store_true',
-                    help='Import AWS-managed resources (only those that were already imported into Kion).')
-PARSER.add_argument('--prepend-id', action='store_true',
-                    help='Prepend each resource\'s ID to its filenames. Useful for easily correlating IDs to resources')
-PARSER.add_argument('--clone-system-managed', action='store_true',
-                    help='Clone system-managed resources. Names of clones will be prefixed using --clone-prefix argument. Ownership of clones will be set with --clone-user-ids and/or --clone-user-group-ids')
-PARSER.add_argument('--clone-prefix', type=str,
-                    help='A prefix for the name of cloned system-managed resources. Use with --clone-system-managed.')
-PARSER.add_argument('--clone-user-ids', nargs='+', type=int,
-                    help='Space separated user IDs to set as owner users for cloned resources')
-PARSER.add_argument('--clone-user-group-ids', nargs='+', type=int,
-                    help='Space separated user group IDs to set as owner user groups for cloned resources')
-# PARSER.add_argument('--dry-run', action='store_true', help='Perform a dry run without writing any files.')
-# PARSER.add_argument('--sync', action='store_true',help='Sync repository resources into Kion.')
-ARGS = PARSER.parse_args()
+
+def parse_args():
+
+    parser = argparse.ArgumentParser(
+        description='Import Cloud Resources into the Repo Module')
+    parser.add_argument('--kion-url', type=str, required=True,
+                        help='URL to Kion, without trailing slash. Example: https://kion.example.com')
+    parser.add_argument('--kion-api-key', type=str,
+                        help='Kion API key. Can be set via env variable KION_APIKEY instead (preferred).')
+    parser.add_argument('--import-dir', type=str, required=True,
+                        help='Path to the root of the target import directory, without trailing slash.')
+    parser.add_argument('--skip-cfts', action='store_true',
+                        help='Skip importing AWS CloudFormation templates.')
+    parser.add_argument('--skip-iams', action='store_true',
+                        help='Skip importing AWS IAM policies.')
+    # parser.add_argument('--skip-arms', action='store_true', help='Skip importing Azure ARM templates.')
+    parser.add_argument('--skip-azure-policies', action='store_true',
+                        help='Skip importing Azure Policies.')
+    parser.add_argument('--skip-azure-roles', action='store_true',
+                        help='Skip importing Azure Roles.')
+    parser.add_argument('--skip-project-roles', action='store_true',
+                        help='Skip importing Project Cloud Access Roles.')
+    parser.add_argument('--skip-ou-roles', action='store_true',
+                        help='Skip importing OU Cloud Access Roles.')
+    parser.add_argument('--skip-cloud-rules', action='store_true',
+                        help='Skip importing Cloud Rules.')
+    parser.add_argument('--skip-checks', action='store_true',
+                        help='Skip importing Compliance Checks.')
+    parser.add_argument('--skip-standards', action='store_true',
+                        help='Skip importing Compliance Standards.')
+    parser.add_argument('--skip-ssl-verify', action='store_true',
+                        help='Skip SSL verification. Use if Kion does not have a valid SSL certificate.')
+    parser.add_argument('--overwrite', action='store_true',
+                        help='Overwrite existing files during import.')
+    parser.add_argument('--import-aws-managed', action='store_true',
+                        help='Import AWS-managed resources (only those that were already imported into Kion).')
+    parser.add_argument('--prepend-id', action='store_true',
+                        help='Prepend each resource\'s ID to its filenames. Useful for easily correlating IDs to resources')
+    parser.add_argument('--clone-system-managed', action='store_true',
+                        help='Clone system-managed resources. Names of clones will be prefixed using --clone-prefix argument. Ownership of clones will be set with --clone-user-ids and/or --clone-user-group-ids')
+    parser.add_argument('--clone-prefix', type=str,
+                        help='A prefix for the name of cloned system-managed resources. Use with --clone-system-managed.')
+    parser.add_argument('--clone-user-ids', nargs='+', type=int,
+                        help='Space separated user IDs to set as owner users for cloned resources')
+    parser.add_argument('--clone-user-group-ids', nargs='+', type=int,
+                        help='Space separated user group IDs to set as owner user groups for cloned resources')
+
+    # parser.add_argument('--dry-run', action='store_true', help='Perform a dry run without writing any files.')
+    # parser.add_argument('--sync', action='store_true',help='Sync repository resources into Kion.')
+    return parser.parse_args()
+
+
+ARGS = parse_args()
 
 # validate kion_url
 if not ARGS.kion_url:

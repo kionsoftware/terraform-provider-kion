@@ -1,3 +1,7 @@
+import main
+import normalize_string
+
+
 def build_filename(base, aws_managed=False, prepend_id=False, r_id=False):
     """
     Helper funcion to build the filename based on provided parameters

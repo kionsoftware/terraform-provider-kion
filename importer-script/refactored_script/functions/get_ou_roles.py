@@ -1,3 +1,7 @@
+import api_call
+from constants import BASE_URL
+
+
 def get_ou_roles(ou_id):
     """
     Get OU Roles
@@ -25,5 +29,3 @@ def get_ou_roles(ou_id):
         return ROLES
     else:
         return False
-
-

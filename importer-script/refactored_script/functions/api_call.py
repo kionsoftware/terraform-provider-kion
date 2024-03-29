@@ -1,5 +1,9 @@
 from json import JSONDecodeError
 import requests
+from constants import HEADERS
+from constants import MAX_UNAUTH_RETRIES
+from constants import UNAUTH_RETRY_COUNTER
+from parsers import ARGS
 
 
 def api_call(url, method='get', payload=None, headers=None, timeout=30, test=False):

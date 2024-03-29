@@ -1,3 +1,6 @@
+from object_api_map import OBJECT_API_MAP
+
+
 def get_api_endpoint(resource, method):
     """
     Helper function to return the proper API endpoint for the
@@ -20,5 +23,3 @@ def get_api_endpoint(resource, method):
     else:
         print("Didn't find %s defined in the map." % resource)
         return False
-
-
