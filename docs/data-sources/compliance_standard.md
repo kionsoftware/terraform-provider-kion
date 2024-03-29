@@ -44,7 +44,7 @@ Read-Only:
 
 - `created_at` (String)
 - `created_by_user_id` (Number)
-- `ct_managed` (Boolean)
 - `description` (String)
 - `id` (Number)
+- `kion_managed` (Boolean)
 - `name` (String)

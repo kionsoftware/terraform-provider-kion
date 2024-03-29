@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func dataSourceAzurePolicy() *schema.Resource {
@@ -50,7 +50,7 @@ func dataSourceAzurePolicy() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"ct_managed": {
+						"kion_managed": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -107,10 +107,10 @@ func dataSourceAzurePolicy() *schema.Resource {
 
 func dataSourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 
 	resp := new(hc.AzurePolicyListResponse)
-	err := c.GET("/v3/azure-policy", resp)
+	err := k.GET("/v3/azure-policy", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -126,7 +126,7 @@ func dataSourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m in
 	for _, item := range resp.Data {
 		data := make(map[string]interface{})
 		data["azure_managed_policy_def_id"] = item.AzurePolicy.AzureManagedPolicyDefID
-		data["ct_managed"] = item.AzurePolicy.CtManaged
+		data["kion_managed"] = item.AzurePolicy.CtManaged
 		data["description"] = item.AzurePolicy.Description
 		data["id"] = item.AzurePolicy.ID
 		data["name"] = item.AzurePolicy.Name

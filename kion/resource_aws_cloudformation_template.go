@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceAwsCloudformationTemplate() *schema.Resource {
@@ -104,7 +104,7 @@ func resourceAwsCloudformationTemplate() *schema.Resource {
 
 func resourceAwsCloudformationTemplateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 
 	post := hc.CFTCreate{
 		Description:           d.Get("description").(string),
@@ -120,7 +120,7 @@ func resourceAwsCloudformationTemplateCreate(ctx context.Context, d *schema.Reso
 		TerminationProtection: d.Get("termination_protection").(bool),
 	}
 
-	resp, err := c.POST("/v3/cft", post)
+	resp, err := k.POST("/v3/cft", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -146,11 +146,11 @@ func resourceAwsCloudformationTemplateCreate(ctx context.Context, d *schema.Reso
 
 func resourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.CFTResponseWithOwnersAndTags)
-	err := c.GET(fmt.Sprintf("/v3/cft/%s", ID), resp)
+	err := k.GET(fmt.Sprintf("/v3/cft/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -194,7 +194,7 @@ func resourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.Resour
 
 func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -225,7 +225,7 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 			TerminationProtection: d.Get("termination_protection").(bool),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/cft/%s", ID), req)
+		err := k.PATCH(fmt.Sprintf("/v3/cft/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -245,7 +245,7 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/cft/%s/owner", ID), hc.ChangeOwners{
+			_, err := k.POST(fmt.Sprintf("/v3/cft/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -261,7 +261,7 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/cft/%s/owner", ID), hc.ChangeOwners{
+			err := k.DELETE(fmt.Sprintf("/v3/cft/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -285,10 +285,10 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 
 func resourceAwsCloudformationTemplateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/cft/%s", ID), nil)
+	err := k.DELETE(fmt.Sprintf("/v3/cft/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

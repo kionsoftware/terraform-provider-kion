@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func dataSourceAzureRole() *schema.Resource {
@@ -103,10 +103,10 @@ func dataSourceAzureRole() *schema.Resource {
 
 func dataSourceAzureRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 
 	resp := new(hc.AzureRoleListResponse)
-	err := c.GET("/v3/azure-role", resp)
+	err := k.GET("/v3/azure-role", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

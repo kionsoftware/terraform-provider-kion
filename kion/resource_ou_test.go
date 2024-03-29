@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 const (
@@ -142,7 +142,7 @@ func testAccOUCheckResourceDestroy(s *terraform.State) error {
 		return nil
 	}
 
-	c := meta.(*hc.Client)
+	k := meta.(*hc.Client)
 
 	// loop through the resources in state, verifying each resource is destroyed
 	for _, rs := range s.RootModule().Resources {
@@ -152,7 +152,7 @@ func testAccOUCheckResourceDestroy(s *terraform.State) error {
 
 		// Retrieve our resource by referencing it's state ID for API lookup
 		resp := new(hc.OUResponse)
-		err := c.GET(fmt.Sprintf("/v3/ou/%s", rs.Primary.ID), resp)
+		err := k.GET(fmt.Sprintf("/v3/ou/%s", rs.Primary.ID), resp)
 		if err == nil {
 			if fmt.Sprint(resp.Data.OU.ID) == rs.Primary.ID {
 				return fmt.Errorf("OU (%s) still exists.", rs.Primary.ID)

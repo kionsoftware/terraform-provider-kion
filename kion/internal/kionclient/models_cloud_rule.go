@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // CloudRuleListResponse for: GET /api/v3/cloud-rule
 type CloudRuleListResponse struct {

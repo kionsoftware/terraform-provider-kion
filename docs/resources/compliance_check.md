@@ -40,8 +40,8 @@ description: |-
 ### Read-Only
 
 - `created_at` (String)
-- `ct_managed` (Boolean)
 - `id` (String) The ID of this resource.
+- `kion_managed` (Boolean)
 - `last_scan_id` (Number)
 
 <a id="nestedblock--owner_user_groups"></a>

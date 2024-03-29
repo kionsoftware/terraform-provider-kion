@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 import (
 	"testing"

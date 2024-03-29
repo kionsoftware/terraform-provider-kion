@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceAzurePolicy() *schema.Resource {
@@ -35,7 +35,7 @@ func resourceAzurePolicy() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"ct_managed": {
+			"kion_managed": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
@@ -89,14 +89,14 @@ func resourceAzurePolicy() *schema.Resource {
 
 func resourceAzurePolicyCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 
 	post := hc.AzurePolicyCreate{
 		OwnerUserGroups: hc.FlattenGenericIDPointer(d, "owner_user_groups"),
 		OwnerUsers:      hc.FlattenGenericIDPointer(d, "owner_users"),
 	}
 
-	resp, err := c.POST("/v3/azure-policy", post)
+	resp, err := k.POST("/v3/azure-policy", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -122,11 +122,11 @@ func resourceAzurePolicyCreate(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.AzurePolicyResponse)
-	err := c.GET(fmt.Sprintf("/v3/azure-policy/%s", ID), resp)
+	err := k.GET(fmt.Sprintf("/v3/azure-policy/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -139,7 +139,7 @@ func resourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	data := make(map[string]interface{})
 	data["azure_managed_policy_def_id"] = item.AzurePolicy.AzureManagedPolicyDefID
-	data["ct_managed"] = item.AzurePolicy.CtManaged
+	data["kion_managed"] = item.AzurePolicy.CtManaged
 	data["description"] = item.AzurePolicy.Description
 	data["name"] = item.AzurePolicy.Name
 	if hc.InflateObjectWithID(item.OwnerUserGroups) != nil {
@@ -167,7 +167,7 @@ func resourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -188,7 +188,7 @@ func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m in
 			Policy:      d.Get("policy").(string),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/azure-policy/%s", ID), req)
+		err := k.PATCH(fmt.Sprintf("/v3/azure-policy/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -208,7 +208,7 @@ func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m in
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/azure-policy/%s/owner", ID), hc.ChangeOwners{
+			_, err := k.POST(fmt.Sprintf("/v3/azure-policy/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -224,7 +224,7 @@ func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m in
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/azure-policy/%s/owner", ID), hc.ChangeOwners{
+			err := k.DELETE(fmt.Sprintf("/v3/azure-policy/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -248,10 +248,10 @@ func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceAzurePolicyDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/azure-policy/%s", ID), nil)
+	err := k.DELETE(fmt.Sprintf("/v3/azure-policy/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

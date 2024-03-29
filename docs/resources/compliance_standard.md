@@ -31,8 +31,8 @@ description: |-
 ### Read-Only
 
 - `created_at` (String)
-- `ct_managed` (Boolean)
 - `id` (String) The ID of this resource.
+- `kion_managed` (Boolean)
 
 <a id="nestedblock--compliance_checks"></a>
 ### Nested Schema for `compliance_checks`

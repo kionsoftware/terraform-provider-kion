@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func dataSourceComplianceStandard() *schema.Resource {
@@ -54,7 +54,7 @@ func dataSourceComplianceStandard() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
-						"ct_managed": {
+						"kion_managed": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -79,10 +79,10 @@ func dataSourceComplianceStandard() *schema.Resource {
 
 func dataSourceComplianceStandardRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 
 	resp := new(hc.ComplianceStandardListResponse)
-	err := c.GET("/v3/compliance/standard", resp)
+	err := k.GET("/v3/compliance/standard", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -99,7 +99,7 @@ func dataSourceComplianceStandardRead(ctx context.Context, d *schema.ResourceDat
 		data := make(map[string]interface{})
 		data["created_at"] = item.CreatedAt
 		data["created_by_user_id"] = item.CreatedByUserID
-		data["ct_managed"] = item.CtManaged
+		data["kion_managed"] = item.CtManaged
 		data["description"] = item.Description
 		data["id"] = item.ID
 		data["name"] = item.Name

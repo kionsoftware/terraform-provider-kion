@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceProject() *schema.Resource {
@@ -198,7 +198,7 @@ func resourceProject() *schema.Resource {
 
 func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 
 	post := hc.ProjectCreate{
 		AutoPay:            d.Get("auto_pay").(bool),
@@ -220,7 +220,7 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 		} `json:"data"`
 	}
 	var config FinancialConfig
-	err := c.GET("/v1/ct-config/financials-config", &config)
+	err := k.GET("/v1/ct-config/financials-config", &config)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -285,7 +285,7 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
-	resp, err := c.POST(fmt.Sprintf("/v3/project/%v", projectCreateURLSuffix), post)
+	resp, err := k.POST(fmt.Sprintf("/v3/project/%v", projectCreateURLSuffix), post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -306,7 +306,7 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 	if d.Get("labels") != nil {
 		ID := d.Id()
-		err = hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
+		err = hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -325,11 +325,11 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ProjectResponse)
-	err := c.GET(fmt.Sprintf("/v3/project/%s", ID), resp)
+	err := k.GET(fmt.Sprintf("/v3/project/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -360,7 +360,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Fetch labels
-	labelData, err := hc.ReadResourceLabels(c, "project", ID)
+	labelData, err := hc.ReadResourceLabels(k, "project", ID)
 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -386,7 +386,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -411,7 +411,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			PermissionSchemeID: d.Get("permission_scheme_id").(int),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/project/%s", ID), req)
+		err := k.PATCH(fmt.Sprintf("/v3/project/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -433,7 +433,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			len(arrAddOwnerUserIds) > 0 ||
 			len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v1/project/%s/owner", ID), hc.ChangeOwners{
+			_, err := k.POST(fmt.Sprintf("/v1/project/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -451,7 +451,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	if d.HasChanges("labels") {
 		hasChanged++
 
-		err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
+		err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -472,10 +472,10 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceProjectDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/project/%s", ID), nil)
+	err := k.DELETE(fmt.Sprintf("/v3/project/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

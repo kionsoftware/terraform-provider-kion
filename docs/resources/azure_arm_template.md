@@ -33,8 +33,8 @@ description: |-
 
 ### Read-Only
 
-- `ct_managed` (Boolean)
 - `id` (String) The ID of this resource.
+- `kion_managed` (Boolean)
 - `version` (Number)
 
 <a id="nestedblock--owner_user_groups"></a>

@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 // Shared methods used by kion_*_account resources.
@@ -21,7 +21,7 @@ import (
 
 func resourceAccountRead(resource string, ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	// HACK: Special case when importing existing accounts
@@ -61,7 +61,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 		accountUrl = fmt.Sprintf("/v3/account/%s", ID)
 		resp = new(hc.AccountResponse)
 	}
-	err := c.GET(accountUrl, resp)
+	err := k.GET(accountUrl, resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -90,7 +90,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 
 	// Fetch labels
 	if accountLocation == ProjectLocation {
-		labelData, err := hc.ReadResourceLabels(c, "account", ID)
+		labelData, err := hc.ReadResourceLabels(k, "account", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -117,7 +117,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 
 func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -143,7 +143,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 
 		tflog.Debug(ctx, "Converting from cached account to project account", map[string]interface{}{"oldProjectId": oldProjectId, "newProjectId": newProjectId})
-		newId, err := convertCacheAccountToProjectAccount(c, accountCacheId, newProjectId, d.Get("start_datecode").(string))
+		newId, err := convertCacheAccountToProjectAccount(k, accountCacheId, newProjectId, d.Get("start_datecode").(string))
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -171,7 +171,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 
 		tflog.Debug(ctx, "Converting from project account to cached account", map[string]interface{}{"oldProjectId": oldProjectId, "newProjectId": newProjectId})
-		newId, err := convertProjectAccountToCacheAccount(c, accountId)
+		newId, err := convertProjectAccountToCacheAccount(k, accountId)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -213,7 +213,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 				tflog.Debug(ctx, "Moving account to different project", map[string]interface{}{"oldProjectId": oldProjectId, "newProjectId": newProjectId, "postData": string(rb)})
 			}
 
-			resp, err := c.POST(fmt.Sprintf("/v3/account/%s/move", ID), req)
+			resp, err := k.POST(fmt.Sprintf("/v3/account/%s/move", ID), req)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -283,7 +283,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			tflog.Debug(ctx, fmt.Sprintf("Updating account via PATCH %s", accountUrl), map[string]interface{}{"postData": string(rb)})
 		}
 
-		err := c.PATCH(accountUrl, req)
+		err := k.PATCH(accountUrl, req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -297,7 +297,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	if accountLocation == ProjectLocation && d.HasChanges("labels") {
 		hasChanged++
 
-		err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
+		err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -314,7 +314,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	accountLocation := getKionAccountLocation(d)
@@ -329,7 +329,7 @@ func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interf
 		accountUrl = fmt.Sprintf("/v3/account/%s", ID)
 	}
 
-	err := c.DELETE(accountUrl, nil)
+	err := k.DELETE(accountUrl, nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -346,12 +346,12 @@ func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interf
 	return diags
 }
 
-func convertCacheAccountToProjectAccount(c *hc.Client, accountCacheId, newProjectId int, startDatecode string) (int, error) {
+func convertCacheAccountToProjectAccount(k *hc.Client, accountCacheId, newProjectId int, startDatecode string) (int, error) {
 
 	// The API is inconsistent and convert expects YYYYMM while other methods expect YYYY-MM
 	startDatecode = strings.ReplaceAll(startDatecode, "-", "")
 
-	resp, err := c.POST(fmt.Sprintf("/v3/account-cache/%d/convert/%d?start_datecode=%s",
+	resp, err := k.POST(fmt.Sprintf("/v3/account-cache/%d/convert/%d?start_datecode=%s",
 		accountCacheId, newProjectId, startDatecode), nil)
 
 	if err != nil {
@@ -361,9 +361,9 @@ func convertCacheAccountToProjectAccount(c *hc.Client, accountCacheId, newProjec
 	return resp.RecordID, nil
 }
 
-func convertProjectAccountToCacheAccount(c *hc.Client, accountId int) (int, error) {
+func convertProjectAccountToCacheAccount(k *hc.Client, accountId int) (int, error) {
 	respRevert := new(hc.AccountRevertResponse)
-	err := c.DeleteWithResponse(fmt.Sprintf("/v3/account/revert/%d", accountId), nil, respRevert)
+	err := k.DeleteWithResponse(fmt.Sprintf("/v3/account/revert/%d", accountId), nil, respRevert)
 
 	if err != nil {
 		return 0, err

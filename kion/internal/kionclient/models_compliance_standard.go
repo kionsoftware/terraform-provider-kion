@@ -1,11 +1,11 @@
-package ctclient
+package kionclient
 
 // ComplianceStandardListResponse for: GET /api/v3/compliance/standard
 type ComplianceStandardListResponse struct {
 	Data []struct {
 		CreatedAt       string `json:"created_at"`
 		CreatedByUserID int    `json:"created_by_user_id"`
-		CtManaged       bool   `json:"ct_managed"`
+		CtManaged       bool   `json:"kion_managed"`
 		Description     string `json:"description"`
 		ID              int    `json:"id"`
 		Name            string `json:"name"`
@@ -20,7 +20,7 @@ type ComplianceStandardResponse struct {
 		ComplianceStandard struct {
 			CreatedAt       string `json:"created_at"`
 			CreatedByUserID int    `json:"created_by_user_id"`
-			CtManaged       bool   `json:"ct_managed"`
+			CtManaged       bool   `json:"kion_managed"`
 			Description     string `json:"description"`
 			ID              int    `json:"id"`
 			Name            string `json:"name"`

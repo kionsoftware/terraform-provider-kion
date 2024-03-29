@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceSamlGroupAssociation() *schema.Resource {
@@ -66,7 +66,7 @@ func resourceSamlGroupAssociation() *schema.Resource {
 
 func resourceSamlGroupAssociationCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 
 	post := hc.CreateSAMLGroupAssociation{
 		AssertionName:  d.Get("assertion_name").(string),
@@ -76,7 +76,7 @@ func resourceSamlGroupAssociationCreate(ctx context.Context, d *schema.ResourceD
 		UserGroupID:    d.Get("user_group_id").(int),
 	}
 
-	resp, err := c.POST("/v3/idms/group-association", post)
+	resp, err := k.POST("/v3/idms/group-association", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -102,11 +102,11 @@ func resourceSamlGroupAssociationCreate(ctx context.Context, d *schema.ResourceD
 
 func resourceSamlGroupAssociationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.GroupAssociationResponse)
-	err := c.GET(fmt.Sprintf("/v3/idms/group-association/%s", ID), resp)
+	err := k.GET(fmt.Sprintf("/v3/idms/group-association/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -141,7 +141,7 @@ func resourceSamlGroupAssociationRead(ctx context.Context, d *schema.ResourceDat
 
 func resourceSamlGroupAssociationUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -162,7 +162,7 @@ func resourceSamlGroupAssociationUpdate(ctx context.Context, d *schema.ResourceD
 			UserGroupID:    d.Get("user_group_id").(int),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/idms/group-association/%s", ID), req)
+		err := k.PATCH(fmt.Sprintf("/v3/idms/group-association/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -182,10 +182,10 @@ func resourceSamlGroupAssociationUpdate(ctx context.Context, d *schema.ResourceD
 
 func resourceSamlGroupAssociationDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/idms/group-association/%s", ID), nil)
+	err := k.DELETE(fmt.Sprintf("/v3/idms/group-association/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // GCPRoleListResponseWithOwners for: GET /api/v3/gcp-iam-role
 type GCPRoleListResponseWithOwners struct {

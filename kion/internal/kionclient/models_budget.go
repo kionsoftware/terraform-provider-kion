@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // BudgetCreate for: POST /api/v3/project/with-budget
 type BudgetCreate struct {

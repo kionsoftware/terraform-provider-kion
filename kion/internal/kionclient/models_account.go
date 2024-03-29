@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // AccountListResponse for GET /api/v3/account
 type AccountListResponse struct {

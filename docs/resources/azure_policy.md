@@ -31,8 +31,8 @@ description: |-
 ### Read-Only
 
 - `azure_managed_policy_def_id` (String)
-- `ct_managed` (Boolean)
 - `id` (String) The ID of this resource.
+- `kion_managed` (Boolean)
 
 <a id="nestedblock--owner_user_groups"></a>
 ### Nested Schema for `owner_user_groups`

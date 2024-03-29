@@ -42,10 +42,10 @@ Optional:
 
 Read-Only:
 
-- `ct_managed` (Boolean)
 - `deployment_mode` (Number)
 - `description` (String)
 - `id` (Number)
+- `kion_managed` (Boolean)
 - `name` (String)
 - `owner_user_groups` (List of Object) (see [below for nested schema](#nestedobjatt--list--owner_user_groups))
 - `owner_users` (List of Object) (see [below for nested schema](#nestedobjatt--list--owner_users))

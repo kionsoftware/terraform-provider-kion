@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func dataSourceAzureArmTemplate() *schema.Resource {
@@ -46,7 +46,7 @@ func dataSourceAzureArmTemplate() *schema.Resource {
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"ct_managed": {
+						"kion_managed": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -119,10 +119,10 @@ func dataSourceAzureArmTemplate() *schema.Resource {
 
 func dataSourceAzureArmTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 
 	resp := new(hc.AzureARMTemplateListResponse)
-	err := c.GET("/v3/azure-arm-template", resp)
+	err := k.GET("/v3/azure-arm-template", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -137,7 +137,7 @@ func dataSourceAzureArmTemplateRead(ctx context.Context, d *schema.ResourceData,
 	arr := make([]map[string]interface{}, 0)
 	for _, item := range resp.Data {
 		data := make(map[string]interface{})
-		data["ct_managed"] = item.AzureArmTemplate.CtManaged
+		data["kion_managed"] = item.AzureArmTemplate.CtManaged
 		data["deployment_mode"] = item.AzureArmTemplate.DeploymentMode
 		data["description"] = item.AzureArmTemplate.Description
 		data["id"] = item.AzureArmTemplate.ID

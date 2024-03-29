@@ -43,9 +43,9 @@ Optional:
 Read-Only:
 
 - `azure_managed_policy_def_id` (String)
-- `ct_managed` (Boolean)
 - `description` (String)
 - `id` (Number)
+- `kion_managed` (Boolean)
 - `name` (String)
 - `owner_user_groups` (List of Object) (see [below for nested schema](#nestedobjatt--list--owner_user_groups))
 - `owner_users` (List of Object) (see [below for nested schema](#nestedobjatt--list--owner_users))

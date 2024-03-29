@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceGcpAccount() *schema.Resource {
@@ -147,7 +147,7 @@ func resourceGcpAccount() *schema.Resource {
 
 func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 
 	accountLocation := getKionAccountLocation(d)
 
@@ -185,7 +185,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		if rb, err := json.Marshal(postAccountData); err == nil {
 			tflog.Debug(ctx, fmt.Sprintf("Importing exiting GCP Project via POST %s", accountUrl), map[string]interface{}{"postData": string(rb)})
 		}
-		resp, err := c.POST(accountUrl, postAccountData)
+		resp, err := k.POST(accountUrl, postAccountData)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -218,7 +218,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		if rb, err := json.Marshal(postCacheData); err == nil {
 			tflog.Debug(ctx, "Creating new GCP account via POST /v3/account-cache/create?account-type=google-cloud", map[string]interface{}{"data": string(rb)})
 		}
-		respCache, err := c.POST("/v3/account-cache/create?account-type=google-cloud", postCacheData)
+		respCache, err := k.POST("/v3/account-cache/create?account-type=google-cloud", postCacheData)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -243,7 +243,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		createStateConf := &resource.StateChangeConf{
 			Refresh: func() (interface{}, string, error) {
 				resp := new(hc.AccountResponse)
-				err := c.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
+				err := k.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
 				if err != nil {
 					if resErr, ok := err.(*hc.RequestError); ok {
 						if resErr.StatusCode == http.StatusNotFound {
@@ -279,7 +279,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			projectId := d.Get("project_id").(int)
 			startDatecode := time.Now().Format("200601")
 
-			newId, err := convertCacheAccountToProjectAccount(c, accountCacheId, projectId, startDatecode)
+			newId, err := convertCacheAccountToProjectAccount(k, accountCacheId, projectId, startDatecode)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -304,7 +304,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 	if accountLocation == ProjectLocation {
 		if _, ok := d.GetOk("labels"); ok {
 			ID := d.Id()
-			err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
+			err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{

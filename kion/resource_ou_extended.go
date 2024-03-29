@@ -5,11 +5,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 // OUChanges allows moving an OU if the parent ID changes and updating permissions.
-func OUChanges(c *hc.Client, d *schema.ResourceData, diags diag.Diagnostics, hasChanged int) (diag.Diagnostics, int) {
+func OUChanges(k *hc.Client, d *schema.ResourceData, diags diag.Diagnostics, hasChanged int) (diag.Diagnostics, int) {
 	// Handle OU move.
 	if d.HasChanges("parent_ou_id") {
 		hasChanged++
@@ -22,7 +22,7 @@ func OUChanges(c *hc.Client, d *schema.ResourceData, diags diag.Diagnostics, has
 			})
 			return diags, hasChanged
 		}
-		_, err = c.POST(fmt.Sprintf("/v2/ou/%s/move", d.Id()), arrParentOUID)
+		_, err = k.POST(fmt.Sprintf("/v2/ou/%s/move", d.Id()), arrParentOUID)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

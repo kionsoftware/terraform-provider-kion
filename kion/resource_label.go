@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceLabel() *schema.Resource {
@@ -50,7 +50,7 @@ func resourceLabel() *schema.Resource {
 
 func resourceLabelCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 
 	post := hc.LabelCreate{
 		Color: d.Get("color").(string),
@@ -58,7 +58,7 @@ func resourceLabelCreate(ctx context.Context, d *schema.ResourceData, m interfac
 		Value: d.Get("value").(string),
 	}
 
-	resp, err := c.POST("/v3/label", post)
+	resp, err := k.POST("/v3/label", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -84,11 +84,11 @@ func resourceLabelCreate(ctx context.Context, d *schema.ResourceData, m interfac
 
 func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.LabelResponse)
-	err := c.GET(fmt.Sprintf("/v3/label/%s", ID), resp)
+	err := k.GET(fmt.Sprintf("/v3/label/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -108,7 +108,7 @@ func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{
 
 func resourceLabelUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -123,7 +123,7 @@ func resourceLabelUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 			Value: d.Get("value").(string),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/label/%s", ID), req)
+		err := k.PATCH(fmt.Sprintf("/v3/label/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -139,10 +139,10 @@ func resourceLabelUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 
 func resourceLabelDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	k := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/label/%s", ID), nil)
+	err := k.DELETE(fmt.Sprintf("/v3/label/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
