@@ -124,7 +124,7 @@ PROVIDER_TEMPLATE = textwrap.dedent('''\
         required_providers {
             kion = {
                 source  = "kionsoftware/kion"
-                version = "0.3.1"
+                version = "0.13.12"
             }
         }
     }
