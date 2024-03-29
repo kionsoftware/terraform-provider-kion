@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
@@ -417,7 +417,7 @@ func populateOrgUnitFromResourceData(k *hc.Client, postCacheData *hc.AccountCach
 
 // waitForAccountCreation polls the creation status until the account is created or a timeout occurs.
 func waitForAccountCreation(k *hc.Client, ctx context.Context, accountCacheId int, d *schema.ResourceData) error {
-	createStateConf := &resource.StateChangeConf{
+	createStateConf := &retry.StateChangeConf{
 		// Define the refresh function, which checks the account creation status.
 		Refresh: func() (interface{}, string, error) {
 			resp := new(hc.AccountResponse)

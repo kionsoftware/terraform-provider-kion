@@ -1,15 +1,14 @@
 package kionclient
 
 import (
-	"errors"
 	"fmt"
 )
 
 var supportedResourceTypes = []string{"account", "cloud-rule", "funding-source", "ou", "project"}
 
 func PutAppLabelIDs(k *Client, labels *[]AssociateLabel, resourceType string, resourceID string) error {
-	if IsSupportedResourceType(resourceType) != true {
-		return errors.New(fmt.Sprintf("Error: %v", "Unsupported resource type for labels"))
+	if !IsSupportedResourceType(resourceType) {
+		return fmt.Errorf("Error: %v", "Unsupported resource type for labels")
 	}
 
 	req := AssociateLabels{
@@ -18,7 +17,7 @@ func PutAppLabelIDs(k *Client, labels *[]AssociateLabel, resourceType string, re
 
 	err := k.PUT(fmt.Sprintf("/v3/%s/%s/labels", resourceType, resourceID), req)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error: %v", err.Error()))
+		return fmt.Errorf("Error: %v", err)
 	}
 
 	return nil
@@ -34,8 +33,8 @@ func IsSupportedResourceType(resourceType string) bool {
 }
 
 func ReadResourceLabels(k *Client, resourceType string, resourceID string) (map[string]interface{}, error) {
-	if IsSupportedResourceType(resourceType) != true {
-		return nil, errors.New(fmt.Sprintf("Error: %v", "Unsupported resource type for labels"))
+	if !IsSupportedResourceType(resourceType) {
+		return nil, fmt.Errorf("Error: %v", "Unsupported resource type for labels")
 	}
 
 	labelsResp := new(AssociatedLabelsResponse)
@@ -45,7 +44,7 @@ func ReadResourceLabels(k *Client, resourceType string, resourceID string) (map[
 	}
 
 	labelItems := labelsResp.Data
-	labelData := make(map[string]interface{}, 0)
+	labelData := make(map[string]interface{})
 	for _, item := range labelItems {
 		labelData[item.Key] = item.Value
 	}

@@ -1187,8 +1187,8 @@ def import_compliance_checks():
                 original_name = check['name']
 
                 # remove these fields before cloning
-                c.pop('id')
-                c.pop('ct_managed')
+                k.pop('id')
+                k.pop('ct_managed')
 
                 result, clone = clone_resource('compliance_checks', c)
                 if clone:

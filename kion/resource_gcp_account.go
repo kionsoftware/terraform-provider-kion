@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
@@ -240,7 +240,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		// The API doesn't give any indication of when the GCP project has been created.
 		// Instead we'll poll a few times to see if the cached account gets deleted.
 		// TODO: Find a better way to confirm GCP Project was created.
-		createStateConf := &resource.StateChangeConf{
+		createStateConf := &retry.StateChangeConf{
 			Refresh: func() (interface{}, string, error) {
 				resp := new(hc.AccountResponse)
 				err := k.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
@@ -263,7 +263,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			Timeout:                   d.Timeout(schema.TimeoutCreate),
 			ContinuousTargetOccurence: 10,
 		}
-		_, err = createStateConf.WaitForState()
+		_, err = createStateConf.WaitForStateContext(ctx)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

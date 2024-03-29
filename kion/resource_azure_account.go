@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
@@ -341,7 +341,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 		accountCacheId := respCache.RecordID
 
 		// Wait for account to be created
-		createStateConf := &resource.StateChangeConf{
+		createStateConf := &retry.StateChangeConf{
 			Refresh: func() (interface{}, string, error) {
 				resp := new(hc.AccountResponse)
 				err := k.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
@@ -370,7 +370,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			},
 			Timeout: d.Timeout(schema.TimeoutCreate),
 		}
-		_, err = createStateConf.WaitForState()
+		_, err = createStateConf.WaitForStateContext(ctx)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
