@@ -235,7 +235,7 @@ func resourceCloudRule() *schema.Resource {
 
 func resourceCloudRuleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.CloudRuleCreate{
 		AzureArmTemplateDefinitionIds: hc.FlattenGenericIDPointer(d, "azure_arm_template_definitions"),
@@ -298,7 +298,7 @@ func resourceCloudRuleCreate(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.CloudRuleResponse)
@@ -404,7 +404,7 @@ func resourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -600,7 +600,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceCloudRuleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/cloud-rule/%s", ID), nil)

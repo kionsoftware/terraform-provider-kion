@@ -213,11 +213,11 @@ func resourceAzureAccount() *schema.Resource {
 
 func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	accountLocation := getKionAccountLocation(d)
 
-	if _, ok := d.GetOk("subscription_uuid"); ok {
+	if _, oclient := d.GetOk("subscription_uuid"); ok {
 		// Import an existing Azure subscription
 
 		var postAccountData interface{}
@@ -284,7 +284,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 		if v, exists := d.GetOk("csp"); exists {
 			cspSet := v.(*schema.Set)
 			for _, item := range cspSet.List() {
-				if cspMap, ok := item.(map[string]interface{}); ok {
+				if cspMap, oclient := item.(map[string]interface{}); ok {
 					postCacheData.SubscriptionCSPBillingInfo = &hc.SubscriptionCSPBillingInfo{
 						BillingCycle: cspMap["billing_cycle"].(string),
 						OfferID:      cspMap["offer_id"].(string),
@@ -296,7 +296,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 		if v, exists := d.GetOk("ea"); exists {
 			eaSet := v.(*schema.Set)
 			for _, item := range eaSet.List() {
-				if eaMap, ok := item.(map[string]interface{}); ok {
+				if eaMap, oclient := item.(map[string]interface{}); ok {
 					postCacheData.SubscriptionEABillingInfo = &hc.SubscriptionEABillingInfo{
 						BillingAccountNumber: eaMap["billing_account"].(string),
 						EAAccountNumber:      eaMap["account"].(string),
@@ -308,7 +308,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 		if v, exists := d.GetOk("mca"); exists {
 			mcaSet := v.(*schema.Set)
 			for _, item := range mcaSet.List() {
-				if mcaMap, ok := item.(map[string]interface{}); ok {
+				if mcaMap, oclient := item.(map[string]interface{}); ok {
 					postCacheData.SubscriptionMCABillingInfo = &hc.SubscriptionMCABillingInfo{
 						BillingAccountNumber: mcaMap["billing_account"].(string),
 						BillingProfileNumber: mcaMap["billing_profile"].(string),
@@ -346,7 +346,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 				resp := new(hc.AccountResponse)
 				err := k.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
 				if err != nil {
-					if resErr, ok := err.(*hc.RequestError); ok {
+					if resErr, oclient := err.(*hc.RequestError); ok {
 						if resErr.StatusCode == http.StatusNotFound {
 							// StateChangeConf handles 404s differently than errors, so return nil instead of err
 							tflog.Trace(ctx, fmt.Sprintf("Checking new Azure account status: /v3/account-cache/%d not found", accountCacheId))
@@ -409,7 +409,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 
 	// Labels are only supported on project accounts, not cached accounts
 	if accountLocation == ProjectLocation {
-		if _, ok := d.GetOk("labels"); ok {
+		if _, oclient := d.GetOk("labels"); ok {
 			ID := d.Id()
 			err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
@@ -444,18 +444,18 @@ func resourceAzureAccountDelete(ctx context.Context, d *schema.ResourceData, m i
 // Require startDatecode if adding to a new project, unless we are creating the account.
 func validateAzureAccountStartDatecode(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	// if start date is already set, nothing to do
-	if _, ok := d.GetOk("start_datecode"); ok {
+	if _, oclient := d.GetOk("start_datecode"); ok {
 		return nil
 	}
 
 	// if not adding to project, we don't care about start date
-	if _, ok := d.GetOk("project_id"); !ok {
+	if _, oclient := d.GetOk("project_id"); !ok {
 		return nil
 	}
 
 	// if there is no subscription_uuid, then we are are creating a new Subscription and
 	// start date isn't required since it will be set to the current month
-	if _, ok := d.GetOk("subscription_uuid"); !ok {
+	if _, oclient := d.GetOk("subscription_uuid"); !ok {
 		return nil
 	}
 

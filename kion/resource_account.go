@@ -21,7 +21,7 @@ import (
 
 func resourceAccountRead(resource string, ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	// HACK: Special case when importing existing accounts
@@ -117,7 +117,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 
 func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -200,9 +200,9 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			if v, exists := d.GetOk("move_project_settings"); exists {
 				moveSettings := v.(*schema.Set)
 				for _, item := range moveSettings.List() {
-					if moveSettingsMap, ok := item.(map[string]interface{}); ok {
+					if moveSettingsMap, oclient := item.(map[string]interface{}); ok {
 						req.FinancialSetting = moveSettingsMap["financials"].(string)
-						if val, ok := moveSettingsMap["move_datecode"]; ok {
+						if val, oclient := moveSettingsMap["move_datecode"]; ok {
 							req.MoveDate = val.(int)
 						}
 					}
@@ -244,13 +244,13 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		case CacheLocation:
 			accountUrl = fmt.Sprintf("/v3/account-cache/%s", ID)
 			cacheReq := hc.AccountCacheUpdatable{}
-			if v, ok := d.GetOk("name"); ok {
+			if v, oclient := d.GetOk("name"); ok {
 				cacheReq.Name = v.(string)
 			}
-			if v, ok := d.GetOk("email"); ok {
+			if v, oclient := d.GetOk("email"); ok {
 				cacheReq.AccountEmail = v.(string)
 			}
-			if v, ok := d.GetOk("linked_role"); ok {
+			if v, oclient := d.GetOk("linked_role"); ok {
 				cacheReq.LinkedRole = v.(string)
 			}
 			cacheReq.IncludeLinkedAccountSpend = hc.OptionalBool(d, "include_linked_account_spend")
@@ -261,16 +261,16 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		default:
 			accountUrl = fmt.Sprintf("/v3/account/%s", ID)
 			accountReq := hc.AccountUpdatable{}
-			if v, ok := d.GetOk("name"); ok {
+			if v, oclient := d.GetOk("name"); ok {
 				accountReq.Name = v.(string)
 			}
-			if v, ok := d.GetOk("email"); ok {
+			if v, oclient := d.GetOk("email"); ok {
 				accountReq.AccountEmail = v.(string)
 			}
-			if v, ok := d.GetOk("linked_role"); ok {
+			if v, oclient := d.GetOk("linked_role"); ok {
 				accountReq.LinkedRole = v.(string)
 			}
-			if v, ok := d.GetOk("start_datecode"); ok {
+			if v, oclient := d.GetOk("start_datecode"); ok {
 				accountReq.StartDatecode = v.(string)
 			}
 			accountReq.IncludeLinkedAccountSpend = hc.OptionalBool(d, "include_linked_account_spend")
@@ -314,7 +314,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	accountLocation := getKionAccountLocation(d)

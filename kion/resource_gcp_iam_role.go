@@ -94,7 +94,7 @@ func resourceGcpIamRole() *schema.Resource {
 
 func resourceGcpIamRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.GCPRoleCreate{
 		Name:               d.Get("name").(string),
@@ -131,7 +131,7 @@ func resourceGcpIamRoleCreate(ctx context.Context, d *schema.ResourceData, m int
 
 func resourceGcpIamRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.GCPRoleResponseWithOwners)
@@ -177,7 +177,7 @@ func resourceGcpIamRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 
 func resourceGcpIamRoleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -259,7 +259,7 @@ func resourceGcpIamRoleUpdate(ctx context.Context, d *schema.ResourceData, m int
 
 func resourceGcpIamRoleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/gcp-iam-role/%s", ID), nil)

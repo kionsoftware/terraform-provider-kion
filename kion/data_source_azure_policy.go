@@ -107,7 +107,7 @@ func dataSourceAzurePolicy() *schema.Resource {
 
 func dataSourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	resp := new(hc.AzurePolicyListResponse)
 	err := k.GET("/v3/azure-policy", resp)

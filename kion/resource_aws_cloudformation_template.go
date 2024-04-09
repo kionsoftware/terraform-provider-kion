@@ -104,7 +104,7 @@ func resourceAwsCloudformationTemplate() *schema.Resource {
 
 func resourceAwsCloudformationTemplateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.CFTCreate{
 		Description:           d.Get("description").(string),
@@ -146,7 +146,7 @@ func resourceAwsCloudformationTemplateCreate(ctx context.Context, d *schema.Reso
 
 func resourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.CFTResponseWithOwnersAndTags)
@@ -194,7 +194,7 @@ func resourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.Resour
 
 func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -285,7 +285,7 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 
 func resourceAwsCloudformationTemplateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/cft/%s", ID), nil)

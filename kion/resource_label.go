@@ -50,7 +50,7 @@ func resourceLabel() *schema.Resource {
 
 func resourceLabelCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.LabelCreate{
 		Color: d.Get("color").(string),
@@ -84,7 +84,7 @@ func resourceLabelCreate(ctx context.Context, d *schema.ResourceData, m interfac
 
 func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.LabelResponse)
@@ -108,7 +108,7 @@ func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{
 
 func resourceLabelUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -139,7 +139,7 @@ func resourceLabelUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 
 func resourceLabelDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/label/%s", ID), nil)

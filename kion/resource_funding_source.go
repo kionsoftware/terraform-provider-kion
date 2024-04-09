@@ -99,7 +99,7 @@ func resourceFundingSource() *schema.Resource {
 
 func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.FundingSourceCreate{
 		Amount:             d.Get("amount").(int),
@@ -153,7 +153,7 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 
 func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.FundingSourceResponse)
@@ -236,7 +236,7 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -327,7 +327,7 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 func resourceFundingSourceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/funding-source/%s", ID), nil)

@@ -134,7 +134,7 @@ func resourceComplianceCheck() *schema.Resource {
 
 func resourceComplianceCheckCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.ComplianceCheckCreate{
 		AzurePolicyID:         hc.FlattenIntPointer(d, "azure_policy_id"),
@@ -180,7 +180,7 @@ func resourceComplianceCheckCreate(ctx context.Context, d *schema.ResourceData, 
 
 func resourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ComplianceCheckWithOwnersResponse)
@@ -239,7 +239,7 @@ func resourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, m 
 
 func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -336,7 +336,7 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 
 func resourceComplianceCheckDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/compliance/check/%s", ID), nil)

@@ -107,7 +107,7 @@ func dataServiceControlPolicy() *schema.Resource {
 
 func dataSourceService_control_policyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	resp := new(hc.ServiceControlPolicyListResponse)
 	err := k.GET("/v3/service-control-policy", resp)

@@ -209,17 +209,17 @@ func resourceAwsAccount() *schema.Resource {
 
 func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	accountLocation := getKionAccountLocation(d)
 
-	if _, ok := d.GetOk("account_number"); ok {
+	if _, oclient := d.GetOk("account_number"); ok {
 		// Import an existing AWS account
 
 		// Default to AWS commercial if not otherwise set
 		// TODO: Why is this required for cache import, but not project import??
 		accountTypeId := int(hc.AWSStandard)
-		if v, ok := d.GetOk("account_type_id"); ok {
+		if v, oclient := d.GetOk("account_type_id"); ok {
 			accountTypeId = v.(int)
 		}
 
@@ -321,7 +321,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 	// Labels are only supported on project accounts, not cached accounts
 	if accountLocation == ProjectLocation {
-		if _, ok := d.GetOk("labels"); ok {
+		if _, oclient := d.GetOk("labels"); ok {
 			ID := d.Id()
 			err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
@@ -402,7 +402,7 @@ func populateOrgUnitFromResourceData(k *hc.Client, postCacheData *hc.AccountCach
 	if v, exists := d.GetOk("aws_organizational_unit"); exists {
 		orgUnitSet := v.(*schema.Set)
 		for _, item := range orgUnitSet.List() {
-			orgUnitMap, ok := item.(map[string]interface{})
+			orgUnitMap, oclient := item.(map[string]interface{})
 			if !ok {
 				return fmt.Errorf("invalid format for aws_organizational_unit")
 			}
@@ -480,18 +480,18 @@ func resourceAwsAccountDelete(ctx context.Context, d *schema.ResourceData, m int
 // Require startDatecode if adding to a new project, unless we are creating the account.
 func validateAwsAccountStartDatecode(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	// if start date is already set, nothing to do
-	if _, ok := d.GetOk("start_datecode"); ok {
+	if _, oclient := d.GetOk("start_datecode"); ok {
 		return nil
 	}
 
 	// if not adding to project, we don't care about start date
-	if _, ok := d.GetOk("project_id"); !ok {
+	if _, oclient := d.GetOk("project_id"); !ok {
 		return nil
 	}
 
 	// if there is no account_number, then we are are creating a new Account and
 	// start date isn't required since it will be set to the current month
-	if _, ok := d.GetOk("account_number"); !ok {
+	if _, oclient := d.GetOk("account_number"); !ok {
 		return nil
 	}
 

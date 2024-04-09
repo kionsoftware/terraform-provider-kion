@@ -93,7 +93,7 @@ func resourceAzureRole() *schema.Resource {
 
 func resourceAzureRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.AzureRoleCreate{
 		Description:       d.Get("description").(string),
@@ -129,7 +129,7 @@ func resourceAzureRoleCreate(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceAzureRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.AzureRoleResponse)
@@ -173,7 +173,7 @@ func resourceAzureRoleRead(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -252,7 +252,7 @@ func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceAzureRoleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/azure-role/%s", ID), nil)

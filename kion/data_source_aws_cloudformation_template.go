@@ -121,7 +121,7 @@ func dataSourceAwsCloudformationTemplate() *schema.Resource {
 
 func dataSourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	resp := new(hc.CFTListResponseWithOwnersAndTags)
 	err := k.GET("/v3/cft", resp)

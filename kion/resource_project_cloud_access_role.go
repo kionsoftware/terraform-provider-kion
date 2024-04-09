@@ -146,7 +146,7 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 
 func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.ProjectCloudAccessRoleCreate{
 		AccountIds:                hc.FlattenGenericIDPointer(d, "accounts"),
@@ -192,7 +192,7 @@ func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.Resourc
 
 func resourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ProjectCloudAccessRoleResponse)
@@ -252,7 +252,7 @@ func resourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.ResourceD
 
 func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -361,7 +361,7 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 
 func resourceProjectCloudAccessRoleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), nil)

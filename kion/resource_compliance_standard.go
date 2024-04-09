@@ -98,7 +98,7 @@ func resourceComplianceStandard() *schema.Resource {
 
 func resourceComplianceStandardCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.ComplianceStandardCreate{
 		ComplianceCheckIds: hc.FlattenGenericIDPointer(d, "compliance_checks"),
@@ -135,7 +135,7 @@ func resourceComplianceStandardCreate(ctx context.Context, d *schema.ResourceDat
 
 func resourceComplianceStandardRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ComplianceStandardResponse)
@@ -182,7 +182,7 @@ func resourceComplianceStandardRead(ctx context.Context, d *schema.ResourceData,
 
 func resourceComplianceStandardUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -293,7 +293,7 @@ func resourceComplianceStandardUpdate(ctx context.Context, d *schema.ResourceDat
 
 func resourceComplianceStandardDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/compliance/standard/%s", ID), nil)

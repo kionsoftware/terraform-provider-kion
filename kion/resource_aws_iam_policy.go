@@ -94,7 +94,7 @@ func resourceAwsIamPolicy() *schema.Resource {
 
 func resourceAwsIamPolicyCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.IAMPolicyCreate{
 		AwsIamPath:        d.Get("aws_iam_path").(string),
@@ -131,7 +131,7 @@ func resourceAwsIamPolicyCreate(ctx context.Context, d *schema.ResourceData, m i
 
 func resourceAwsIamPolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.IAMPolicyResponse)
@@ -177,7 +177,7 @@ func resourceAwsIamPolicyRead(ctx context.Context, d *schema.ResourceData, m int
 
 func resourceAwsIamPolicyUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -256,7 +256,7 @@ func resourceAwsIamPolicyUpdate(ctx context.Context, d *schema.ResourceData, m i
 
 func resourceAwsIamPolicyDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/iam-policy/%s", ID), nil)

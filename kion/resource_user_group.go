@@ -97,7 +97,7 @@ func resourceUserGroup() *schema.Resource {
 
 func resourceUserGroupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.UGroupCreate{
 		Description:       d.Get("description").(string),
@@ -134,7 +134,7 @@ func resourceUserGroupCreate(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceUserGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.UGroupResponse)
@@ -181,7 +181,7 @@ func resourceUserGroupRead(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceUserGroupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -290,7 +290,7 @@ func resourceUserGroupUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceUserGroupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/user-group/%s", ID), nil)

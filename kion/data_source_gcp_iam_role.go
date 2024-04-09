@@ -112,7 +112,7 @@ func dataSourceGcpIamRole() *schema.Resource {
 
 func dataSourceGcpIamRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	resp := new(hc.GCPRoleListResponseWithOwners)
 	err := k.GET("/v3/gcp-iam-role", resp)

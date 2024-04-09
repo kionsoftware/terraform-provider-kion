@@ -142,7 +142,7 @@ func testAccOUCheckResourceDestroy(s *terraform.State) error {
 		return nil
 	}
 
-	k := meta.(*hc.Client)
+	client := meta.(*hc.Client)
 
 	// loop through the resources in state, verifying each resource is destroyed
 	for _, rs := range s.RootModule().Resources {

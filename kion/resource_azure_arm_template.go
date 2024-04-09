@@ -104,7 +104,7 @@ func resourceAzureArmTemplate() *schema.Resource {
 
 func resourceAzureArmTemplateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.AzureARMTemplateDefinitionCreate{
 		DeploymentMode:        d.Get("deployment_mode").(int),
@@ -144,7 +144,7 @@ func resourceAzureArmTemplateCreate(ctx context.Context, d *schema.ResourceData,
 
 func resourceAzureArmTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.AzureARMTemplateResponse)
@@ -192,7 +192,7 @@ func resourceAzureArmTemplateRead(ctx context.Context, d *schema.ResourceData, m
 
 func resourceAzureArmTemplateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -275,7 +275,7 @@ func resourceAzureArmTemplateUpdate(ctx context.Context, d *schema.ResourceData,
 
 func resourceAzureArmTemplateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/azure-arm-template/%s", ID), nil)

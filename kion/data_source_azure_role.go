@@ -103,7 +103,7 @@ func dataSourceAzureRole() *schema.Resource {
 
 func dataSourceAzureRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	resp := new(hc.AzureRoleListResponse)
 	err := k.GET("/v3/azure-role", resp)

@@ -198,7 +198,7 @@ func resourceProject() *schema.Resource {
 
 func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.ProjectCreate{
 		AutoPay:            d.Get("auto_pay").(bool),
@@ -325,7 +325,7 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ProjectResponse)
@@ -386,7 +386,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -472,7 +472,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceProjectDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/project/%s", ID), nil)

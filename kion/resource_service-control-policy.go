@@ -89,7 +89,7 @@ func resourceServiceControlPolicy() *schema.Resource {
 
 func resourceServiceControlPolicyCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.ServiceControlPolicyCreate{
 		Description:       d.Get("description").(string),
@@ -125,7 +125,7 @@ func resourceServiceControlPolicyCreate(ctx context.Context, d *schema.ResourceD
 
 func resourceServiceControlPolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ServiceControlPolicyResponse)
@@ -170,7 +170,7 @@ func resourceServiceControlPolicyRead(ctx context.Context, d *schema.ResourceDat
 
 func resourceServiceControlPolicyUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -249,7 +249,7 @@ func resourceServiceControlPolicyUpdate(ctx context.Context, d *schema.ResourceD
 
 func resourceServiceControlPolicyDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/service-control-policy/%s", ID), nil)

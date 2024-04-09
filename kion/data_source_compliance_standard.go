@@ -79,7 +79,7 @@ func dataSourceComplianceStandard() *schema.Resource {
 
 func dataSourceComplianceStandardRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	resp := new(hc.ComplianceStandardListResponse)
 	err := k.GET("/v3/compliance/standard", resp)

@@ -92,7 +92,7 @@ func resourceOU() *schema.Resource {
 
 func resourceOUCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.OUCreate{
 		Description:        d.Get("description").(string),
@@ -143,7 +143,7 @@ func resourceOUCreate(ctx context.Context, d *schema.ResourceData, m interface{}
 
 func resourceOURead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.OUResponse)
@@ -209,7 +209,7 @@ func resourceOURead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -310,7 +310,7 @@ func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 
 func resourceOUDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v2/ou/%s", ID), nil)

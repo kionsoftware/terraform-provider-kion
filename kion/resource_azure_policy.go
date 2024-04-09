@@ -89,7 +89,7 @@ func resourceAzurePolicy() *schema.Resource {
 
 func resourceAzurePolicyCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.AzurePolicyCreate{
 		OwnerUserGroups: hc.FlattenGenericIDPointer(d, "owner_user_groups"),
@@ -122,7 +122,7 @@ func resourceAzurePolicyCreate(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.AzurePolicyResponse)
@@ -167,7 +167,7 @@ func resourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -248,7 +248,7 @@ func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceAzurePolicyDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/azure-policy/%s", ID), nil)

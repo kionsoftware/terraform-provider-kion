@@ -147,7 +147,7 @@ func resourceGcpAccount() *schema.Resource {
 
 func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	accountLocation := getKionAccountLocation(d)
 
@@ -245,7 +245,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 				resp := new(hc.AccountResponse)
 				err := k.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
 				if err != nil {
-					if resErr, ok := err.(*hc.RequestError); ok {
+					if resErr, oclient := err.(*hc.RequestError); ok {
 						if resErr.StatusCode == http.StatusNotFound {
 							// StateChangeConf handles 404s differently than errors, so return nil instead of err
 							tflog.Trace(ctx, fmt.Sprintf("Checking new GCP account status: /v3/account-cache/%d not found", accountCacheId))
@@ -302,7 +302,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 	// Labels are only supported on project accounts, not cached accounts
 	if accountLocation == ProjectLocation {
-		if _, ok := d.GetOk("labels"); ok {
+		if _, oclient := d.GetOk("labels"); ok {
 			ID := d.Id()
 			err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
@@ -338,12 +338,12 @@ func resourceGcpAccountDelete(ctx context.Context, d *schema.ResourceData, m int
 func validateGcpAccountStartDatecode(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 
 	// if start date is already set, nothing to do
-	if _, ok := d.GetOk("start_datecode"); ok {
+	if _, oclient := d.GetOk("start_datecode"); ok {
 		return nil
 	}
 
 	// if not adding to project, we don't care about start date
-	if _, ok := d.GetOk("project_id"); !ok {
+	if _, oclient := d.GetOk("project_id"); !ok {
 		return nil
 	}
 

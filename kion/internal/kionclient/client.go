@@ -44,7 +44,7 @@ func NewClient(kionURL string, kionAPIKey string, kionAPIPath string, skipSSLVal
 	customTransport := http.DefaultTransport.(*http.Transport).Clone()
 	customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: skipSSLValidation}
 
-	k := Client{
+	client := Client{
 		HTTPClient: &http.Client{
 			Transport: customTransport,
 		},

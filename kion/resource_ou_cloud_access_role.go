@@ -120,7 +120,7 @@ func resourceOUCloudAccessRole() *schema.Resource {
 
 func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.OUCloudAccessRoleCreate{
 		AwsIamPath:                d.Get("aws_iam_path").(string),
@@ -163,7 +163,7 @@ func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData
 
 func resourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.OUCloudAccessRoleResponse)
@@ -218,7 +218,7 @@ func resourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, 
 
 func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -317,7 +317,7 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 
 func resourceOUCloudAccessRoleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	k := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := k.DELETE(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), nil)
