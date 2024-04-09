@@ -1,9 +1,8 @@
-package ctclient
+package kionclient
 
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -125,8 +124,4 @@ func (f *Filter) DeepMatch(keys []string, m map[string]interface{}, filterValue 
 	}
 
 	return false, nil
-}
-
-func isZero(v reflect.Value) bool {
-	return !v.IsValid() || reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }

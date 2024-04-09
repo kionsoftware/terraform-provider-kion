@@ -73,3 +73,7 @@ test:
 
 testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
+
+vet:
+	go vet $(TEST)
+	staticcheck $(TEST)

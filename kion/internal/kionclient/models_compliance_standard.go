@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // ComplianceStandardListResponse for: GET /api/v3/compliance/standard
 type ComplianceStandardListResponse struct {

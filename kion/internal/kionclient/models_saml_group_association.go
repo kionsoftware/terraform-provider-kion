@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // GroupAssociationListResponse for: GET /api/v3/idms/{id}/group-association
 type GroupAssociationListResponse struct {

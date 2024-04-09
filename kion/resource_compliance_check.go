@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceComplianceCheck() *schema.Resource {
@@ -134,7 +134,7 @@ func resourceComplianceCheck() *schema.Resource {
 
 func resourceComplianceCheckCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.ComplianceCheckCreate{
 		AzurePolicyID:         hc.FlattenIntPointer(d, "azure_policy_id"),
@@ -154,7 +154,7 @@ func resourceComplianceCheckCreate(ctx context.Context, d *schema.ResourceData, 
 		SeverityTypeID:        hc.FlattenIntPointer(d, "severity_type_id"),
 	}
 
-	resp, err := c.POST("/v3/compliance/check", post)
+	resp, err := client.POST("/v3/compliance/check", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -180,11 +180,11 @@ func resourceComplianceCheckCreate(ctx context.Context, d *schema.ResourceData, 
 
 func resourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ComplianceCheckWithOwnersResponse)
-	err := c.GET(fmt.Sprintf("/v3/compliance/check/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/compliance/check/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -239,7 +239,7 @@ func resourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, m 
 
 func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -276,7 +276,7 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 			SeverityTypeID:        hc.FlattenIntPointer(d, "severity_type_id"),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/compliance/check/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/compliance/check/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -296,7 +296,7 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/compliance/check/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/compliance/check/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -312,7 +312,7 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/compliance/check/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/compliance/check/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -336,10 +336,10 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 
 func resourceComplianceCheckDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/compliance/check/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/compliance/check/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 import (
 	"fmt"
@@ -251,31 +251,17 @@ func FieldsChanged(iOld interface{}, iNew interface{}, fields []string) (map[str
 }
 
 func OptionalBool(d *schema.ResourceData, fieldname string) *bool {
-	b, ok := d.GetOkExists(fieldname)
-	if !ok {
-		return nil
+	if v, ok := d.Get(fieldname).(bool); ok {
+		return &v
 	}
-
-	ret, ok := b.(bool)
-	if !ok {
-		return nil
-	}
-
-	return &ret
+	return nil
 }
 
 func OptionalInt(d *schema.ResourceData, fieldname string) *int {
-	v, ok := d.GetOkExists(fieldname)
-	if !ok {
-		return nil
+	if v, ok := d.Get(fieldname).(int); ok {
+		return &v
 	}
-
-	ret, ok := v.(int)
-	if !ok {
-		return nil
-	}
-
-	return &ret
+	return nil
 }
 
 // AssociationChanged returns arrays of which values to change.

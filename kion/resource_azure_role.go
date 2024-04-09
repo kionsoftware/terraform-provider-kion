@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceAzureRole() *schema.Resource {
@@ -93,7 +93,7 @@ func resourceAzureRole() *schema.Resource {
 
 func resourceAzureRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.AzureRoleCreate{
 		Description:       d.Get("description").(string),
@@ -103,7 +103,7 @@ func resourceAzureRoleCreate(ctx context.Context, d *schema.ResourceData, m inte
 		RolePermissions:   d.Get("role_permissions").(string),
 	}
 
-	resp, err := c.POST("/v3/azure-role", post)
+	resp, err := client.POST("/v3/azure-role", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -129,11 +129,11 @@ func resourceAzureRoleCreate(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceAzureRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.AzureRoleResponse)
-	err := c.GET(fmt.Sprintf("/v3/azure-role/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/azure-role/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -173,7 +173,7 @@ func resourceAzureRoleRead(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -192,7 +192,7 @@ func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 			RolePermissions: d.Get("role_permissions").(string),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/azure-role/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/azure-role/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -212,7 +212,7 @@ func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/azure-role/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/azure-role/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -228,7 +228,7 @@ func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/azure-role/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/azure-role/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -252,10 +252,10 @@ func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceAzureRoleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/azure-role/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/azure-role/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

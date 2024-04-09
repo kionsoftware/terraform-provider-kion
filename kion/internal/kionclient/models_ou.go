@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // OUListResponse for: GET /api/v3/ou
 type OUListResponse struct {

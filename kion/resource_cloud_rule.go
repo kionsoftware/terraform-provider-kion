@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceCloudRule() *schema.Resource {
@@ -235,7 +235,7 @@ func resourceCloudRule() *schema.Resource {
 
 func resourceCloudRuleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.CloudRuleCreate{
 		AzureArmTemplateDefinitionIds: hc.FlattenGenericIDPointer(d, "azure_arm_template_definitions"),
@@ -258,7 +258,7 @@ func resourceCloudRuleCreate(ctx context.Context, d *schema.ResourceData, m inte
 		ServiceControlPolicyIds:       hc.FlattenGenericIDPointer(d, "service_control_policies"),
 	}
 
-	resp, err := c.POST("/v3/cloud-rule", post)
+	resp, err := client.POST("/v3/cloud-rule", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -279,7 +279,7 @@ func resourceCloudRuleCreate(ctx context.Context, d *schema.ResourceData, m inte
 
 	if d.Get("labels") != nil {
 		ID := d.Id()
-		err = hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "cloud-rule", ID)
+		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "cloud-rule", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -298,11 +298,11 @@ func resourceCloudRuleCreate(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.CloudRuleResponse)
-	err := c.GET(fmt.Sprintf("/v3/cloud-rule/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/cloud-rule/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -378,7 +378,7 @@ func resourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	// Fetch labels
-	labelData, err := hc.ReadResourceLabels(c, "cloud-rule", ID)
+	labelData, err := hc.ReadResourceLabels(client, "cloud-rule", ID)
 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -404,7 +404,7 @@ func resourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m interf
 
 func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -425,7 +425,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 			PreWebhookID:  hc.FlattenIntPointer(d, "pre_webhook_id"),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/cloud-rule/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/cloud-rule/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -475,7 +475,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 			len(arrAddOUIds) > 0 ||
 			len(arrAddProjectIds) > 0 ||
 			len(arrAddServiceControlPolicyIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/cloud-rule/%s/association", ID), hc.CloudRuleAssociationsAdd{
+			_, err := client.POST(fmt.Sprintf("/v3/cloud-rule/%s/association", ID), hc.CloudRuleAssociationsAdd{
 				AzureArmTemplateDefinitionIds: &arrAddAzureArmTemplateDefinitionIds,
 				AzurePolicyDefinitionIds:      &arrAddAzurePolicyDefinitionIds,
 				AzureRoleDefinitionIds:        &arrAddAzureRoleDefinitionIds,
@@ -511,7 +511,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 			len(arrRemoveOUIds) > 0 ||
 			len(arrRemoveProjectIds) > 0 ||
 			len(arrRemoveServiceControlPolicyIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/cloud-rule/%s/association", ID), hc.CloudRuleAssociationsRemove{
+			err := client.DELETE(fmt.Sprintf("/v3/cloud-rule/%s/association", ID), hc.CloudRuleAssociationsRemove{
 				AzureArmTemplateDefinitionIds: &arrRemoveAzureArmTemplateDefinitionIds,
 				AzurePolicyDefinitionIds:      &arrRemoveAzurePolicyDefinitionIds,
 				AzureRoleDefinitionIds:        &arrRemoveAzureRoleDefinitionIds,
@@ -545,7 +545,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/cloud-rule/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/cloud-rule/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -561,7 +561,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/cloud-rule/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/cloud-rule/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -579,7 +579,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 	if d.HasChanges("labels") {
 		hasChanged++
 
-		err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "cloud-rule", ID)
+		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "cloud-rule", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -600,10 +600,10 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceCloudRuleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/cloud-rule/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/cloud-rule/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

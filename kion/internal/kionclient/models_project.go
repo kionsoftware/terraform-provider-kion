@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // ProjectListResponse for: GET /api/v3/project
 type ProjectListResponse struct {

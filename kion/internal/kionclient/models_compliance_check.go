@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // ComplianceCheckListResponse for: GET /api/v3/compliance/check
 type ComplianceCheckListResponse struct {

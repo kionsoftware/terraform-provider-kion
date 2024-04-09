@@ -1,4 +1,4 @@
-package ctclient
+package kionclient
 
 // CODEGENGetAllResponse -
 type CODEGENGetAllResponse struct{}

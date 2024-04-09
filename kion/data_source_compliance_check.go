@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func dataSourceComplianceCheck() *schema.Resource {
@@ -126,10 +126,10 @@ func dataSourceComplianceCheck() *schema.Resource {
 
 func dataSourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	resp := new(hc.ComplianceCheckListResponse)
-	err := c.GET("/v3/compliance/check", resp)
+	err := client.GET("/v3/compliance/check", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

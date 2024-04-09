@@ -727,11 +727,11 @@ data "kion_aws_iam_policy" "p1" {
 output "policy_access" {
   value = {
     # Loop through each policy
-    for c in data.kion_aws_iam_policy.p1.list :
+    for k in data.kion_aws_iam_policy.p1.list :
     # Create a map with a key of: id
-    c.id => c
+    k.id => k
     # Filter out an names that don't match the passed in variable
-    if c.name == "SystemReadOnlyAccess"
+    if k.name == "SystemReadOnlyAccess"
   }
 }
 ```
