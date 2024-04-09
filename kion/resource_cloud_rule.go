@@ -424,9 +424,15 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
+
 	hasChanged := 0
 
+	// Determine if the attributes that are updatable are changed.
+	// Leave out fields that are not allowed to be changed like
+	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
+	// schema instead.
 	if d.HasChanges("description", "name", "post_webhook_id", "pre_webhook_id") {
+		hasChanged++
 		// Common attributes update
 		req := hc.CloudRuleUpdate{
 			Description:   d.Get("description").(string),
@@ -445,7 +451,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 	// AWS CloudFormation templates update
 	if d.HasChange("aws_cloudformation_templates") {
-		newCftIDs := extractTemplateIDs(d, "aws_cloudformation_templates")
+		newCftIDs := extractCFTandARMTemplateIDs(d, "aws_cloudformation_templates")
 		if len(newCftIDs) > 0 {
 			if err := updateCFTandARMTemplateAssociations(client, ID, newCftIDs, "CFT"); err != nil {
 				return append(diags, err...)
@@ -455,7 +461,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 	// Azure ARM templates update
 	if d.HasChange("azure_arm_template_definitions") {
-		newArmTemplateIDs := extractTemplateIDs(d, "azure_arm_template_definitions")
+		newArmTemplateIDs := extractCFTandARMTemplateIDs(d, "azure_arm_template_definitions")
 		if len(newArmTemplateIDs) > 0 {
 			if err := updateCFTandARMTemplateAssociations(client, ID, newArmTemplateIDs, "ARM"); err != nil {
 				return append(diags, err...)
@@ -645,7 +651,7 @@ func resourceCloudRuleDelete(ctx context.Context, d *schema.ResourceData, m inte
 	return diags
 }
 
-func extractTemplateIDs(d *schema.ResourceData, key string) []int {
+func extractCFTandARMTemplateIDs(d *schema.ResourceData, key string) []int {
 	ids := []int{}
 	if v, ok := d.GetOk(key); ok {
 		for _, v := range v.([]interface{}) {
