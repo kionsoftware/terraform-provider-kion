@@ -115,7 +115,7 @@ func dataSourceGcpIamRoleRead(ctx context.Context, d *schema.ResourceData, m int
 	client := m.(*hc.Client)
 
 	resp := new(hc.GCPRoleListResponseWithOwners)
-	err := k.GET("/v3/gcp-iam-role", resp)
+	err := client.GET("/v3/gcp-iam-role", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

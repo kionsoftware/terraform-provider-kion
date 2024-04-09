@@ -166,7 +166,7 @@ func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.Resourc
 		WebAccess:                 d.Get("web_access").(bool),
 	}
 
-	resp, err := k.POST("/v3/project-cloud-access-role", post)
+	resp, err := client.POST("/v3/project-cloud-access-role", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -196,7 +196,7 @@ func resourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.ResourceD
 	ID := d.Id()
 
 	resp := new(hc.ProjectCloudAccessRoleResponse)
-	err := k.GET(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -277,7 +277,7 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 			WebAccess:           d.Get("web_access").(bool),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -309,7 +309,7 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 			len(arrAddAzureRoleDefinitions) > 0 ||
 			len(arrAddUserGroupIds) > 0 ||
 			len(arrAddUserIds) > 0 {
-			_, err := k.POST(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), hc.ProjectCloudAccessRoleAssociationsAdd{
+			_, err := client.POST(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), hc.ProjectCloudAccessRoleAssociationsAdd{
 				AccountIds:                &arrAddAccountIds,
 				AwsIamPermissionsBoundary: arrAddAwsIamPermissionsBoundary,
 				AwsIamPolicies:            &arrAddAwsIamPolicies,
@@ -333,7 +333,7 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 			len(arrRemoveAzureRoleDefinitions) > 0 ||
 			len(arrRemoveUserGroupIds) > 0 ||
 			len(arrRemoveUserIds) > 0 {
-			err := k.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), hc.ProjectCloudAccessRoleAssociationsRemove{
+			err := client.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), hc.ProjectCloudAccessRoleAssociationsRemove{
 				AccountIds:                &arrRemoveAccountIds,
 				AwsIamPermissionsBoundary: arrRemoveAwsIamPermissionsBoundary,
 				AwsIamPolicies:            &arrRemoveAwsIamPolicies,
@@ -364,7 +364,7 @@ func resourceProjectCloudAccessRoleDelete(ctx context.Context, d *schema.Resourc
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

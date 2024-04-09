@@ -110,7 +110,7 @@ func dataSourceService_control_policyRead(ctx context.Context, d *schema.Resourc
 	client := m.(*hc.Client)
 
 	resp := new(hc.ServiceControlPolicyListResponse)
-	err := k.GET("/v3/service-control-policy", resp)
+	err := client.GET("/v3/service-control-policy", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

@@ -82,7 +82,7 @@ func dataSourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m 
 	client := m.(*hc.Client)
 
 	resp := new(hc.FundingSourceListResponse)
-	err := k.GET("/v3/funding-source", resp)
+	err := client.GET("/v3/funding-source", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

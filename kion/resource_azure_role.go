@@ -103,7 +103,7 @@ func resourceAzureRoleCreate(ctx context.Context, d *schema.ResourceData, m inte
 		RolePermissions:   d.Get("role_permissions").(string),
 	}
 
-	resp, err := k.POST("/v3/azure-role", post)
+	resp, err := client.POST("/v3/azure-role", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -133,7 +133,7 @@ func resourceAzureRoleRead(ctx context.Context, d *schema.ResourceData, m interf
 	ID := d.Id()
 
 	resp := new(hc.AzureRoleResponse)
-	err := k.GET(fmt.Sprintf("/v3/azure-role/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/azure-role/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -192,7 +192,7 @@ func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 			RolePermissions: d.Get("role_permissions").(string),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/azure-role/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/azure-role/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -212,7 +212,7 @@ func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := k.POST(fmt.Sprintf("/v3/azure-role/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/azure-role/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -228,7 +228,7 @@ func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := k.DELETE(fmt.Sprintf("/v3/azure-role/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/azure-role/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -255,7 +255,7 @@ func resourceAzureRoleDelete(ctx context.Context, d *schema.ResourceData, m inte
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/azure-role/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/azure-role/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

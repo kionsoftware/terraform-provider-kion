@@ -86,7 +86,7 @@ func dataSourceSamlGroupAssociationRead(ctx context.Context, d *schema.ResourceD
 	client := m.(*hc.Client)
 
 	resp := new(hc.GroupAssociationListResponse)
-	err := k.GET("/v3/idms/{id}/group-association", resp)
+	err := client.GET("/v3/idms/{id}/group-association", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

@@ -154,7 +154,7 @@ func resourceComplianceCheckCreate(ctx context.Context, d *schema.ResourceData, 
 		SeverityTypeID:        hc.FlattenIntPointer(d, "severity_type_id"),
 	}
 
-	resp, err := k.POST("/v3/compliance/check", post)
+	resp, err := client.POST("/v3/compliance/check", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -184,7 +184,7 @@ func resourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, m 
 	ID := d.Id()
 
 	resp := new(hc.ComplianceCheckWithOwnersResponse)
-	err := k.GET(fmt.Sprintf("/v3/compliance/check/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/compliance/check/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -276,7 +276,7 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 			SeverityTypeID:        hc.FlattenIntPointer(d, "severity_type_id"),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/compliance/check/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/compliance/check/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -296,7 +296,7 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := k.POST(fmt.Sprintf("/v3/compliance/check/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/compliance/check/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -312,7 +312,7 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := k.DELETE(fmt.Sprintf("/v3/compliance/check/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/compliance/check/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -339,7 +339,7 @@ func resourceComplianceCheckDelete(ctx context.Context, d *schema.ResourceData, 
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/compliance/check/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/compliance/check/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

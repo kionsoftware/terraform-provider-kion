@@ -6,7 +6,7 @@ import (
 
 var supportedResourceTypes = []string{"account", "cloud-rule", "funding-source", "ou", "project"}
 
-func PutAppLabelIDs(k *Client, labels *[]AssociateLabel, resourceType string, resourceID string) error {
+func PutAppLabelIDs(client *Client, labels *[]AssociateLabel, resourceType string, resourceID string) error {
 	if !IsSupportedResourceType(resourceType) {
 		return fmt.Errorf("Error: %v", "Unsupported resource type for labels")
 	}
@@ -15,7 +15,7 @@ func PutAppLabelIDs(k *Client, labels *[]AssociateLabel, resourceType string, re
 		Labels: labels,
 	}
 
-	err := k.PUT(fmt.Sprintf("/v3/%s/%s/labels", resourceType, resourceID), req)
+	err := client.PUT(fmt.Sprintf("/v3/%s/%s/labels", resourceType, resourceID), req)
 	if err != nil {
 		return fmt.Errorf("Error: %v", err)
 	}
@@ -32,13 +32,13 @@ func IsSupportedResourceType(resourceType string) bool {
 	return false
 }
 
-func ReadResourceLabels(k *Client, resourceType string, resourceID string) (map[string]interface{}, error) {
+func ReadResourceLabels(client *Client, resourceType string, resourceID string) (map[string]interface{}, error) {
 	if !IsSupportedResourceType(resourceType) {
 		return nil, fmt.Errorf("Error: %v", "Unsupported resource type for labels")
 	}
 
 	labelsResp := new(AssociatedLabelsResponse)
-	err := k.GET(fmt.Sprintf("/v3/%s/%s/labels", resourceType, resourceID), labelsResp)
+	err := client.GET(fmt.Sprintf("/v3/%s/%s/labels", resourceType, resourceID), labelsResp)
 	if err != nil {
 		return nil, err
 	}

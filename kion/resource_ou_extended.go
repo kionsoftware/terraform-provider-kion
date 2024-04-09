@@ -9,7 +9,7 @@ import (
 )
 
 // OUChanges allows moving an OU if the parent ID changes and updating permissions.
-func OUChanges(k *hc.Client, d *schema.ResourceData, diags diag.Diagnostics, hasChanged int) (diag.Diagnostics, int) {
+func OUChanges(client *hc.Client, d *schema.ResourceData, diags diag.Diagnostics, hasChanged int) (diag.Diagnostics, int) {
 	// Handle OU move.
 	if d.HasChanges("parent_ou_id") {
 		hasChanged++
@@ -22,7 +22,7 @@ func OUChanges(k *hc.Client, d *schema.ResourceData, diags diag.Diagnostics, has
 			})
 			return diags, hasChanged
 		}
-		_, err = k.POST(fmt.Sprintf("/v2/ou/%s/move", d.Id()), arrParentOUID)
+		_, err = client.POST(fmt.Sprintf("/v2/ou/%s/move", d.Id()), arrParentOUID)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

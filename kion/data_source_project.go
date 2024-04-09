@@ -86,7 +86,7 @@ func dataSourceProjectRead(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*hc.Client)
 
 	resp := new(hc.ProjectListResponse)
-	err := k.GET("/v3/project", resp)
+	err := client.GET("/v3/project", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

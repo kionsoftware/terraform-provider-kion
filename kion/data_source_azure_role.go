@@ -106,7 +106,7 @@ func dataSourceAzureRoleRead(ctx context.Context, d *schema.ResourceData, m inte
 	client := m.(*hc.Client)
 
 	resp := new(hc.AzureRoleListResponse)
-	err := k.GET("/v3/azure-role", resp)
+	err := client.GET("/v3/azure-role", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

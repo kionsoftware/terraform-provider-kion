@@ -84,7 +84,7 @@ func dataSourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m inte
 	client := m.(*hc.Client)
 
 	resp := new(hc.CloudRuleListResponse)
-	err := k.GET("/v3/cloud-rule", resp)
+	err := client.GET("/v3/cloud-rule", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

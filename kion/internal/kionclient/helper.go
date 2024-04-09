@@ -9,7 +9,7 @@ import (
 
 // FlattenStringPointer -
 func FlattenStringPointer(d *schema.ResourceData, key string) *string {
-	if i, oclient := d.GetOk(key); ok {
+	if i, ok := d.GetOk(key); ok {
 		v := i.(string)
 		return &v
 	}
@@ -33,7 +33,7 @@ func FlattenStringArray(items []interface{}) []string {
 
 // FlattenStringArrayPointer -
 func FlattenStringArrayPointer(d *schema.ResourceData, key string) *[]string {
-	if i, oclient := d.GetOk(key); ok {
+	if i, ok := d.GetOk(key); ok {
 		v := i.([]string)
 		arr := make([]string, 0)
 		for _, item := range v {
@@ -64,7 +64,7 @@ func FilterStringArray(items []string) []string {
 
 // FlattenIntPointer -
 func FlattenIntPointer(d *schema.ResourceData, key string) *int {
-	if i, oclient := d.GetOk(key); ok {
+	if i, ok := d.GetOk(key); ok {
 		v := i.(int)
 		return &v
 	}
@@ -104,7 +104,7 @@ func FlattenBoolArray(items []interface{}) []bool {
 
 // FlattenBoolPointer -
 func FlattenBoolPointer(d *schema.ResourceData, key string) *bool {
-	if i, oclient := d.GetOk(key); ok {
+	if i, ok := d.GetOk(key); ok {
 		v := i.(bool)
 		return &v
 	}
@@ -117,7 +117,7 @@ func FlattenGenericIDArray(d *schema.ResourceData, key string) []int {
 	uid := d.Get(key).([]interface{})
 	uids := make([]int, 0)
 	for _, item := range uid {
-		v, oclient := item.(map[string]interface{})
+		v, ok := item.(map[string]interface{})
 		if ok {
 			uids = append(uids, v["id"].(int))
 		}
@@ -138,7 +138,7 @@ func FlattenGenericIDPointer(d *schema.ResourceData, key string) *[]int {
 
 	uids := make([]int, 0)
 	for _, item := range uid.([]interface{}) {
-		v, oclient := item.(map[string]interface{})
+		v, ok := item.(map[string]interface{})
 		if ok {
 			uids = append(uids, v["id"].(int))
 		}
@@ -251,14 +251,14 @@ func FieldsChanged(iOld interface{}, iNew interface{}, fields []string) (map[str
 }
 
 func OptionalBool(d *schema.ResourceData, fieldname string) *bool {
-	if v, oclient := d.Get(fieldname).(bool); ok {
+	if v, ok := d.Get(fieldname).(bool); ok {
 		return &v
 	}
 	return nil
 }
 
 func OptionalInt(d *schema.ResourceData, fieldname string) *int {
-	if v, oclient := d.Get(fieldname).(int); ok {
+	if v, ok := d.Get(fieldname).(int); ok {
 		return &v
 	}
 	return nil
@@ -282,7 +282,7 @@ func AssociationChanged(d *schema.ResourceData, fieldname string) ([]int, []int,
 	ownerOld := io.([]interface{})
 	oldIDs := make([]int, 0)
 	for _, item := range ownerOld {
-		v, oclient := item.(map[string]interface{})
+		v, ok := item.(map[string]interface{})
 		if ok {
 			oldIDs = append(oldIDs, v["id"].(int))
 		}
@@ -290,7 +290,7 @@ func AssociationChanged(d *schema.ResourceData, fieldname string) ([]int, []int,
 	ownerNew := in.([]interface{})
 	newIDs := make([]int, 0)
 	for _, item := range ownerNew {
-		v, oclient := item.(map[string]interface{})
+		v, ok := item.(map[string]interface{})
 		if ok {
 			newIDs = append(newIDs, v["id"].(int))
 		}

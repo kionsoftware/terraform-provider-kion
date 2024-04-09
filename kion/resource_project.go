@@ -220,7 +220,7 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 		} `json:"data"`
 	}
 	var config FinancialConfig
-	err := k.GET("/v1/ct-config/financials-config", &config)
+	err := client.GET("/v1/ct-config/financials-config", &config)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -285,7 +285,7 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
-	resp, err := k.POST(fmt.Sprintf("/v3/project/%v", projectCreateURLSuffix), post)
+	resp, err := client.POST(fmt.Sprintf("/v3/project/%v", projectCreateURLSuffix), post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -306,7 +306,7 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 	if d.Get("labels") != nil {
 		ID := d.Id()
-		err = hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
+		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -329,7 +329,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 	ID := d.Id()
 
 	resp := new(hc.ProjectResponse)
-	err := k.GET(fmt.Sprintf("/v3/project/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/project/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -360,7 +360,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Fetch labels
-	labelData, err := hc.ReadResourceLabels(k, "project", ID)
+	labelData, err := hc.ReadResourceLabels(client, "project", ID)
 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -411,7 +411,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			PermissionSchemeID: d.Get("permission_scheme_id").(int),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/project/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/project/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -433,7 +433,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			len(arrAddOwnerUserIds) > 0 ||
 			len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			_, err := k.POST(fmt.Sprintf("/v1/project/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v1/project/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -451,7 +451,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	if d.HasChanges("labels") {
 		hasChanged++
 
-		err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
+		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -475,7 +475,7 @@ func resourceProjectDelete(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/project/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/project/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

@@ -82,7 +82,7 @@ func dataSourceOURead(ctx context.Context, d *schema.ResourceData, m interface{}
 	client := m.(*hc.Client)
 
 	resp := new(hc.OUListResponse)
-	err := k.GET("/v3/ou", resp)
+	err := client.GET("/v3/ou", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

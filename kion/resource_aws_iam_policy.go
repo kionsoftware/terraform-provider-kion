@@ -105,7 +105,7 @@ func resourceAwsIamPolicyCreate(ctx context.Context, d *schema.ResourceData, m i
 		Policy:            d.Get("policy").(string),
 	}
 
-	resp, err := k.POST("/v3/iam-policy", post)
+	resp, err := client.POST("/v3/iam-policy", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -135,7 +135,7 @@ func resourceAwsIamPolicyRead(ctx context.Context, d *schema.ResourceData, m int
 	ID := d.Id()
 
 	resp := new(hc.IAMPolicyResponse)
-	err := k.GET(fmt.Sprintf("/v3/iam-policy/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/iam-policy/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -196,7 +196,7 @@ func resourceAwsIamPolicyUpdate(ctx context.Context, d *schema.ResourceData, m i
 			Policy:      d.Get("policy").(string),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/iam-policy/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/iam-policy/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -216,7 +216,7 @@ func resourceAwsIamPolicyUpdate(ctx context.Context, d *schema.ResourceData, m i
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := k.POST(fmt.Sprintf("/v3/iam-policy/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/iam-policy/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -232,7 +232,7 @@ func resourceAwsIamPolicyUpdate(ctx context.Context, d *schema.ResourceData, m i
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := k.DELETE(fmt.Sprintf("/v3/iam-policy/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/iam-policy/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -259,7 +259,7 @@ func resourceAwsIamPolicyDelete(ctx context.Context, d *schema.ResourceData, m i
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/iam-policy/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/iam-policy/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

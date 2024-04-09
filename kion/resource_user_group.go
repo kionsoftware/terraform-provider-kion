@@ -108,7 +108,7 @@ func resourceUserGroupCreate(ctx context.Context, d *schema.ResourceData, m inte
 		UserIds:           hc.FlattenGenericIDPointer(d, "users"),
 	}
 
-	resp, err := k.POST("/v3/user-group", post)
+	resp, err := client.POST("/v3/user-group", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -138,7 +138,7 @@ func resourceUserGroupRead(ctx context.Context, d *schema.ResourceData, m interf
 	ID := d.Id()
 
 	resp := new(hc.UGroupResponse)
-	err := k.GET(fmt.Sprintf("/v3/user-group/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/user-group/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -200,7 +200,7 @@ func resourceUserGroupUpdate(ctx context.Context, d *schema.ResourceData, m inte
 			Name:        d.Get("name").(string),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/user-group/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/user-group/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -217,7 +217,7 @@ func resourceUserGroupUpdate(ctx context.Context, d *schema.ResourceData, m inte
 		arrAddUserIds, arrRemoveUserIds, _, _ := hc.AssociationChanged(d, "users")
 
 		if len(arrAddUserIds) > 0 {
-			_, err := k.POST(fmt.Sprintf("/v3/user-group/%s/user", ID), arrAddUserIds)
+			_, err := client.POST(fmt.Sprintf("/v3/user-group/%s/user", ID), arrAddUserIds)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -229,7 +229,7 @@ func resourceUserGroupUpdate(ctx context.Context, d *schema.ResourceData, m inte
 		}
 
 		if len(arrRemoveUserIds) > 0 {
-			err := k.DELETE(fmt.Sprintf("/v3/user-group/%s/user", ID), arrRemoveUserIds)
+			err := client.DELETE(fmt.Sprintf("/v3/user-group/%s/user", ID), arrRemoveUserIds)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -250,7 +250,7 @@ func resourceUserGroupUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := k.POST(fmt.Sprintf("/v3/user-group/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/user-group/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -266,7 +266,7 @@ func resourceUserGroupUpdate(ctx context.Context, d *schema.ResourceData, m inte
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := k.DELETE(fmt.Sprintf("/v3/user-group/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/user-group/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -293,7 +293,7 @@ func resourceUserGroupDelete(ctx context.Context, d *schema.ResourceData, m inte
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/user-group/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/user-group/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

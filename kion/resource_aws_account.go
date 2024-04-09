@@ -213,13 +213,13 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 	accountLocation := getKionAccountLocation(d)
 
-	if _, oclient := d.GetOk("account_number"); ok {
+	if _, ok := d.GetOk("account_number"); ok {
 		// Import an existing AWS account
 
 		// Default to AWS commercial if not otherwise set
 		// TODO: Why is this required for cache import, but not project import??
 		accountTypeId := int(hc.AWSStandard)
-		if v, oclient := d.GetOk("account_type_id"); ok {
+		if v, ok := d.GetOk("account_type_id"); ok {
 			accountTypeId = v.(int)
 		}
 
@@ -263,7 +263,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		if rb, err := json.Marshal(postAccountData); err == nil {
 			tflog.Debug(ctx, fmt.Sprintf("Importing exiting AWS account via POST %s", accountUrl), map[string]interface{}{"postData": string(rb)})
 		}
-		resp, err := k.POST(accountUrl, postAccountData)
+		resp, err := client.POST(accountUrl, postAccountData)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -285,7 +285,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 	} else {
 		// Call the createAwsAccount function
-		diags, accountCacheId := createAwsAccount(ctx, k, d)
+		diags, accountCacheId := createAwsAccount(ctx, client, d)
 		if diags.HasError() {
 			return diags
 		}
@@ -298,7 +298,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			retries := 3              // Number of retries
 			delay := 30 * time.Second // Delay between retries
 
-			newId, err := retryConvertCacheAccountToProjectAccountForAWS(k, accountCacheId, projectId, startDatecode, retries, delay)
+			newId, err := retryConvertCacheAccountToProjectAccountForAWS(client, accountCacheId, projectId, startDatecode, retries, delay)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -321,9 +321,9 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 	// Labels are only supported on project accounts, not cached accounts
 	if accountLocation == ProjectLocation {
-		if _, oclient := d.GetOk("labels"); ok {
+		if _, ok := d.GetOk("labels"); ok {
 			ID := d.Id()
-			err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
+			err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
@@ -340,7 +340,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 	return append(diags, resourceAwsAccountRead(ctx, d, m)...)
 }
 
-func createAwsAccount(ctx context.Context, k *hc.Client, d *schema.ResourceData) (diag.Diagnostics, int) {
+func createAwsAccount(ctx context.Context, client *hc.Client, d *schema.ResourceData) (diag.Diagnostics, int) {
 	var diags diag.Diagnostics
 
 	// Lock to ensure one account creation process at a time as AWS Orgs cannot handle more than one account creation at a time.
@@ -359,18 +359,18 @@ func createAwsAccount(ctx context.Context, k *hc.Client, d *schema.ResourceData)
 	}
 
 	// Populate organizational unit details from Terraform resource data, if provided by user.
-	if err := populateOrgUnitFromResourceData(k, &postCacheData, d); err != nil {
+	if err := populateOrgUnitFromResourceData(client, &postCacheData, d); err != nil {
 		return diag.FromErr(err), 0
 	}
 
 	// Log the account creation POST data.
-	if err := logPostData(ctx, k, postCacheData); err != nil {
+	if err := logPostData(ctx, client, postCacheData); err != nil {
 		// If logging fails, only warn instead of failing the operation.
 		tflog.Warn(ctx, "Failed to log post data for AWS account creation", map[string]interface{}{"error": err.Error()})
 	}
 
 	// Send the POST request to create the AWS account.
-	respCache, err := k.POST("/v3/account-cache/create?account-type=aws", postCacheData)
+	respCache, err := client.POST("/v3/account-cache/create?account-type=aws", postCacheData)
 	if err != nil || respCache.RecordID == 0 {
 		if err == nil {
 			err = fmt.Errorf("received item ID of 0")
@@ -379,7 +379,7 @@ func createAwsAccount(ctx context.Context, k *hc.Client, d *schema.ResourceData)
 	}
 
 	// Wait for the account to be fully created.
-	if err := waitForAccountCreation(k, ctx, respCache.RecordID, d); err != nil {
+	if err := waitForAccountCreation(client, ctx, respCache.RecordID, d); err != nil {
 		return diag.FromErr(err), 0
 	}
 
@@ -388,7 +388,7 @@ func createAwsAccount(ctx context.Context, k *hc.Client, d *schema.ResourceData)
 }
 
 // logPostData logs the data being posted for account creation. It returns an error if marshalling fails.
-func logPostData(ctx context.Context, k *hc.Client, postData interface{}) error {
+func logPostData(ctx context.Context, client *hc.Client, postData interface{}) error {
 	rb, err := json.Marshal(postData)
 	if err != nil {
 		return err
@@ -398,11 +398,11 @@ func logPostData(ctx context.Context, k *hc.Client, postData interface{}) error 
 }
 
 // populateOrgUnitFromResourceData parses OU details from Terraform data, updating AccountCacheNewAWSCreate for account creation.
-func populateOrgUnitFromResourceData(k *hc.Client, postCacheData *hc.AccountCacheNewAWSCreate, d *schema.ResourceData) error {
+func populateOrgUnitFromResourceData(client *hc.Client, postCacheData *hc.AccountCacheNewAWSCreate, d *schema.ResourceData) error {
 	if v, exists := d.GetOk("aws_organizational_unit"); exists {
 		orgUnitSet := v.(*schema.Set)
 		for _, item := range orgUnitSet.List() {
-			orgUnitMap, oclient := item.(map[string]interface{})
+			orgUnitMap, ok := item.(map[string]interface{})
 			if !ok {
 				return fmt.Errorf("invalid format for aws_organizational_unit")
 			}
@@ -416,12 +416,12 @@ func populateOrgUnitFromResourceData(k *hc.Client, postCacheData *hc.AccountCach
 }
 
 // waitForAccountCreation polls the creation status until the account is created or a timeout occurs.
-func waitForAccountCreation(k *hc.Client, ctx context.Context, accountCacheId int, d *schema.ResourceData) error {
+func waitForAccountCreation(client *hc.Client, ctx context.Context, accountCacheId int, d *schema.ResourceData) error {
 	createStateConf := &retry.StateChangeConf{
 		// Define the refresh function, which checks the account creation status.
 		Refresh: func() (interface{}, string, error) {
 			resp := new(hc.AccountResponse)
-			err := k.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
+			err := client.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
 			if err != nil {
 				// Directly return errors, including NotFound, allowing the SDK to handle retries for NotFound appropriately.
 				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d error", accountCacheId), map[string]interface{}{"error": err, "accountCacheId": accountCacheId})
@@ -447,10 +447,10 @@ func waitForAccountCreation(k *hc.Client, ctx context.Context, accountCacheId in
 	return err // Return the error, if any.
 }
 
-func retryConvertCacheAccountToProjectAccountForAWS(k *hc.Client, accountCacheId, projectId int, startDatecode string, retries int, delay time.Duration) (int, error) {
+func retryConvertCacheAccountToProjectAccountForAWS(client *hc.Client, accountCacheId, projectId int, startDatecode string, retries int, delay time.Duration) (int, error) {
 	var lastErr error
 	for i := 0; i < retries; i++ {
-		id, err := convertCacheAccountToProjectAccount(k, accountCacheId, projectId, startDatecode)
+		id, err := convertCacheAccountToProjectAccount(client, accountCacheId, projectId, startDatecode)
 		if err == nil {
 			return id, nil
 		}
@@ -480,18 +480,18 @@ func resourceAwsAccountDelete(ctx context.Context, d *schema.ResourceData, m int
 // Require startDatecode if adding to a new project, unless we are creating the account.
 func validateAwsAccountStartDatecode(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	// if start date is already set, nothing to do
-	if _, oclient := d.GetOk("start_datecode"); ok {
+	if _, ok := d.GetOk("start_datecode"); ok {
 		return nil
 	}
 
 	// if not adding to project, we don't care about start date
-	if _, oclient := d.GetOk("project_id"); !ok {
+	if _, ok := d.GetOk("project_id"); !ok {
 		return nil
 	}
 
 	// if there is no account_number, then we are are creating a new Account and
 	// start date isn't required since it will be set to the current month
-	if _, oclient := d.GetOk("account_number"); !ok {
+	if _, ok := d.GetOk("account_number"); !ok {
 		return nil
 	}
 

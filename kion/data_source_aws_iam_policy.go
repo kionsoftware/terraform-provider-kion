@@ -114,7 +114,7 @@ func dataSourceAwsIamPolicyRead(ctx context.Context, d *schema.ResourceData, m i
 	client := m.(*hc.Client)
 
 	resp := new(hc.IAMPolicyListResponse)
-	err := k.GET("/v3/iam-policy", resp)
+	err := client.GET("/v3/iam-policy", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

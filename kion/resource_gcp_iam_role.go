@@ -105,7 +105,7 @@ func resourceGcpIamRoleCreate(ctx context.Context, d *schema.ResourceData, m int
 		GCPRoleLaunchStage: d.Get("gcp_role_launch_stage").(int),
 	}
 
-	resp, err := k.POST("/v3/gcp-iam-role", post)
+	resp, err := client.POST("/v3/gcp-iam-role", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -135,7 +135,7 @@ func resourceGcpIamRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 	ID := d.Id()
 
 	resp := new(hc.GCPRoleResponseWithOwners)
-	err := k.GET(fmt.Sprintf("/v3/gcp-iam-role/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/gcp-iam-role/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -199,7 +199,7 @@ func resourceGcpIamRoleUpdate(ctx context.Context, d *schema.ResourceData, m int
 			RolePermissions:    hc.FlattenStringArray(d.Get("role_permissions").(*schema.Set).List()),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/gcp-iam-role/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/gcp-iam-role/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -219,7 +219,7 @@ func resourceGcpIamRoleUpdate(ctx context.Context, d *schema.ResourceData, m int
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := k.POST(fmt.Sprintf("/v3/gcp-iam-role/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/gcp-iam-role/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -235,7 +235,7 @@ func resourceGcpIamRoleUpdate(ctx context.Context, d *schema.ResourceData, m int
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := k.DELETE(fmt.Sprintf("/v3/gcp-iam-role/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/gcp-iam-role/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -262,7 +262,7 @@ func resourceGcpIamRoleDelete(ctx context.Context, d *schema.ResourceData, m int
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/gcp-iam-role/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/gcp-iam-role/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

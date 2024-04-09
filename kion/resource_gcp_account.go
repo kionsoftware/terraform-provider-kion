@@ -185,7 +185,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		if rb, err := json.Marshal(postAccountData); err == nil {
 			tflog.Debug(ctx, fmt.Sprintf("Importing exiting GCP Project via POST %s", accountUrl), map[string]interface{}{"postData": string(rb)})
 		}
-		resp, err := k.POST(accountUrl, postAccountData)
+		resp, err := client.POST(accountUrl, postAccountData)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -218,7 +218,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		if rb, err := json.Marshal(postCacheData); err == nil {
 			tflog.Debug(ctx, "Creating new GCP account via POST /v3/account-cache/create?account-type=google-cloud", map[string]interface{}{"data": string(rb)})
 		}
-		respCache, err := k.POST("/v3/account-cache/create?account-type=google-cloud", postCacheData)
+		respCache, err := client.POST("/v3/account-cache/create?account-type=google-cloud", postCacheData)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -243,9 +243,9 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		createStateConf := &retry.StateChangeConf{
 			Refresh: func() (interface{}, string, error) {
 				resp := new(hc.AccountResponse)
-				err := k.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
+				err := client.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
 				if err != nil {
-					if resErr, oclient := err.(*hc.RequestError); ok {
+					if resErr, ok := err.(*hc.RequestError); ok {
 						if resErr.StatusCode == http.StatusNotFound {
 							// StateChangeConf handles 404s differently than errors, so return nil instead of err
 							tflog.Trace(ctx, fmt.Sprintf("Checking new GCP account status: /v3/account-cache/%d not found", accountCacheId))
@@ -279,7 +279,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			projectId := d.Get("project_id").(int)
 			startDatecode := time.Now().Format("200601")
 
-			newId, err := convertCacheAccountToProjectAccount(k, accountCacheId, projectId, startDatecode)
+			newId, err := convertCacheAccountToProjectAccount(client, accountCacheId, projectId, startDatecode)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -302,9 +302,9 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 	// Labels are only supported on project accounts, not cached accounts
 	if accountLocation == ProjectLocation {
-		if _, oclient := d.GetOk("labels"); ok {
+		if _, ok := d.GetOk("labels"); ok {
 			ID := d.Id()
-			err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
+			err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
@@ -338,12 +338,12 @@ func resourceGcpAccountDelete(ctx context.Context, d *schema.ResourceData, m int
 func validateGcpAccountStartDatecode(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 
 	// if start date is already set, nothing to do
-	if _, oclient := d.GetOk("start_datecode"); ok {
+	if _, ok := d.GetOk("start_datecode"); ok {
 		return nil
 	}
 
 	// if not adding to project, we don't care about start date
-	if _, oclient := d.GetOk("project_id"); !ok {
+	if _, ok := d.GetOk("project_id"); !ok {
 		return nil
 	}
 

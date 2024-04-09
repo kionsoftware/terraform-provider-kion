@@ -113,7 +113,7 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 		OwnerUserGroupIds:  hc.FlattenGenericIDPointer(d, "owner_user_groups"),
 	}
 
-	resp, err := k.POST("/v3/funding-source", post)
+	resp, err := client.POST("/v3/funding-source", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -134,7 +134,7 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	if d.Get("labels") != nil {
 		ID := d.Id()
-		err = hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
+		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -157,7 +157,7 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 	ID := d.Id()
 
 	resp := new(hc.FundingSourceResponse)
-	err := k.GET(fmt.Sprintf("/v3/funding-source/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/funding-source/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -177,7 +177,7 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 	data["end_datecode"] = item.EndDatecode
 
 	permissionResp := new(hc.FSUserMappingListResponse)
-	err = k.GET(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), permissionResp)
+	err = client.GET(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), permissionResp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -210,7 +210,7 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	// Fetch labels
-	labelData, err := hc.ReadResourceLabels(k, "funding-source", ID)
+	labelData, err := hc.ReadResourceLabels(client, "funding-source", ID)
 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -261,7 +261,7 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 			StartDatecode: d.Get("start_datecode").(string),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/funding-source/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/funding-source/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -291,7 +291,7 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 			len(arrAddOwnerUserIds) > 0 ||
 			len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := k.PATCH(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), patch)
+			err := client.PATCH(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), patch)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -310,7 +310,7 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 	if d.HasChanges("labels") {
 		hasChanged++
 
-		err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
+		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -330,7 +330,7 @@ func resourceFundingSourceDelete(ctx context.Context, d *schema.ResourceData, m 
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/funding-source/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/funding-source/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

@@ -56,17 +56,17 @@ func NewClient(kionURL string, kionAPIKey string, kionAPIPath string, skipSSLVal
 		log.Fatalln("The URL is not valid:", kionURL, err.Error())
 	}
 	u.Path = path.Join(strings.TrimRight(u.Path, "/"), strings.TrimRight(kionAPIPath, "/"))
-	k.HostURL = u.String()
+	client.HostURL = u.String()
 
-	k.Token = kionAPIKey
+	client.Token = kionAPIKey
 
-	return &k
+	return &client
 }
 
-func (k *Client) doRequest(req *http.Request) ([]byte, int, error) {
-	req.Header.Set("Authorization", "Bearer "+k.Token)
+func (client *Client) doRequest(req *http.Request) ([]byte, int, error) {
+	req.Header.Set("Authorization", "Bearer "+client.Token)
 
-	res, err := k.HTTPClient.Do(req)
+	res, err := client.HTTPClient.Do(req)
 	if err != nil {
 		return nil, 0, NewRequestError(0, err)
 	}
@@ -85,7 +85,7 @@ func (k *Client) doRequest(req *http.Request) ([]byte, int, error) {
 }
 
 // GET - Returns an element from Kion.
-func (k *Client) GET(urlPath string, returnData interface{}) error {
+func (client *Client) GET(urlPath string, returnData interface{}) error {
 	if returnData != nil {
 		// Ensure the correct returnData was passed in.
 		v := reflect.ValueOf(returnData)
@@ -94,12 +94,12 @@ func (k *Client) GET(urlPath string, returnData interface{}) error {
 		}
 	}
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s%s", k.HostURL, urlPath), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s%s", client.HostURL, urlPath), nil)
 	if err != nil {
 		return err
 	}
 
-	body, statusCode, err := k.doRequest(req)
+	body, statusCode, err := client.doRequest(req)
 	if err != nil {
 		return err
 	}
@@ -115,19 +115,19 @@ func (k *Client) GET(urlPath string, returnData interface{}) error {
 }
 
 // POST - creates an element in Kion.
-func (k *Client) POST(urlPath string, sendData interface{}) (*Creation, error) {
-	//return nil, fmt.Errorf("test error: %v %v %#v", k.HostURL, urlPath, sendData)
+func (client *Client) POST(urlPath string, sendData interface{}) (*Creation, error) {
+	//return nil, fmt.Errorf("test error: %v %v %#v", client.HostURL, urlPath, sendData)
 	rb, err := json.Marshal(sendData)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s%s", k.HostURL, urlPath), strings.NewReader(string(rb)))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s%s", client.HostURL, urlPath), strings.NewReader(string(rb)))
 	if err != nil {
 		return nil, err
 	}
 
-	body, _, err := k.doRequest(req)
+	body, _, err := client.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -147,18 +147,18 @@ func (k *Client) POST(urlPath string, sendData interface{}) (*Creation, error) {
 }
 
 // PATCH - updates an element in Kion.
-func (k *Client) PATCH(urlPath string, sendData interface{}) error {
+func (client *Client) PATCH(urlPath string, sendData interface{}) error {
 	rb, err := json.Marshal(sendData)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("PATCH", fmt.Sprintf("%s%s", k.HostURL, urlPath), strings.NewReader(string(rb)))
+	req, err := http.NewRequest("PATCH", fmt.Sprintf("%s%s", client.HostURL, urlPath), strings.NewReader(string(rb)))
 	if err != nil {
 		return err
 	}
 
-	_, _, err = k.doRequest(req)
+	_, _, err = client.doRequest(req)
 	if err != nil {
 		return err
 	}
@@ -167,18 +167,18 @@ func (k *Client) PATCH(urlPath string, sendData interface{}) error {
 }
 
 // PUT - updates an element in Kion.
-func (k *Client) PUT(urlPath string, sendData interface{}) error {
+func (client *Client) PUT(urlPath string, sendData interface{}) error {
 	rb, err := json.Marshal(sendData)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s%s", k.HostURL, urlPath), strings.NewReader(string(rb)))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s%s", client.HostURL, urlPath), strings.NewReader(string(rb)))
 	if err != nil {
 		return err
 	}
 
-	_, _, err = k.doRequest(req)
+	_, _, err = client.doRequest(req)
 	if err != nil {
 		return err
 	}
@@ -187,11 +187,11 @@ func (k *Client) PUT(urlPath string, sendData interface{}) error {
 }
 
 // DELETE - removes an element from Kion. sendData can be nil.
-func (k *Client) DELETE(urlPath string, sendData interface{}) error {
-	return k.DeleteWithResponse(urlPath, sendData, nil)
+func (client *Client) DELETE(urlPath string, sendData interface{}) error {
+	return client.DeleteWithResponse(urlPath, sendData, nil)
 }
 
-func (k *Client) DeleteWithResponse(urlPath string, sendData interface{}, returnData interface{}) error {
+func (client *Client) DeleteWithResponse(urlPath string, sendData interface{}, returnData interface{}) error {
 	var req *http.Request
 	var err error
 
@@ -201,18 +201,18 @@ func (k *Client) DeleteWithResponse(urlPath string, sendData interface{}, return
 			return err
 		}
 
-		req, err = http.NewRequest("DELETE", fmt.Sprintf("%s%s", k.HostURL, urlPath), strings.NewReader(string(rb)))
+		req, err = http.NewRequest("DELETE", fmt.Sprintf("%s%s", client.HostURL, urlPath), strings.NewReader(string(rb)))
 		if err != nil {
 			return err
 		}
 	} else {
-		req, err = http.NewRequest("DELETE", fmt.Sprintf("%s%s", k.HostURL, urlPath), nil)
+		req, err = http.NewRequest("DELETE", fmt.Sprintf("%s%s", client.HostURL, urlPath), nil)
 		if err != nil {
 			return err
 		}
 	}
 
-	body, statusCode, err := k.doRequest(req)
+	body, statusCode, err := client.doRequest(req)
 	if err != nil {
 		return err
 	}

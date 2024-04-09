@@ -122,7 +122,7 @@ func dataSourceAccountRead(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*hc.Client)
 
 	resp := new(hc.AccountListResponse)
-	err := k.GET("/v3/account", resp)
+	err := client.GET("/v3/account", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

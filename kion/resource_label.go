@@ -58,7 +58,7 @@ func resourceLabelCreate(ctx context.Context, d *schema.ResourceData, m interfac
 		Value: d.Get("value").(string),
 	}
 
-	resp, err := k.POST("/v3/label", post)
+	resp, err := client.POST("/v3/label", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -88,7 +88,7 @@ func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{
 	ID := d.Id()
 
 	resp := new(hc.LabelResponse)
-	err := k.GET(fmt.Sprintf("/v3/label/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/label/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -123,7 +123,7 @@ func resourceLabelUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 			Value: d.Get("value").(string),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/label/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/label/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -142,7 +142,7 @@ func resourceLabelDelete(ctx context.Context, d *schema.ResourceData, m interfac
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/label/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/label/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

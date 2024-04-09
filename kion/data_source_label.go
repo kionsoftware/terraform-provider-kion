@@ -74,7 +74,7 @@ func dataSourceLabelRead(ctx context.Context, d *schema.ResourceData, m interfac
 	client := m.(*hc.Client)
 
 	resp := new(hc.LabelListResponse)
-	err := k.GET("/v3/label", resp)
+	err := client.GET("/v3/label", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

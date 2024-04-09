@@ -120,7 +120,7 @@ func resourceAwsCloudformationTemplateCreate(ctx context.Context, d *schema.Reso
 		TerminationProtection: d.Get("termination_protection").(bool),
 	}
 
-	resp, err := k.POST("/v3/cft", post)
+	resp, err := client.POST("/v3/cft", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -150,7 +150,7 @@ func resourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.Resour
 	ID := d.Id()
 
 	resp := new(hc.CFTResponseWithOwnersAndTags)
-	err := k.GET(fmt.Sprintf("/v3/cft/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/cft/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -225,7 +225,7 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 			TerminationProtection: d.Get("termination_protection").(bool),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/cft/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/cft/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -245,7 +245,7 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := k.POST(fmt.Sprintf("/v3/cft/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/cft/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -261,7 +261,7 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := k.DELETE(fmt.Sprintf("/v3/cft/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/cft/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -288,7 +288,7 @@ func resourceAwsCloudformationTemplateDelete(ctx context.Context, d *schema.Reso
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/cft/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/cft/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

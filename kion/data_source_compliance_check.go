@@ -129,7 +129,7 @@ func dataSourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, 
 	client := m.(*hc.Client)
 
 	resp := new(hc.ComplianceCheckListResponse)
-	err := k.GET("/v3/compliance/check", resp)
+	err := client.GET("/v3/compliance/check", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

@@ -61,7 +61,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 		accountUrl = fmt.Sprintf("/v3/account/%s", ID)
 		resp = new(hc.AccountResponse)
 	}
-	err := k.GET(accountUrl, resp)
+	err := client.GET(accountUrl, resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -90,7 +90,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 
 	// Fetch labels
 	if accountLocation == ProjectLocation {
-		labelData, err := hc.ReadResourceLabels(k, "account", ID)
+		labelData, err := hc.ReadResourceLabels(client, "account", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -143,7 +143,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 
 		tflog.Debug(ctx, "Converting from cached account to project account", map[string]interface{}{"oldProjectId": oldProjectId, "newProjectId": newProjectId})
-		newId, err := convertCacheAccountToProjectAccount(k, accountCacheId, newProjectId, d.Get("start_datecode").(string))
+		newId, err := convertCacheAccountToProjectAccount(client, accountCacheId, newProjectId, d.Get("start_datecode").(string))
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -171,7 +171,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 
 		tflog.Debug(ctx, "Converting from project account to cached account", map[string]interface{}{"oldProjectId": oldProjectId, "newProjectId": newProjectId})
-		newId, err := convertProjectAccountToCacheAccount(k, accountId)
+		newId, err := convertProjectAccountToCacheAccount(client, accountId)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -200,9 +200,9 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			if v, exists := d.GetOk("move_project_settings"); exists {
 				moveSettings := v.(*schema.Set)
 				for _, item := range moveSettings.List() {
-					if moveSettingsMap, oclient := item.(map[string]interface{}); ok {
+					if moveSettingsMap, ok := item.(map[string]interface{}); ok {
 						req.FinancialSetting = moveSettingsMap["financials"].(string)
-						if val, oclient := moveSettingsMap["move_datecode"]; ok {
+						if val, ok := moveSettingsMap["move_datecode"]; ok {
 							req.MoveDate = val.(int)
 						}
 					}
@@ -213,7 +213,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 				tflog.Debug(ctx, "Moving account to different project", map[string]interface{}{"oldProjectId": oldProjectId, "newProjectId": newProjectId, "postData": string(rb)})
 			}
 
-			resp, err := k.POST(fmt.Sprintf("/v3/account/%s/move", ID), req)
+			resp, err := client.POST(fmt.Sprintf("/v3/account/%s/move", ID), req)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -244,13 +244,13 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		case CacheLocation:
 			accountUrl = fmt.Sprintf("/v3/account-cache/%s", ID)
 			cacheReq := hc.AccountCacheUpdatable{}
-			if v, oclient := d.GetOk("name"); ok {
+			if v, ok := d.GetOk("name"); ok {
 				cacheReq.Name = v.(string)
 			}
-			if v, oclient := d.GetOk("email"); ok {
+			if v, ok := d.GetOk("email"); ok {
 				cacheReq.AccountEmail = v.(string)
 			}
-			if v, oclient := d.GetOk("linked_role"); ok {
+			if v, ok := d.GetOk("linked_role"); ok {
 				cacheReq.LinkedRole = v.(string)
 			}
 			cacheReq.IncludeLinkedAccountSpend = hc.OptionalBool(d, "include_linked_account_spend")
@@ -261,16 +261,16 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		default:
 			accountUrl = fmt.Sprintf("/v3/account/%s", ID)
 			accountReq := hc.AccountUpdatable{}
-			if v, oclient := d.GetOk("name"); ok {
+			if v, ok := d.GetOk("name"); ok {
 				accountReq.Name = v.(string)
 			}
-			if v, oclient := d.GetOk("email"); ok {
+			if v, ok := d.GetOk("email"); ok {
 				accountReq.AccountEmail = v.(string)
 			}
-			if v, oclient := d.GetOk("linked_role"); ok {
+			if v, ok := d.GetOk("linked_role"); ok {
 				accountReq.LinkedRole = v.(string)
 			}
-			if v, oclient := d.GetOk("start_datecode"); ok {
+			if v, ok := d.GetOk("start_datecode"); ok {
 				accountReq.StartDatecode = v.(string)
 			}
 			accountReq.IncludeLinkedAccountSpend = hc.OptionalBool(d, "include_linked_account_spend")
@@ -283,7 +283,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			tflog.Debug(ctx, fmt.Sprintf("Updating account via PATCH %s", accountUrl), map[string]interface{}{"postData": string(rb)})
 		}
 
-		err := k.PATCH(accountUrl, req)
+		err := client.PATCH(accountUrl, req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -297,7 +297,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	if accountLocation == ProjectLocation && d.HasChanges("labels") {
 		hasChanged++
 
-		err := hc.PutAppLabelIDs(k, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
+		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -329,7 +329,7 @@ func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interf
 		accountUrl = fmt.Sprintf("/v3/account/%s", ID)
 	}
 
-	err := k.DELETE(accountUrl, nil)
+	err := client.DELETE(accountUrl, nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -346,12 +346,12 @@ func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interf
 	return diags
 }
 
-func convertCacheAccountToProjectAccount(k *hc.Client, accountCacheId, newProjectId int, startDatecode string) (int, error) {
+func convertCacheAccountToProjectAccount(client *hc.Client, accountCacheId, newProjectId int, startDatecode string) (int, error) {
 
 	// The API is inconsistent and convert expects YYYYMM while other methods expect YYYY-MM
 	startDatecode = strings.ReplaceAll(startDatecode, "-", "")
 
-	resp, err := k.POST(fmt.Sprintf("/v3/account-cache/%d/convert/%d?start_datecode=%s",
+	resp, err := client.POST(fmt.Sprintf("/v3/account-cache/%d/convert/%d?start_datecode=%s",
 		accountCacheId, newProjectId, startDatecode), nil)
 
 	if err != nil {
@@ -361,9 +361,9 @@ func convertCacheAccountToProjectAccount(k *hc.Client, accountCacheId, newProjec
 	return resp.RecordID, nil
 }
 
-func convertProjectAccountToCacheAccount(k *hc.Client, accountId int) (int, error) {
+func convertProjectAccountToCacheAccount(client *hc.Client, accountId int) (int, error) {
 	respRevert := new(hc.AccountRevertResponse)
-	err := k.DeleteWithResponse(fmt.Sprintf("/v3/account/revert/%d", accountId), nil, respRevert)
+	err := client.DeleteWithResponse(fmt.Sprintf("/v3/account/revert/%d", accountId), nil, respRevert)
 
 	if err != nil {
 		return 0, err

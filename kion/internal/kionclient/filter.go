@@ -19,7 +19,7 @@ type Filterable struct {
 func NewFilterable(d *schema.ResourceData) *Filterable {
 	arr := make([]Filter, 0)
 
-	v, oclient := d.GetOk("filter")
+	v, ok := d.GetOk("filter")
 	if !ok {
 		return nil
 	}
@@ -87,7 +87,7 @@ type Filter struct {
 
 // DeepMatch -
 func (f *Filter) DeepMatch(keys []string, m map[string]interface{}, filterValue interface{}) (bool, error) {
-	val, oclient := m[keys[0]]
+	val, ok := m[keys[0]]
 	if !ok {
 		return false, errors.New("filter is not found: " + keys[0] + fmt.Sprintf(" | %#v", m))
 	}
@@ -95,7 +95,7 @@ func (f *Filter) DeepMatch(keys []string, m map[string]interface{}, filterValue 
 	if len(keys) == 1 {
 		// Catch a user error if the filter is comparing against an array
 		// ex. Using a filter of 'owner_users' instead of 'owner_users.id'
-		if _, oclient := val.([]interface{}); ok {
+		if _, ok := val.([]interface{}); ok {
 			return false, fmt.Errorf("filter key (%v) references an array instead of a field: %v", f.key, fmt.Sprint(val))
 		}
 		// If set as a regex, then compare against it.
@@ -110,7 +110,7 @@ func (f *Filter) DeepMatch(keys []string, m map[string]interface{}, filterValue 
 		return fmt.Sprint(val) == filterValue, nil
 	}
 
-	if x, oclient := val.([]interface{}); ok {
+	if x, ok := val.([]interface{}); ok {
 		// If the field is an array, then determine if one of the values matches.
 		for _, i := range x {
 			vmap := i.(map[string]interface{})

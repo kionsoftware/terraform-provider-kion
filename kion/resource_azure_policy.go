@@ -96,7 +96,7 @@ func resourceAzurePolicyCreate(ctx context.Context, d *schema.ResourceData, m in
 		OwnerUsers:      hc.FlattenGenericIDPointer(d, "owner_users"),
 	}
 
-	resp, err := k.POST("/v3/azure-policy", post)
+	resp, err := client.POST("/v3/azure-policy", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -126,7 +126,7 @@ func resourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m inte
 	ID := d.Id()
 
 	resp := new(hc.AzurePolicyResponse)
-	err := k.GET(fmt.Sprintf("/v3/azure-policy/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/azure-policy/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -188,7 +188,7 @@ func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m in
 			Policy:      d.Get("policy").(string),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/azure-policy/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/azure-policy/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -208,7 +208,7 @@ func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m in
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := k.POST(fmt.Sprintf("/v3/azure-policy/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/azure-policy/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -224,7 +224,7 @@ func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m in
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := k.DELETE(fmt.Sprintf("/v3/azure-policy/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/azure-policy/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -251,7 +251,7 @@ func resourceAzurePolicyDelete(ctx context.Context, d *schema.ResourceData, m in
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/azure-policy/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/azure-policy/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

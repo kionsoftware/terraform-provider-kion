@@ -124,7 +124,7 @@ func dataSourceAwsCloudformationTemplateRead(ctx context.Context, d *schema.Reso
 	client := m.(*hc.Client)
 
 	resp := new(hc.CFTListResponseWithOwnersAndTags)
-	err := k.GET("/v3/cft", resp)
+	err := client.GET("/v3/cft", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

@@ -152,7 +152,7 @@ func testAccOUCheckResourceDestroy(s *terraform.State) error {
 
 		// Retrieve our resource by referencing it's state ID for API lookup
 		resp := new(hc.OUResponse)
-		err := k.GET(fmt.Sprintf("/v3/ou/%s", rs.Primary.ID), resp)
+		err := client.GET(fmt.Sprintf("/v3/ou/%s", rs.Primary.ID), resp)
 		if err == nil {
 			if fmt.Sprint(resp.Data.OU.ID) == rs.Primary.ID {
 				return fmt.Errorf("OU (%s) still exists.", rs.Primary.ID)

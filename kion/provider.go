@@ -98,14 +98,14 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	var diags diag.Diagnostics
 
 	var skipSSLValidation bool
-	v, oclient := d.GetOk("skipsslvalidation")
+	v, ok := d.GetOk("skipsslvalidation")
 	if ok {
 		t := v.(bool)
 		skipSSLValidation = t
 	}
 
 	client := kionclient.NewClient(kionURL, kionAPIKey, kionAPIPath, skipSSLValidation)
-	err := k.GET("/v3/me/cloud-access-role", nil)
+	err := client.GET("/v3/me/cloud-access-role", nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -116,5 +116,5 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diags
 	}
 
-	return k, diags
+	return client, diags
 }

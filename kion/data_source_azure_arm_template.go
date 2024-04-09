@@ -122,7 +122,7 @@ func dataSourceAzureArmTemplateRead(ctx context.Context, d *schema.ResourceData,
 	client := m.(*hc.Client)
 
 	resp := new(hc.AzureARMTemplateListResponse)
-	err := k.GET("/v3/azure-arm-template", resp)
+	err := client.GET("/v3/azure-arm-template", resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

@@ -76,7 +76,7 @@ func resourceSamlGroupAssociationCreate(ctx context.Context, d *schema.ResourceD
 		UserGroupID:    d.Get("user_group_id").(int),
 	}
 
-	resp, err := k.POST("/v3/idms/group-association", post)
+	resp, err := client.POST("/v3/idms/group-association", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -106,7 +106,7 @@ func resourceSamlGroupAssociationRead(ctx context.Context, d *schema.ResourceDat
 	ID := d.Id()
 
 	resp := new(hc.GroupAssociationResponse)
-	err := k.GET(fmt.Sprintf("/v3/idms/group-association/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/idms/group-association/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -162,7 +162,7 @@ func resourceSamlGroupAssociationUpdate(ctx context.Context, d *schema.ResourceD
 			UserGroupID:    d.Get("user_group_id").(int),
 		}
 
-		err := k.PATCH(fmt.Sprintf("/v3/idms/group-association/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/idms/group-association/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -185,7 +185,7 @@ func resourceSamlGroupAssociationDelete(ctx context.Context, d *schema.ResourceD
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := k.DELETE(fmt.Sprintf("/v3/idms/group-association/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/idms/group-association/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
