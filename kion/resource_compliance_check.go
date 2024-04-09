@@ -57,7 +57,7 @@ func resourceComplianceCheck() *schema.Resource {
 				Optional: true,
 				ForceNew: true, // Not allowed to be changed, forces new item if changed.
 			},
-			"kion_managed": {
+			"ct_managed": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
@@ -204,7 +204,7 @@ func resourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, m 
 	data["compliance_check_type_id"] = item.ComplianceCheck.ComplianceCheckTypeID
 	data["created_at"] = item.ComplianceCheck.CreatedAt
 	data["created_by_user_id"] = item.ComplianceCheck.CreatedByUserID
-	data["kion_managed"] = item.ComplianceCheck.CtManaged
+	data["ct_managed"] = item.ComplianceCheck.CtManaged
 	data["description"] = item.ComplianceCheck.Description
 	data["frequency_minutes"] = item.ComplianceCheck.FrequencyMinutes
 	data["frequency_type_id"] = item.ComplianceCheck.FrequencyTypeID

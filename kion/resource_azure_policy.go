@@ -35,7 +35,7 @@ func resourceAzurePolicy() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"kion_managed": {
+			"ct_managed": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
@@ -139,7 +139,7 @@ func resourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	data := make(map[string]interface{})
 	data["azure_managed_policy_def_id"] = item.AzurePolicy.AzureManagedPolicyDefID
-	data["kion_managed"] = item.AzurePolicy.CtManaged
+	data["ct_managed"] = item.AzurePolicy.CtManaged
 	data["description"] = item.AzurePolicy.Description
 	data["name"] = item.AzurePolicy.Name
 	if hc.InflateObjectWithID(item.OwnerUserGroups) != nil {

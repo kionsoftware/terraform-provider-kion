@@ -50,7 +50,7 @@ func dataSourceAzurePolicy() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"kion_managed": {
+						"ct_managed": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -126,7 +126,7 @@ func dataSourceAzurePolicyRead(ctx context.Context, d *schema.ResourceData, m in
 	for _, item := range resp.Data {
 		data := make(map[string]interface{})
 		data["azure_managed_policy_def_id"] = item.AzurePolicy.AzureManagedPolicyDefID
-		data["kion_managed"] = item.AzurePolicy.CtManaged
+		data["ct_managed"] = item.AzurePolicy.CtManaged
 		data["description"] = item.AzurePolicy.Description
 		data["id"] = item.AzurePolicy.ID
 		data["name"] = item.AzurePolicy.Name

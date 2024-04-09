@@ -9,7 +9,7 @@ type ComplianceCheckListResponse struct {
 		ComplianceCheckTypeID int      `json:"compliance_check_type_id"`
 		CreatedAt             string   `json:"created_at"`
 		CreatedByUserID       int      `json:"created_by_user_id"`
-		CtManaged             bool     `json:"kion_managed"`
+		CtManaged             bool     `json:"ct_managed"`
 		Description           string   `json:"description"`
 		FrequencyMinutes      int      `json:"frequency_minutes"`
 		FrequencyTypeID       int      `json:"frequency_type_id"`
@@ -34,7 +34,7 @@ type ComplianceCheckWithOwnersResponse struct {
 			ComplianceCheckTypeID int      `json:"compliance_check_type_id"`
 			CreatedAt             string   `json:"created_at"`
 			CreatedByUserID       int      `json:"created_by_user_id"`
-			CtManaged             bool     `json:"kion_managed"`
+			CtManaged             bool     `json:"ct_managed"`
 			Description           string   `json:"description"`
 			FrequencyMinutes      int      `json:"frequency_minutes"`
 			FrequencyTypeID       int      `json:"frequency_type_id"`

@@ -3,7 +3,7 @@
 page_title: "kion_compliance_standard Data Source - terraform-provider-kion"
 subcategory: ""
 description: |-
-  
+
 ---
 
 # kion_compliance_standard (Data Source)
@@ -46,5 +46,5 @@ Read-Only:
 - `created_by_user_id` (Number)
 - `description` (String)
 - `id` (Number)
-- `kion_managed` (Boolean)
+- `ct_managed` (Boolean)
 - `name` (String)

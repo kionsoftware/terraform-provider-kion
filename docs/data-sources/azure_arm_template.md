@@ -3,7 +3,7 @@
 page_title: "kion_azure_arm_template Data Source - terraform-provider-kion"
 subcategory: ""
 description: |-
-  
+
 ---
 
 # kion_azure_arm_template (Data Source)
@@ -45,7 +45,7 @@ Read-Only:
 - `deployment_mode` (Number)
 - `description` (String)
 - `id` (Number)
-- `kion_managed` (Boolean)
+- `ct_managed` (Boolean)
 - `name` (String)
 - `owner_user_groups` (List of Object) (see [below for nested schema](#nestedobjatt--list--owner_user_groups))
 - `owner_users` (List of Object) (see [below for nested schema](#nestedobjatt--list--owner_users))

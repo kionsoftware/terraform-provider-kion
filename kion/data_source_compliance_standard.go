@@ -54,7 +54,7 @@ func dataSourceComplianceStandard() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
-						"kion_managed": {
+						"ct_managed": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -99,7 +99,7 @@ func dataSourceComplianceStandardRead(ctx context.Context, d *schema.ResourceDat
 		data := make(map[string]interface{})
 		data["created_at"] = item.CreatedAt
 		data["created_by_user_id"] = item.CreatedByUserID
-		data["kion_managed"] = item.CtManaged
+		data["ct_managed"] = item.CtManaged
 		data["description"] = item.Description
 		data["id"] = item.ID
 		data["name"] = item.Name

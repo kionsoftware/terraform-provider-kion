@@ -5,7 +5,7 @@ type AzurePolicyListResponse struct {
 	Data []struct {
 		AzurePolicy struct {
 			AzureManagedPolicyDefID string `json:"azure_managed_policy_def_id"`
-			CtManaged               bool   `json:"kion_managed"`
+			CtManaged               bool   `json:"ct_managed"`
 			Description             string `json:"description"`
 			ID                      int    `json:"id"`
 			Name                    string `json:"name"`
@@ -23,7 +23,7 @@ type AzurePolicyResponse struct {
 	Data struct {
 		AzurePolicy struct {
 			AzureManagedPolicyDefID string `json:"azure_managed_policy_def_id"`
-			CtManaged               bool   `json:"kion_managed"`
+			CtManaged               bool   `json:"ct_managed"`
 			Description             string `json:"description"`
 			ID                      int    `json:"id"`
 			Name                    string `json:"name"`

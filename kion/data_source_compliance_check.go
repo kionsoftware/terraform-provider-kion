@@ -71,7 +71,7 @@ func dataSourceComplianceCheck() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
-						"kion_managed": {
+						"ct_managed": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -152,7 +152,7 @@ func dataSourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, 
 		data["compliance_check_type_id"] = item.ComplianceCheckTypeID
 		data["created_at"] = item.CreatedAt
 		data["created_by_user_id"] = item.CreatedByUserID
-		data["kion_managed"] = item.CtManaged
+		data["ct_managed"] = item.CtManaged
 		data["description"] = item.Description
 		data["frequency_minutes"] = item.FrequencyMinutes
 		data["frequency_type_id"] = item.FrequencyTypeID

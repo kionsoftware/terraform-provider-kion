@@ -4,7 +4,7 @@ package kionclient
 type AzureARMTemplateListResponse struct {
 	Data []struct {
 		AzureArmTemplate struct {
-			CtManaged             bool   `json:"kion_managed"`
+			CtManaged             bool   `json:"ct_managed"`
 			DeploymentMode        int    `json:"deployment_mode"`
 			Description           string `json:"description"`
 			ID                    int    `json:"id"`
@@ -25,7 +25,7 @@ type AzureARMTemplateListResponse struct {
 type AzureARMTemplateResponse struct {
 	Data struct {
 		AzureArmTemplate struct {
-			CtManaged             bool   `json:"kion_managed"`
+			CtManaged             bool   `json:"ct_managed"`
 			DeploymentMode        int    `json:"deployment_mode"`
 			Description           string `json:"description"`
 			ID                    int    `json:"id"`

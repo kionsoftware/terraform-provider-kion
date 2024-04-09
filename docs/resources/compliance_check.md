@@ -3,7 +3,7 @@
 page_title: "kion_compliance_check Resource - terraform-provider-kion"
 subcategory: ""
 description: |-
-  
+
 ---
 
 # kion_compliance_check (Resource)
@@ -41,7 +41,7 @@ description: |-
 
 - `created_at` (String)
 - `id` (String) The ID of this resource.
-- `kion_managed` (Boolean)
+- `ct_managed` (Boolean)
 - `last_scan_id` (Number)
 
 <a id="nestedblock--owner_user_groups"></a>

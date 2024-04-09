@@ -31,7 +31,7 @@ func resourceAzureArmTemplate() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-			"kion_managed": {
+			"ct_managed": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
@@ -160,7 +160,7 @@ func resourceAzureArmTemplateRead(ctx context.Context, d *schema.ResourceData, m
 	item := resp.Data
 
 	data := make(map[string]interface{})
-	data["kion_managed"] = item.AzureArmTemplate.CtManaged
+	data["ct_managed"] = item.AzureArmTemplate.CtManaged
 	data["deployment_mode"] = item.AzureArmTemplate.DeploymentMode
 	data["description"] = item.AzureArmTemplate.Description
 	data["name"] = item.AzureArmTemplate.Name

@@ -52,7 +52,7 @@ func resourceComplianceStandard() *schema.Resource {
 				Required: true,
 				ForceNew: true, // Not allowed to be changed, forces new item if changed.
 			},
-			"kion_managed": {
+			"ct_managed": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
@@ -156,7 +156,7 @@ func resourceComplianceStandardRead(ctx context.Context, d *schema.ResourceData,
 	}
 	data["created_at"] = item.ComplianceStandard.CreatedAt
 	data["created_by_user_id"] = item.ComplianceStandard.CreatedByUserID
-	data["kion_managed"] = item.ComplianceStandard.CtManaged
+	data["ct_managed"] = item.ComplianceStandard.CtManaged
 	data["description"] = item.ComplianceStandard.Description
 	data["name"] = item.ComplianceStandard.Name
 	if hc.InflateObjectWithID(item.OwnerUserGroups) != nil {
