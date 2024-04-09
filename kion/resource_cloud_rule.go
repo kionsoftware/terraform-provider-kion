@@ -40,7 +40,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 			},
 			"aws_iam_policies": {
@@ -64,7 +64,7 @@ func resourceCloudRule() *schema.Resource {
 						},
 					},
 				},
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 			},
 			"azure_policy_definitions": {
@@ -237,11 +237,27 @@ func resourceCloudRuleCreate(ctx context.Context, d *schema.ResourceData, m inte
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
+	var cftIds []int
+	if v, ok := d.GetOk("aws_cloudformation_templates"); ok {
+		// Convert the list to a slice of int
+		for _, tmpl := range v.([]interface{}) {
+			cftIds = append(cftIds, tmpl.(map[string]interface{})["id"].(int))
+		}
+	}
+
+	var AzureArmTemplateDefinitionIds []int
+	if v, ok := d.GetOk("azure_arm_template_definitions"); ok {
+		// Convert the list to a slice of int
+		for _, tmpl := range v.([]interface{}) {
+			AzureArmTemplateDefinitionIds = append(AzureArmTemplateDefinitionIds, tmpl.(map[string]interface{})["id"].(int))
+		}
+	}
+
 	post := hc.CloudRuleCreate{
-		AzureArmTemplateDefinitionIds: hc.FlattenGenericIDPointer(d, "azure_arm_template_definitions"),
+		AzureArmTemplateDefinitionIds: &AzureArmTemplateDefinitionIds,
 		AzurePolicyDefinitionIds:      hc.FlattenGenericIDPointer(d, "azure_policy_definitions"),
 		AzureRoleDefinitionIds:        hc.FlattenGenericIDPointer(d, "azure_role_definitions"),
-		CftIds:                        hc.FlattenGenericIDPointer(d, "aws_cloudformation_templates"),
+		CftIds:                        &cftIds,
 		ComplianceStandardIds:         hc.FlattenGenericIDPointer(d, "compliance_standards"),
 		Description:                   d.Get("description").(string),
 		GcpIamRoleIds:                 hc.FlattenGenericIDPointer(d, "gcp_iam_roles"),
@@ -314,14 +330,16 @@ func resourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m interf
 	item := resp.Data
 
 	data := make(map[string]interface{})
-	if hc.InflateObjectWithID(item.AwsCloudformationTemplates) != nil {
-		data["aws_cloudformation_templates"] = hc.InflateObjectWithID(item.AwsCloudformationTemplates)
+	awsCftData := hc.InflateObjectWithID(item.AwsCloudformationTemplates)
+	azureArmTemplateData := hc.InflateObjectWithID(item.AzureArmTemplateDefinitions)
+	if awsCftData != nil {
+		data["aws_cloudformation_templates"] = awsCftData
 	}
 	if hc.InflateObjectWithID(item.AwsIamPolicies) != nil {
 		data["aws_iam_policies"] = hc.InflateObjectWithID(item.AwsIamPolicies)
 	}
-	if hc.InflateObjectWithID(item.AzureArmTemplateDefinitions) != nil {
-		data["azure_arm_template_definitions"] = hc.InflateObjectWithID(item.AzureArmTemplateDefinitions)
+	if azureArmTemplateData != nil {
+		data["azure_arm_template_definitions"] = azureArmTemplateData
 	}
 	if hc.InflateObjectWithID(item.AzurePolicyDefinitions) != nil {
 		data["azure_policy_definitions"] = hc.InflateObjectWithID(item.AzurePolicyDefinitions)
@@ -406,33 +424,42 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
-
 	hasChanged := 0
 
-	// Determine if the attributes that are updatable are changed.
-	// Leave out fields that are not allowed to be changed like
-	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
-	// schema instead.
-	if d.HasChanges("description",
-		"name",
-		"post_webhook_id",
-		"pre_webhook_id") {
-		hasChanged++
+	if d.HasChanges("description", "name", "post_webhook_id", "pre_webhook_id") {
+		// Common attributes update
 		req := hc.CloudRuleUpdate{
 			Description:   d.Get("description").(string),
 			Name:          d.Get("name").(string),
 			PostWebhookID: hc.FlattenIntPointer(d, "post_webhook_id"),
 			PreWebhookID:  hc.FlattenIntPointer(d, "pre_webhook_id"),
 		}
-
-		err := client.PATCH(fmt.Sprintf("/v3/cloud-rule/%s", ID), req)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
+		if err := client.PATCH(fmt.Sprintf("/v3/cloud-rule/%s", ID), req); err != nil {
+			return append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to update CloudRule",
 				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 			})
-			return diags
+		}
+	}
+
+	// AWS CloudFormation templates update
+	if d.HasChange("aws_cloudformation_templates") {
+		newCftIDs := extractTemplateIDs(d, "aws_cloudformation_templates")
+		if len(newCftIDs) > 0 {
+			if err := updateCFTandARMTemplateAssociations(client, ID, newCftIDs, "CFT"); err != nil {
+				return append(diags, err...)
+			}
+		}
+	}
+
+	// Azure ARM templates update
+	if d.HasChange("azure_arm_template_definitions") {
+		newArmTemplateIDs := extractTemplateIDs(d, "azure_arm_template_definitions")
+		if len(newArmTemplateIDs) > 0 {
+			if err := updateCFTandARMTemplateAssociations(client, ID, newArmTemplateIDs, "ARM"); err != nil {
+				return append(diags, err...)
+			}
 		}
 	}
 
@@ -463,31 +490,29 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 		arrAddServiceControlPolicyIds, arrRemoveServiceControlPolicyIds, _, _ := hc.AssociationChanged(d, "service_control_policies")
 		arrAddGcpIamRoleIds, arrRemoveGcpIamRoleIds, _, _ := hc.AssociationChanged(d, "gcp_iam_roles")
 
-		if len(arrAddAzureArmTemplateDefinitionIds) > 0 ||
-			len(arrAddAzurePolicyDefinitionIds) > 0 ||
+		if len(arrAddAzurePolicyDefinitionIds) > 0 ||
 			len(arrAddAzureRoleDefinitionIds) > 0 ||
-			len(arrAddCftIds) > 0 ||
 			len(arrAddComplianceStandardIds) > 0 ||
 			len(arrAddGcpIamRoleIds) > 0 ||
 			len(arrAddIamPolicyIds) > 0 ||
+			len(arrAddCftIds) > 0 ||
+			len(arrAddAzureArmTemplateDefinitionIds) > 0 ||
 			len(arrAddInternalAmiIds) > 0 ||
 			len(arrAddInternalPortfolioIds) > 0 ||
 			len(arrAddOUIds) > 0 ||
 			len(arrAddProjectIds) > 0 ||
 			len(arrAddServiceControlPolicyIds) > 0 {
 			_, err := client.POST(fmt.Sprintf("/v3/cloud-rule/%s/association", ID), hc.CloudRuleAssociationsAdd{
-				AzureArmTemplateDefinitionIds: &arrAddAzureArmTemplateDefinitionIds,
-				AzurePolicyDefinitionIds:      &arrAddAzurePolicyDefinitionIds,
-				AzureRoleDefinitionIds:        &arrAddAzureRoleDefinitionIds,
-				CftIds:                        &arrAddCftIds,
-				ComplianceStandardIds:         &arrAddComplianceStandardIds,
-				GcpIamRoleIds:                 &arrAddGcpIamRoleIds,
-				IamPolicyIds:                  &arrAddIamPolicyIds,
-				InternalAmiIds:                &arrAddInternalAmiIds,
-				InternalPortfolioIds:          &arrAddInternalPortfolioIds,
-				OUIds:                         &arrAddOUIds,
-				ProjectIds:                    &arrAddProjectIds,
-				ServiceControlPolicyIds:       &arrAddServiceControlPolicyIds,
+				AzurePolicyDefinitionIds: &arrAddAzurePolicyDefinitionIds,
+				AzureRoleDefinitionIds:   &arrAddAzureRoleDefinitionIds,
+				ComplianceStandardIds:    &arrAddComplianceStandardIds,
+				GcpIamRoleIds:            &arrAddGcpIamRoleIds,
+				IamPolicyIds:             &arrAddIamPolicyIds,
+				InternalAmiIds:           &arrAddInternalAmiIds,
+				InternalPortfolioIds:     &arrAddInternalPortfolioIds,
+				OUIds:                    &arrAddOUIds,
+				ProjectIds:               &arrAddProjectIds,
+				ServiceControlPolicyIds:  &arrAddServiceControlPolicyIds,
 			})
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
@@ -528,7 +553,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  "Unable to remove owners on CloudRule",
+					Summary:  "Unable to remove Associations on CloudRule",
 					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 				})
 				return diags
@@ -617,5 +642,34 @@ func resourceCloudRuleDelete(ctx context.Context, d *schema.ResourceData, m inte
 	// it is added here for explicitness.
 	d.SetId("")
 
+	return diags
+}
+
+func extractTemplateIDs(d *schema.ResourceData, key string) []int {
+	ids := []int{}
+	if v, ok := d.GetOk(key); ok {
+		for _, v := range v.([]interface{}) {
+			ids = append(ids, v.(map[string]interface{})["id"].(int))
+		}
+	}
+	return ids
+}
+
+func updateCFTandARMTemplateAssociations(client *hc.Client, ID string, ids []int, templateType string) diag.Diagnostics {
+	var diags diag.Diagnostics
+	cloudRuleAssocationEndpoint := fmt.Sprintf("/v3/cloud-rule/%s/association", ID)
+	reqBody := hc.CloudRuleAssociationsAdd{}
+	if templateType == "CFT" {
+		reqBody.CftIds = &ids
+	} else {
+		reqBody.AzureArmTemplateDefinitionIds = &ids
+	}
+	if _, err := client.POST(cloudRuleAssocationEndpoint, reqBody); err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Unable to update %s templates association", templateType),
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+	}
 	return diags
 }
