@@ -14,7 +14,7 @@ $ pip3 install requests
 
 ## Required Terraform Files
 
-This script will check your import directory for a `main.tf` file. If it doesn't find one, it will create one that is
+This script will check your import directory for a `.tf` file for each resource this imports. If it doesn't find one, it will create one that is
 configured with the modules included based on which resources you imported.
 
 If `main.tf` already exists, the script will create a `main.tf.example` file instead. You may have to copy some lines from that file into the existing `main.tf`, or just overwrite the existing file entirely with the new one.
