@@ -3,7 +3,7 @@
 page_title: "kion_azure_arm_template Resource - terraform-provider-kion"
 subcategory: ""
 description: |-
-
+  
 ---
 
 # kion_azure_arm_template (Resource)
@@ -33,8 +33,8 @@ description: |-
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
 - `ct_managed` (Boolean)
+- `id` (String) The ID of this resource.
 - `version` (Number)
 
 <a id="nestedblock--owner_user_groups"></a>

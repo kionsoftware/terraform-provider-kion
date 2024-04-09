@@ -3,7 +3,7 @@
 page_title: "kion_compliance_check Data Source - terraform-provider-kion"
 subcategory: ""
 description: |-
-
+  
 ---
 
 # kion_compliance_check (Data Source)
@@ -48,13 +48,13 @@ Read-Only:
 - `compliance_check_type_id` (Number)
 - `created_at` (String)
 - `created_by_user_id` (Number)
+- `ct_managed` (Boolean)
 - `description` (String)
 - `frequency_minutes` (Number)
 - `frequency_type_id` (Number)
 - `id` (Number)
 - `is_all_regions` (Boolean)
 - `is_auto_archived` (Boolean)
-- `ct_managed` (Boolean)
 - `last_scan_id` (Number)
 - `name` (String)
 - `regions` (List of String)

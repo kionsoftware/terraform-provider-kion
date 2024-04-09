@@ -3,7 +3,7 @@
 page_title: "kion_azure_policy Resource - terraform-provider-kion"
 subcategory: ""
 description: |-
-
+  
 ---
 
 # kion_azure_policy (Resource)
@@ -31,8 +31,8 @@ description: |-
 ### Read-Only
 
 - `azure_managed_policy_def_id` (String)
-- `id` (String) The ID of this resource.
 - `ct_managed` (Boolean)
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--owner_user_groups"></a>
 ### Nested Schema for `owner_user_groups`

@@ -3,7 +3,7 @@
 page_title: "kion_compliance_standard Resource - terraform-provider-kion"
 subcategory: ""
 description: |-
-
+  
 ---
 
 # kion_compliance_standard (Resource)
@@ -31,8 +31,8 @@ description: |-
 ### Read-Only
 
 - `created_at` (String)
-- `id` (String) The ID of this resource.
 - `ct_managed` (Boolean)
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--compliance_checks"></a>
 ### Nested Schema for `compliance_checks`
