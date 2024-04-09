@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.13] - 2024-04-09
+- Changed `aws_cloudformation_templates` and `azure_arm_template_definitions` from `TypeSet` to `TypeList` in the Terraform provider schema to preserve the order of templates as specified in Terraform configurations.
+- Updated the `resourceCloudRuleCreate` function to build lists of template IDs directly from the Terraform state, ensuring order preservation during cloud rule creation.
+- Modified the `resourceCloudRuleRead` function to correctly parse and set ordered template lists in the Terraform state, maintaining consistency with the API.
+- Bump Go Version to 1.22
+
 ## [0.3.12] - 2024-03-29
 - Introduced several enhancements and refactoring changes to the Makefile and the Terraform provider. The key changes include adding a development build option, introducing a sync mechanism for AWS account creation, allowing more than one `kion_aws_account` to be created at once.
 
