@@ -251,17 +251,31 @@ func FieldsChanged(iOld interface{}, iNew interface{}, fields []string) (map[str
 }
 
 func OptionalBool(d *schema.ResourceData, fieldname string) *bool {
-	if v, ok := d.Get(fieldname).(bool); ok {
-		return &v
+	b, ok := d.GetOkExists(fieldname)
+	if !ok {
+		return nil
 	}
-	return nil
+
+	ret, ok := b.(bool)
+	if !ok {
+		return nil
+	}
+
+	return &ret
 }
 
 func OptionalInt(d *schema.ResourceData, fieldname string) *int {
-	if v, ok := d.Get(fieldname).(int); ok {
-		return &v
+	v, ok := d.GetOkExists(fieldname)
+	if !ok {
+		return nil
 	}
-	return nil
+
+	ret, ok := v.(int)
+	if !ok {
+		return nil
+	}
+
+	return &ret
 }
 
 // AssociationChanged returns arrays of which values to change.

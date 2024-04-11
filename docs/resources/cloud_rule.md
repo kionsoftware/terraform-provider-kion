@@ -21,9 +21,9 @@ description: |-
 
 ### Optional
 
-- `aws_cloudformation_templates` (Block Set) (see [below for nested schema](#nestedblock--aws_cloudformation_templates))
+- `aws_cloudformation_templates` (Block List) (see [below for nested schema](#nestedblock--aws_cloudformation_templates))
 - `aws_iam_policies` (Block Set) (see [below for nested schema](#nestedblock--aws_iam_policies))
-- `azure_arm_template_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_arm_template_definitions))
+- `azure_arm_template_definitions` (Block List) (see [below for nested schema](#nestedblock--azure_arm_template_definitions))
 - `azure_policy_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_policy_definitions))
 - `azure_role_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_role_definitions))
 - `compliance_standards` (Block Set) (see [below for nested schema](#nestedblock--compliance_standards))
