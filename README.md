@@ -435,11 +435,10 @@ or a cached account ID.
 
 For example:
 
-    ```
-    terraform import kion_aws_account.test1 account_id=123
-    terraform import kion_aws_account.test2 account_cache_id=321
-    ```
-
+```bash
+terraform import kion_aws_account.test1 account_id=123
+terraform import kion_aws_account.test2 account_cache_id=321
+```
 
 ```hcl
 # Import an existing GCP project to the account cache:
@@ -469,10 +468,10 @@ or a cached account ID.
 
 For example:
 
-    ```
-    terraform import kion_gcp_account.test3 account_id=123
-    terraform import kion_gcp_account.test4 account_cache_id=321
-    ```
+```bash
+terraform import kion_gcp_account.test3 account_id=123
+terraform import kion_gcp_account.test4 account_cache_id=321
+```
 
 ```hcl
 # Import an existing Azure subscription to a project:
@@ -504,10 +503,10 @@ or a cached account ID.
 
 For example:
 
-    ```
-    terraform import kion_azure_account.test5 account_id=123
-    terraform import kion_azure_account.test6 account_cache_id=321
-    ```
+```bash
+terraform import kion_azure_account.test5 account_id=123
+terraform import kion_azure_account.test6 account_cache_id=321
+```
 
 ```hcl
 # Create a GCP IAM role.
@@ -634,7 +633,6 @@ output "fs_id" {
   value = kion_funding_source.fs1.id
 }
 ```
-
 
 ### Data Sources
 
