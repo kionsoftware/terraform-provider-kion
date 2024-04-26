@@ -150,7 +150,6 @@ func dataSourceProjectEnforcementRead(ctx context.Context, d *schema.ResourceDat
 		data["cloud_rule_id"] = item.CloudRule.ID
 		data["notification_frequency"] = item.NotificationFrequency
 		data["project_id"] = item.ProjectID
-		data["ou_id"] = item.OUID
 		data["enabled"] = item.Enabled
 		data["user_group_ids"] = item.UserGroupIds
 		data["user_ids"] = item.UserIds

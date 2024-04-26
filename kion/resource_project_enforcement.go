@@ -40,13 +40,13 @@ func resourceProjectEnforcement() *schema.Resource {
 			},
 			"spend_option": {
 				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"spend", "remaining", "spend_rate"}, false),
-				Description:  "Type of spend option. Valid values are 'spend', 'remaining', 'spend_rate'.",
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"spend", "remaining"}, false),
+				Description:  "Type of spend option. Valid values are 'spend', 'remaining'.",
 			},
 			"amount_type": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"custom", "last_month"}, false),
 				Description:  "Type of the amount. Valid values are 'custom', 'last_month'.",
 			},
@@ -57,7 +57,7 @@ func resourceProjectEnforcement() *schema.Resource {
 			},
 			"threshold_type": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"dollar", "percent"}, false),
 				Description:  "Type of the threshold value. Valid values are 'dollar', 'percent'.",
 			},
@@ -81,19 +81,16 @@ func resourceProjectEnforcement() *schema.Resource {
 				Required:    true,
 				Description: "ID of the project under enforcement.",
 			},
-			"ou_id": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Description: "If enforcement is from an Organizational Unit (OU), this is the ID of the OU.",
-			},
 			"enabled": {
 				Type:        schema.TypeBool,
-				Required:    true,
+				Optional:    true,
+				Default:     true,
 				Description: "Flag that specifies if the enforcement is enabled.",
 			},
 			"overburn": {
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Default:     false,
 				Description: "Flag that specifies if enforcement will place project in an overburn state when triggered.",
 			},
 			"user_group_ids": {
@@ -141,9 +138,9 @@ func resourceProjectEnforcementCreate(ctx context.Context, d *schema.ResourceDat
 		ThresholdType: d.Get("threshold_type").(string),
 		Threshold:     d.Get("threshold").(int),
 		CloudRuleID:   hc.OptionalInt(d, "cloud_rule_id"),
-		Overburn:      d.Get("overburn").(bool),
-		UserGroupIds:  convertToIntSlice(d.Get("user_group_ids").([]interface{})),
-		UserIds:       convertToIntSlice(d.Get("user_ids").([]interface{})),
+		Overburn:      hc.OptionalBool(d, "overburn"),
+		UserGroupIds:  hc.FlattenGenericIDPointer(d, "user_group_ids"),
+		UserIds:       hc.FlattenGenericIDPointer(d, "user_ids"),
 	}
 
 	// Build the endpoint URL for creation
@@ -213,6 +210,7 @@ func resourceProjectEnforcementRead(ctx context.Context, d *schema.ResourceData,
 			diags = append(diags, safeSet(d, "enabled", item.Enabled)...)
 			diags = append(diags, safeSet(d, "overburn", item.Overburn)...)
 			diags = append(diags, safeSet(d, "user_group_ids", item.UserGroupIds)...)
+			diags = append(diags, safeSet(d, "user_ids", item.UserIds)...)
 			found = true
 			break
 		}
@@ -220,6 +218,56 @@ func resourceProjectEnforcementRead(ctx context.Context, d *schema.ResourceData,
 
 	if !found {
 		return diag.Errorf("Enforcement ID %d not found under Project ID %d", enforcementIDInt, projectID)
+	}
+
+	return diags
+}
+
+// ModifyProjectEnforcementUsers handles adding or removing users and user groups in a project enforcement
+func ModifyProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, m interface{}, add bool) diag.Diagnostics {
+	var diags diag.Diagnostics
+	client := m.(*hc.Client)
+
+	enforcementID := d.Id()
+	projectID, ok := d.GetOk("project_id")
+	if !ok {
+		return diag.Errorf("Invalid or missing project ID")
+	}
+
+	projectIDInt, err := strconv.Atoi(projectID.(string))
+	if err != nil {
+		return diag.Errorf("Project ID should be an integer")
+	}
+
+	// Use the FlattenGenericIDPointer function properly
+	arrAddOwnerUserIds := hc.FlattenGenericIDPointer(d, "user_ids")
+	arrAddOwnerUserGroupIds := hc.FlattenGenericIDPointer(d, "user_group_ids")
+
+	if arrAddOwnerUserIds == nil && arrAddOwnerUserGroupIds == nil {
+		return diag.Errorf("At least one user ID or user group ID must be provided")
+	}
+
+	// Prepare the request body
+	req := hc.ProjectEnforcementUsersCreate{
+		UserIds:      arrAddOwnerUserIds,
+		UserGroupIds: arrAddOwnerUserGroupIds,
+	}
+
+	var endpoint string
+	if add {
+		endpoint = fmt.Sprintf("/api/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
+		_, err = client.POST(endpoint, req)
+	} else {
+		endpoint = fmt.Sprintf("/api/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
+		err = client.DELETE(endpoint, req)
+	}
+
+	if err != nil {
+		action := "adding"
+		if !add {
+			action = "removing"
+		}
+		return diag.Errorf("Error %s users/user groups in Project Enforcement: %v", action, err)
 	}
 
 	return diags
@@ -234,28 +282,42 @@ func resourceProjectEnforcementUpdate(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Invalid or missing project ID")
 	}
 
-	projectIDInt := projectID.(int)
-	enforcementID := d.Id()
-
-	// Prepare the update request
-	req := hc.ProjectEnforcementUpdate{
-		Description:   d.Get("description").(string),
-		Timeframe:     d.Get("timeframe").(string),
-		SpendOption:   d.Get("spend_option").(string),
-		AmountType:    d.Get("amount_type").(string),
-		ServiceID:     hc.OptionalInt(d, "service_id"),
-		ThresholdType: d.Get("threshold_type").(string),
-		Threshold:     d.Get("threshold").(int),
-		CloudRuleID:   hc.OptionalInt(d, "cloud_rule_id"),
-		Overburn:      d.Get("overburn").(bool),
-		Enabled:       d.Get("enabled").(bool),
+	projectIDInt, ok := projectID.(int)
+	if !ok {
+		return diag.Errorf("Project ID should be an integer")
 	}
 
-	// Send the update request
-	endpoint := fmt.Sprintf("/v3/project/%d/enforcement/%s", projectIDInt, enforcementID)
-	err := client.PATCH(endpoint, req)
-	if err != nil {
-		return diag.Errorf("Unable to update Project Enforcement: %v", err)
+	enforcementID := d.Id()
+
+	// Determine if the attributes that are updatable have changed.
+	if d.HasChanges("description", "timeframe", "spend_option", "amount_type", "service_id", "threshold_type", "threshold", "cloud_rule_id", "overburn", "enabled") {
+		req := hc.ProjectEnforcementUpdate{
+			Description:   d.Get("description").(string),
+			Timeframe:     d.Get("timeframe").(string),
+			SpendOption:   d.Get("spend_option").(string),
+			AmountType:    d.Get("amount_type").(string),
+			ServiceID:     hc.OptionalInt(d, "service_id"),
+			ThresholdType: d.Get("threshold_type").(string),
+			Threshold:     d.Get("threshold").(int),
+			CloudRuleID:   hc.OptionalInt(d, "cloud_rule_id"),
+			Overburn:      hc.OptionalBool(d, "overburn"),
+			Enabled:       hc.OptionalBool(d, "enabled"),
+		}
+
+		// Send the update request
+		endpoint := fmt.Sprintf("/v3/project/%d/enforcement/%s", projectIDInt, enforcementID)
+		err := client.PATCH(endpoint, req)
+		if err != nil {
+			return diag.Errorf("Unable to update Project Enforcement: %v", err)
+		}
+	}
+
+	// Check for changes in owner users or owner user groups
+	if d.HasChanges("user_group_ids", "user_ids") {
+		addDiags := ModifyProjectEnforcementUsers(ctx, d, m, true)
+		diags = append(diags, addDiags...)
+		removeDiags := ModifyProjectEnforcementUsers(ctx, d, m, false)
+		diags = append(diags, removeDiags...)
 	}
 
 	// Always perform a read after update to ensure state is consistent
@@ -274,7 +336,7 @@ func resourceProjectEnforcementDelete(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Invalid or missing project ID")
 	}
 
-	// Converting projectID to int, assuming it's stored as an integer in the state
+	// Converting projectID to int
 	projectIDInt, ok := projectID.(int)
 	if !ok {
 		return diag.Errorf("Project ID should be an integer")
@@ -303,24 +365,18 @@ func resourceProjectEnforcementDelete(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-// Helper function to convert []interface{} from Terraform state to []int required by the Kion API.
-func convertToIntSlice(interfaceSlice []interface{}) []int {
-	intSlice := make([]int, len(interfaceSlice))
-	for i, v := range interfaceSlice {
-		intSlice[i] = v.(int)
-	}
-	return intSlice
-}
-
-// Handle setting Terraform schema values, centralizing error reporting
+// Handle setting Terraform schema values, centralizing error reporting and ensuring non-nil values
 func safeSet(d *schema.ResourceData, key string, value interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	if err := d.Set(key, value); err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error setting field",
-			Detail:   fmt.Sprintf("Error setting %s: %s", key, err),
-		})
+	// Check if the value is non-nil before setting
+	if value != nil {
+		if err := d.Set(key, value); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error setting field",
+				Detail:   fmt.Sprintf("Error setting %s: %s", key, err),
+			})
+		}
 	}
 	return diags
 }

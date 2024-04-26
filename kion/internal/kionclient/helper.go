@@ -126,6 +126,14 @@ func FlattenGenericIDArray(d *schema.ResourceData, key string) []int {
 	return uids
 }
 
+func ConvertToIntSlice(interfaceSlice []interface{}) []int {
+	intSlice := make([]int, len(interfaceSlice))
+	for i, v := range interfaceSlice {
+		intSlice[i] = v.(int)
+	}
+	return intSlice
+}
+
 // FlattenGenericIDPointer -
 func FlattenGenericIDPointer(d *schema.ResourceData, key string) *[]int {
 	uid := d.Get(key)
