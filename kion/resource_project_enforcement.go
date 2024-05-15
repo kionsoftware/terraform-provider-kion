@@ -223,7 +223,6 @@ func resourceProjectEnforcementRead(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-// ModifyProjectEnforcementUsers handles adding or removing users and user groups in a project enforcement
 func ModifyProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, m interface{}, add bool) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
@@ -234,40 +233,39 @@ func ModifyProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Invalid or missing project ID")
 	}
 
-	projectIDInt, err := strconv.Atoi(projectID.(string))
-	if err != nil {
-		return diag.Errorf("Project ID should be an integer")
+	// Assuming projectID is always an integer based on your other function
+	projectIDInt, ok := projectID.(int)
+	if !ok {
+		return diag.Errorf("Project ID should be an integer, got %T", projectID)
 	}
 
 	// Use the FlattenGenericIDPointer function properly
-	arrAddOwnerUserIds := hc.FlattenGenericIDPointer(d, "user_ids")
-	arrAddOwnerUserGroupIds := hc.FlattenGenericIDPointer(d, "user_group_ids")
+	arrAddUserIds := hc.FlattenGenericIDPointer(d, "user_ids")
+	arrAddUserGroupIds := hc.FlattenGenericIDPointer(d, "user_group_ids")
 
-	if arrAddOwnerUserIds == nil && arrAddOwnerUserGroupIds == nil {
+	if arrAddUserIds == nil && arrAddUserGroupIds == nil {
 		return diag.Errorf("At least one user ID or user group ID must be provided")
 	}
 
 	// Prepare the request body
 	req := hc.ProjectEnforcementUsersCreate{
-		UserIds:      arrAddOwnerUserIds,
-		UserGroupIds: arrAddOwnerUserGroupIds,
+		UserIds:      arrAddUserIds,
+		UserGroupIds: arrAddUserGroupIds,
 	}
 
 	var endpoint string
 	if add {
-		endpoint = fmt.Sprintf("/api/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
-		_, err = client.POST(endpoint, req)
-	} else {
-		endpoint = fmt.Sprintf("/api/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
-		err = client.DELETE(endpoint, req)
-	}
-
-	if err != nil {
-		action := "adding"
-		if !add {
-			action = "removing"
+		endpoint = fmt.Sprintf("/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
+		_, err := client.POST(endpoint, req)
+		if err != nil {
+			return diag.Errorf("Error adding users/user groups in Project Enforcement: %v", err)
 		}
-		return diag.Errorf("Error %s users/user groups in Project Enforcement: %v", action, err)
+	} else {
+		endpoint = fmt.Sprintf("/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
+		err := client.DELETE(endpoint, req)
+		if err != nil {
+			return diag.Errorf("Error removing users/user groups in Project Enforcement: %v", err)
+		}
 	}
 
 	return diags
