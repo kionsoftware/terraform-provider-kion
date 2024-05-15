@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [0.3.14] - 2024-05-15
 
 - Fixed an issue where the provider would attempt to update project labels even when labels were not defined in the HCL. The provider now checks if labels are explicitly set and non-empty before making update requests, preventing unnecessary API calls and avoiding the `405 Method Not Allowed error` from any Kion version before v3.7.7.
-- Added examples into example directory that previously only were in the `READEME.md` file.
+- Added examples into example directory that previously only were in the `README.md` file.  This allows each resources to have more example information directly in the resource docs.
 
 ## [0.3.13] - 2024-04-09
 
