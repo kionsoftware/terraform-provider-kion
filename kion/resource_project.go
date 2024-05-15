@@ -304,7 +304,7 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	if d.Get("labels") != nil {
+	if labels, ok := d.GetOk("labels"); ok && labels != nil {
 		ID := d.Id()
 		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
 

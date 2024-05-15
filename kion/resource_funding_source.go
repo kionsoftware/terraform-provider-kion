@@ -132,14 +132,14 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	if d.Get("labels") != nil {
+	if labels, ok := d.GetOk("labels"); ok && labels != nil {
 		ID := d.Id()
-		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
+		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "project", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Unable to update funding source labels",
+				Summary:  "Unable to update Project labels",
 				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 			})
 			return diags
