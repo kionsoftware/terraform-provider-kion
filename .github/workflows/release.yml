@@ -10,13 +10,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Unshallow
         run: git fetch --prune --unshallow
 
+      - name: Verify Tag on Main Branch
+        id: verify_tag
+        run: |
+          BRANCH=$(git branch -r --contains $GITHUB_REF | grep 'origin/main' || true)
+          if [ -z "$BRANCH" ]; then
+            echo "Tag is not on the main branch. Exiting."
+            exit 1
+          fi
+
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: '^1.22.0'
 
@@ -30,19 +39,10 @@ jobs:
       - name: Extract Tag Name
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      - name: Extract Release Notes
-        run: |
-          VERSION=$(echo $VERSION | sed 's/^v//')
-          RELEASE_NOTES=$(awk -v version="$VERSION" '$0 ~ "^## \\[" version "\\] - " {printIt=1;next} /^## \[/ {printIt=0} printIt {print}' CHANGELOG.md)
-          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
-          echo "$RELEASE_NOTES" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
-          args: release --release-notes="${{ env.RELEASE_NOTES }}"
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
