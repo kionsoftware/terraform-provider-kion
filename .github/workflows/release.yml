@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - '**'
 
 jobs:
   goreleaser:
@@ -15,17 +17,25 @@ jobs:
       - name: Unshallow
         run: git fetch --prune --unshallow
 
-      - name: Verify Tag on Main Branch
-        id: verify_tag
+      - name: Verify Tag and Branch
+        id: verify_tag_branch
         run: |
-          BRANCH=$(git branch -r --contains $GITHUB_REF | grep 'origin/main' || true)
-          if [ -z "$BRANCH" ]; then
-            echo "Tag is not on the main branch. Exiting."
-            exit 1
+          if [ "${GITHUB_REF_TYPE}" == "tag" ]; then
+            BRANCH=$(git branch -r --contains $GITHUB_REF | grep 'origin/main' || true)
+            if [ -z "$BRANCH" ]; then
+              echo "Tag is not on the main branch. Performing dry run."
+              echo "dry_run=true" >> $GITHUB_ENV
+            else
+              echo "Tag is on the main branch. Proceeding with release."
+              echo "dry_run=false" >> $GITHUB_ENV
+            fi
+          else
+            echo "No tag found. Performing dry run."
+            echo "dry_run=true" >> $GITHUB_ENV
           fi
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '^1.22.0'
 
@@ -37,12 +47,21 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }}
 
       - name: Extract Tag Name
+        if: ${{ env.dry_run == 'false' }}
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
+      - name: Extract Version from Makefile
+        if: ${{ env.dry_run == 'true' }}
+        run: |
+          VERSION=$(grep -E '^VERSION' Makefile | awk -F= '{print $2}' | xargs)
+          echo "VERSION=v$VERSION" >> $GITHUB_ENV
+
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v5
         with:
-          version: latest
+          version: '~> v1'
+          args: ${{ env.dry_run == 'true' && 'release --clean --skip=publish,validate' || 'release --clean' }}
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ env.VERSION }}
