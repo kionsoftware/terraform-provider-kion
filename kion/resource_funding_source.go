@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceFundingSource() *schema.Resource {
@@ -99,7 +99,7 @@ func resourceFundingSource() *schema.Resource {
 
 func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.FundingSourceCreate{
 		Amount:             d.Get("amount").(int),
@@ -113,7 +113,7 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 		OwnerUserGroupIds:  hc.FlattenGenericIDPointer(d, "owner_user_groups"),
 	}
 
-	resp, err := c.POST("/v3/funding-source", post)
+	resp, err := client.POST("/v3/funding-source", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -132,14 +132,14 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	if d.Get("labels") != nil {
+	if labels, ok := d.GetOk("labels"); ok && labels != nil {
 		ID := d.Id()
-		err = hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
+		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Unable to update funding source labels",
+				Summary:  "Unable to update Funding Source labels",
 				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 			})
 			return diags
@@ -153,11 +153,11 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 
 func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.FundingSourceResponse)
-	err := c.GET(fmt.Sprintf("/v3/funding-source/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/funding-source/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -177,7 +177,7 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 	data["end_datecode"] = item.EndDatecode
 
 	permissionResp := new(hc.FSUserMappingListResponse)
-	err = c.GET(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), permissionResp)
+	err = client.GET(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), permissionResp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -210,7 +210,7 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	// Fetch labels
-	labelData, err := hc.ReadResourceLabels(c, "funding-source", ID)
+	labelData, err := hc.ReadResourceLabels(client, "funding-source", ID)
 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -236,7 +236,7 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -261,7 +261,7 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 			StartDatecode: d.Get("start_datecode").(string),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/funding-source/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/funding-source/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -291,7 +291,7 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 			len(arrAddOwnerUserIds) > 0 ||
 			len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := c.PATCH(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), patch)
+			err := client.PATCH(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), patch)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -310,7 +310,7 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 	if d.HasChanges("labels") {
 		hasChanged++
 
-		err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
+		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -327,10 +327,10 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 func resourceFundingSourceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/funding-source/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/funding-source/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

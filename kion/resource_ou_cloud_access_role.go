@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceOUCloudAccessRole() *schema.Resource {
@@ -120,7 +120,7 @@ func resourceOUCloudAccessRole() *schema.Resource {
 
 func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.OUCloudAccessRoleCreate{
 		AwsIamPath:                d.Get("aws_iam_path").(string),
@@ -137,7 +137,7 @@ func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData
 		WebAccess:                 d.Get("web_access").(bool),
 	}
 
-	resp, err := c.POST("/v3/ou-cloud-access-role", post)
+	resp, err := client.POST("/v3/ou-cloud-access-role", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -163,11 +163,11 @@ func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData
 
 func resourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.OUCloudAccessRoleResponse)
-	err := c.GET(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -218,7 +218,7 @@ func resourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, 
 
 func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -239,7 +239,7 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 			WebAccess:           d.Get("web_access").(bool),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -266,8 +266,9 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 		if arrAddAwsIamPermissionsBoundary != nil ||
 			len(arrAddAwsIamPolicies) > 0 ||
 			len(arrAddUserGroupIds) > 0 ||
+			len(arrAddAzureRoleDefinitions) > 0 ||
 			len(arrAddUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), hc.OUCloudAccessRoleAssociationsAdd{
+			_, err := client.POST(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), hc.OUCloudAccessRoleAssociationsAdd{
 				AwsIamPermissionsBoundary: arrAddAwsIamPermissionsBoundary,
 				AwsIamPolicies:            &arrAddAwsIamPolicies,
 				AzureRoleDefinitions:      &arrAddAzureRoleDefinitions,
@@ -277,7 +278,7 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  "Unable to add owners on OUCloudAccessRole",
+					Summary:  "Unable to add associations on OUCloudAccessRole",
 					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 				})
 				return diags
@@ -289,7 +290,7 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 			len(arrRemoveAzureRoleDefinitions) > 0 ||
 			len(arrRemoveUserGroupIds) > 0 ||
 			len(arrRemoveUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), hc.OUCloudAccessRoleAssociationsRemove{
+			err := client.DELETE(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), hc.OUCloudAccessRoleAssociationsRemove{
 				AwsIamPermissionsBoundary: arrRemoveAwsIamPermissionsBoundary,
 				AwsIamPolicies:            &arrRemoveAwsIamPolicies,
 				AzureRoleDefinitions:      &arrRemoveAzureRoleDefinitions,
@@ -316,10 +317,10 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 
 func resourceOUCloudAccessRoleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

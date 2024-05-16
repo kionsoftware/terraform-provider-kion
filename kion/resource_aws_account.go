@@ -5,17 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceAwsAccount() *schema.Resource {
@@ -209,7 +209,7 @@ func resourceAwsAccount() *schema.Resource {
 
 func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	accountLocation := getKionAccountLocation(d)
 
@@ -263,7 +263,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		if rb, err := json.Marshal(postAccountData); err == nil {
 			tflog.Debug(ctx, fmt.Sprintf("Importing exiting AWS account via POST %s", accountUrl), map[string]interface{}{"postData": string(rb)})
 		}
-		resp, err := c.POST(accountUrl, postAccountData)
+		resp, err := client.POST(accountUrl, postAccountData)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -284,90 +284,9 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		d.SetId(strconv.Itoa(resp.RecordID))
 
 	} else {
-		// Create a new AWS account
-
-		postCacheData := hc.AccountCacheNewAWSCreate{
-			AccountEmail:              d.Get("email").(string),
-			Name:                      d.Get("name").(string),
-			CommercialAccountName:     d.Get("commercial_account_name").(string),
-			CreateGovcloud:            hc.OptionalBool(d, "create_govcloud"),
-			GovAccountName:            d.Get("gov_account_name").(string),
-			IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
-			LinkedRole:                d.Get("linked_role").(string),
-			PayerID:                   d.Get("payer_id").(int),
-		}
-
-		if v, exists := d.GetOk("aws_organizational_unit"); exists {
-			orgUnitSet := v.(*schema.Set)
-			for _, item := range orgUnitSet.List() {
-				if orgUnitMap, ok := item.(map[string]interface{}); ok {
-					postCacheData.OrganizationalUnit = &hc.PayerOrganizationalUnit{
-						Name:      orgUnitMap["name"].(string),
-						OrgUnitId: orgUnitMap["org_unit_id"].(string),
-					}
-				}
-			}
-		}
-
-		if rb, err := json.Marshal(postCacheData); err == nil {
-			tflog.Debug(ctx, "Creating new AWS account via POST /v3/account-cache/create?account-type=aws", map[string]interface{}{"postData": string(rb)})
-		}
-		respCache, err := c.POST("/v3/account-cache/create?account-type=aws", postCacheData)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to create AWS Account",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), postCacheData),
-			})
-			return diags
-		} else if respCache.RecordID == 0 {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to create AWS Account",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), postCacheData),
-			})
-			return diags
-		}
-
-		accountCacheId := respCache.RecordID
-
-		// Wait for account to be created
-		createStateConf := &resource.StateChangeConf{
-			Refresh: func() (interface{}, string, error) {
-				resp := new(hc.AccountResponse)
-				err := c.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
-				if err != nil {
-					if resErr, ok := err.(*hc.RequestError); ok {
-						if resErr.StatusCode == http.StatusNotFound {
-							// StateChangeConf handles 404s differently than errors, so return nil instead of err
-							tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d not found", accountCacheId))
-							return nil, "NotFound", nil
-						}
-					}
-					tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d error", accountCacheId), map[string]interface{}{"error": err})
-					return nil, "Error", err
-				}
-				if resp.Data.AccountNumber == "" {
-					tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d missing account number", accountCacheId))
-					return resp, "MissingAccountNumber", nil
-				}
-				return resp, "AccountCreated", nil
-			},
-			Pending: []string{
-				"MissingAccountNumber",
-			},
-			Target: []string{
-				"AccountCreated",
-			},
-			Timeout: d.Timeout(schema.TimeoutCreate),
-		}
-		_, err = createStateConf.WaitForState()
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to create AWS Account",
-				Detail:   fmt.Sprintf("Error: %v", err.Error()),
-			})
+		// Call the createAwsAccount function
+		diags, accountCacheId := createAwsAccount(ctx, client, d)
+		if diags.HasError() {
 			return diags
 		}
 
@@ -376,8 +295,10 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			// Move cached account to the requested project
 			projectId := d.Get("project_id").(int)
 			startDatecode := time.Now().Format("200601")
+			retries := 3              // Number of retries
+			delay := 30 * time.Second // Delay between retries
 
-			newId, err := convertCacheAccountToProjectAccount(c, accountCacheId, projectId, startDatecode)
+			newId, err := retryConvertCacheAccountToProjectAccountForAWS(client, accountCacheId, projectId, startDatecode, retries, delay)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -402,7 +323,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 	if accountLocation == ProjectLocation {
 		if _, ok := d.GetOk("labels"); ok {
 			ID := d.Id()
-			err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
+			err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
@@ -417,6 +338,130 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 	}
 
 	return append(diags, resourceAwsAccountRead(ctx, d, m)...)
+}
+
+func createAwsAccount(ctx context.Context, client *hc.Client, d *schema.ResourceData) (diag.Diagnostics, int) {
+	var diags diag.Diagnostics
+
+	// Lock to ensure one account creation process at a time as AWS Orgs cannot handle more than one account creation at a time.
+	awsAccountCreationMux.Lock()
+	defer awsAccountCreationMux.Unlock()
+
+	postCacheData := hc.AccountCacheNewAWSCreate{
+		AccountEmail:              d.Get("email").(string),
+		Name:                      d.Get("name").(string),
+		CommercialAccountName:     d.Get("commercial_account_name").(string),
+		CreateGovcloud:            hc.OptionalBool(d, "create_govcloud"),
+		GovAccountName:            d.Get("gov_account_name").(string),
+		IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
+		LinkedRole:                d.Get("linked_role").(string),
+		PayerID:                   d.Get("payer_id").(int),
+	}
+
+	// Populate organizational unit details from Terraform resource data, if provided by user.
+	if err := populateOrgUnitFromResourceData(client, &postCacheData, d); err != nil {
+		return diag.FromErr(err), 0
+	}
+
+	// Log the account creation POST data.
+	if err := logPostData(ctx, client, postCacheData); err != nil {
+		// If logging fails, only warn instead of failing the operation.
+		tflog.Warn(ctx, "Failed to log post data for AWS account creation", map[string]interface{}{"error": err.Error()})
+	}
+
+	// Send the POST request to create the AWS account.
+	respCache, err := client.POST("/v3/account-cache/create?account-type=aws", postCacheData)
+	if err != nil || respCache.RecordID == 0 {
+		if err == nil {
+			err = fmt.Errorf("received item ID of 0")
+		}
+		return diag.Errorf("Unable to create AWS Account: %v", err), 0
+	}
+
+	// Wait for the account to be fully created.
+	if err := waitForAccountCreation(client, ctx, respCache.RecordID, d); err != nil {
+		return diag.FromErr(err), 0
+	}
+
+	// Return any diagnostics and the ID of the created account cache.
+	return diags, respCache.RecordID
+}
+
+// logPostData logs the data being posted for account creation. It returns an error if marshalling fails.
+func logPostData(ctx context.Context, client *hc.Client, postData interface{}) error {
+	rb, err := json.Marshal(postData)
+	if err != nil {
+		return err
+	}
+	tflog.Debug(ctx, "Creating new AWS account via POST /v3/account-cache/create?account-type=aws", map[string]interface{}{"postData": string(rb)})
+	return nil
+}
+
+// populateOrgUnitFromResourceData parses OU details from Terraform data, updating AccountCacheNewAWSCreate for account creation.
+func populateOrgUnitFromResourceData(client *hc.Client, postCacheData *hc.AccountCacheNewAWSCreate, d *schema.ResourceData) error {
+	if v, exists := d.GetOk("aws_organizational_unit"); exists {
+		orgUnitSet := v.(*schema.Set)
+		for _, item := range orgUnitSet.List() {
+			orgUnitMap, ok := item.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("invalid format for aws_organizational_unit")
+			}
+			postCacheData.OrganizationalUnit = &hc.PayerOrganizationalUnit{
+				Name:      orgUnitMap["name"].(string),
+				OrgUnitId: orgUnitMap["org_unit_id"].(string),
+			}
+		}
+	}
+	return nil
+}
+
+// waitForAccountCreation polls the creation status until the account is created or a timeout occurs.
+func waitForAccountCreation(client *hc.Client, ctx context.Context, accountCacheId int, d *schema.ResourceData) error {
+	createStateConf := &retry.StateChangeConf{
+		// Define the refresh function, which checks the account creation status.
+		Refresh: func() (interface{}, string, error) {
+			resp := new(hc.AccountResponse)
+			err := client.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
+			if err != nil {
+				// Directly return errors, including NotFound, allowing the SDK to handle retries for NotFound appropriately.
+				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d error", accountCacheId), map[string]interface{}{"error": err, "accountCacheId": accountCacheId})
+				return nil, "", err
+			}
+
+			// Check if the account number is still not available in the response.
+			if resp.Data.AccountNumber == "" {
+				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d missing account number", accountCacheId), map[string]interface{}{"accountCacheId": accountCacheId})
+				return resp, "MissingAccountNumber", nil
+			}
+
+			// Account creation is successful.
+			return resp, "AccountCreated", nil
+		},
+		Pending: []string{"MissingAccountNumber"},
+		Target:  []string{"AccountCreated"},
+		Timeout: d.Timeout(schema.TimeoutCreate),
+	}
+
+	// Use WaitForStateContext to respect the given context's deadline or cancellation.
+	_, err := createStateConf.WaitForStateContext(ctx)
+	return err // Return the error, if any.
+}
+
+func retryConvertCacheAccountToProjectAccountForAWS(client *hc.Client, accountCacheId, projectId int, startDatecode string, retries int, delay time.Duration) (int, error) {
+	var lastErr error
+	for i := 0; i < retries; i++ {
+		id, err := convertCacheAccountToProjectAccount(client, accountCacheId, projectId, startDatecode)
+		if err == nil {
+			return id, nil
+		}
+		if strings.Contains(err.Error(), "Rule is already in progress") && i < retries-1 {
+			time.Sleep(delay)
+			continue
+		}
+		lastErr = err
+		break
+	}
+	return 0, lastErr
 }
 
 func resourceAwsAccountRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

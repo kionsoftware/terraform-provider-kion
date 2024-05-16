@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceServiceControlPolicy() *schema.Resource {
@@ -89,7 +89,7 @@ func resourceServiceControlPolicy() *schema.Resource {
 
 func resourceServiceControlPolicyCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.ServiceControlPolicyCreate{
 		Description:       d.Get("description").(string),
@@ -99,7 +99,7 @@ func resourceServiceControlPolicyCreate(ctx context.Context, d *schema.ResourceD
 		Policy:            d.Get("policy").(string),
 	}
 
-	resp, err := c.POST("/v3/service-control-policy", post)
+	resp, err := client.POST("/v3/service-control-policy", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -125,11 +125,11 @@ func resourceServiceControlPolicyCreate(ctx context.Context, d *schema.ResourceD
 
 func resourceServiceControlPolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ServiceControlPolicyResponse)
-	err := c.GET(fmt.Sprintf("/v3/service-control-policy/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/service-control-policy/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -170,7 +170,7 @@ func resourceServiceControlPolicyRead(ctx context.Context, d *schema.ResourceDat
 
 func resourceServiceControlPolicyUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -189,7 +189,7 @@ func resourceServiceControlPolicyUpdate(ctx context.Context, d *schema.ResourceD
 			Policy:      d.Get("policy").(string),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/service-control-policy/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/service-control-policy/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -209,7 +209,7 @@ func resourceServiceControlPolicyUpdate(ctx context.Context, d *schema.ResourceD
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/service-control-policy/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/service-control-policy/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -225,7 +225,7 @@ func resourceServiceControlPolicyUpdate(ctx context.Context, d *schema.ResourceD
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/service-control-policy/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/service-control-policy/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -249,10 +249,10 @@ func resourceServiceControlPolicyUpdate(ctx context.Context, d *schema.ResourceD
 
 func resourceServiceControlPolicyDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/service-control-policy/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/service-control-policy/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

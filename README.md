@@ -29,7 +29,7 @@ terraform {
   required_providers {
     kion = {
       source  = "kionsoftware/kion"
-      version = "0.3.9"
+      version = "0.3.13"
     }
   }
 }
@@ -435,11 +435,10 @@ or a cached account ID.
 
 For example:
 
-    ```
-    terraform import kion_aws_account.test1 account_id=123
-    terraform import kion_aws_account.test2 account_cache_id=321
-    ```
-
+```bash
+terraform import kion_aws_account.test1 account_id=123
+terraform import kion_aws_account.test2 account_cache_id=321
+```
 
 ```hcl
 # Import an existing GCP project to the account cache:
@@ -469,10 +468,10 @@ or a cached account ID.
 
 For example:
 
-    ```
-    terraform import kion_gcp_account.test3 account_id=123
-    terraform import kion_gcp_account.test4 account_cache_id=321
-    ```
+```bash
+terraform import kion_gcp_account.test3 account_id=123
+terraform import kion_gcp_account.test4 account_cache_id=321
+```
 
 ```hcl
 # Import an existing Azure subscription to a project:
@@ -504,10 +503,10 @@ or a cached account ID.
 
 For example:
 
-    ```
-    terraform import kion_azure_account.test5 account_id=123
-    terraform import kion_azure_account.test6 account_cache_id=321
-    ```
+```bash
+terraform import kion_azure_account.test5 account_id=123
+terraform import kion_azure_account.test6 account_cache_id=321
+```
 
 ```hcl
 # Create a GCP IAM role.
@@ -635,7 +634,6 @@ output "fs_id" {
 }
 ```
 
-
 ### Data Sources
 
 ```hcl
@@ -727,11 +725,11 @@ data "kion_aws_iam_policy" "p1" {
 output "policy_access" {
   value = {
     # Loop through each policy
-    for c in data.kion_aws_iam_policy.p1.list :
+    for k in data.kion_aws_iam_policy.p1.list :
     # Create a map with a key of: id
-    c.id => c
+    k.id => k
     # Filter out an names that don't match the passed in variable
-    if c.name == "SystemReadOnlyAccess"
+    if k.name == "SystemReadOnlyAccess"
   }
 }
 ```

@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceProjectCloudAccessRole() *schema.Resource {
@@ -146,7 +146,7 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 
 func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.ProjectCloudAccessRoleCreate{
 		AccountIds:                hc.FlattenGenericIDPointer(d, "accounts"),
@@ -166,7 +166,7 @@ func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.Resourc
 		WebAccess:                 d.Get("web_access").(bool),
 	}
 
-	resp, err := c.POST("/v3/project-cloud-access-role", post)
+	resp, err := client.POST("/v3/project-cloud-access-role", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -192,11 +192,11 @@ func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.Resourc
 
 func resourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ProjectCloudAccessRoleResponse)
-	err := c.GET(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -252,7 +252,7 @@ func resourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.ResourceD
 
 func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -277,7 +277,7 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 			WebAccess:           d.Get("web_access").(bool),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -309,7 +309,7 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 			len(arrAddAzureRoleDefinitions) > 0 ||
 			len(arrAddUserGroupIds) > 0 ||
 			len(arrAddUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), hc.ProjectCloudAccessRoleAssociationsAdd{
+			_, err := client.POST(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), hc.ProjectCloudAccessRoleAssociationsAdd{
 				AccountIds:                &arrAddAccountIds,
 				AwsIamPermissionsBoundary: arrAddAwsIamPermissionsBoundary,
 				AwsIamPolicies:            &arrAddAwsIamPolicies,
@@ -333,7 +333,7 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 			len(arrRemoveAzureRoleDefinitions) > 0 ||
 			len(arrRemoveUserGroupIds) > 0 ||
 			len(arrRemoveUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), hc.ProjectCloudAccessRoleAssociationsRemove{
+			err := client.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), hc.ProjectCloudAccessRoleAssociationsRemove{
 				AccountIds:                &arrRemoveAccountIds,
 				AwsIamPermissionsBoundary: arrRemoveAwsIamPermissionsBoundary,
 				AwsIamPolicies:            &arrRemoveAwsIamPolicies,
@@ -361,10 +361,10 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 
 func resourceProjectCloudAccessRoleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

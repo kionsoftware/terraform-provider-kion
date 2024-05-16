@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceAzureArmTemplate() *schema.Resource {
@@ -104,7 +104,7 @@ func resourceAzureArmTemplate() *schema.Resource {
 
 func resourceAzureArmTemplateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.AzureARMTemplateDefinitionCreate{
 		DeploymentMode:        d.Get("deployment_mode").(int),
@@ -118,7 +118,7 @@ func resourceAzureArmTemplateCreate(ctx context.Context, d *schema.ResourceData,
 		TemplateParameters:    d.Get("template_parameters").(string),
 	}
 
-	resp, err := c.POST("/v3/azure-arm-template", post)
+	resp, err := client.POST("/v3/azure-arm-template", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -144,11 +144,11 @@ func resourceAzureArmTemplateCreate(ctx context.Context, d *schema.ResourceData,
 
 func resourceAzureArmTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.AzureARMTemplateResponse)
-	err := c.GET(fmt.Sprintf("/v3/azure-arm-template/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/azure-arm-template/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -192,7 +192,7 @@ func resourceAzureArmTemplateRead(ctx context.Context, d *schema.ResourceData, m
 
 func resourceAzureArmTemplateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -215,7 +215,7 @@ func resourceAzureArmTemplateUpdate(ctx context.Context, d *schema.ResourceData,
 			TemplateParameters: d.Get("template_parameters").(string),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/azure-arm-template/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/azure-arm-template/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -235,7 +235,7 @@ func resourceAzureArmTemplateUpdate(ctx context.Context, d *schema.ResourceData,
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/azure-arm-template/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/azure-arm-template/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -251,7 +251,7 @@ func resourceAzureArmTemplateUpdate(ctx context.Context, d *schema.ResourceData,
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/azure-arm-template/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/azure-arm-template/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -275,10 +275,10 @@ func resourceAzureArmTemplateUpdate(ctx context.Context, d *schema.ResourceData,
 
 func resourceAzureArmTemplateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/azure-arm-template/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/azure-arm-template/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

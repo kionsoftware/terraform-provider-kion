@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceComplianceStandard() *schema.Resource {
@@ -98,7 +98,7 @@ func resourceComplianceStandard() *schema.Resource {
 
 func resourceComplianceStandardCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.ComplianceStandardCreate{
 		ComplianceCheckIds: hc.FlattenGenericIDPointer(d, "compliance_checks"),
@@ -109,7 +109,7 @@ func resourceComplianceStandardCreate(ctx context.Context, d *schema.ResourceDat
 		OwnerUserIds:       hc.FlattenGenericIDPointer(d, "owner_users"),
 	}
 
-	resp, err := c.POST("/v3/compliance/standard", post)
+	resp, err := client.POST("/v3/compliance/standard", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -135,11 +135,11 @@ func resourceComplianceStandardCreate(ctx context.Context, d *schema.ResourceDat
 
 func resourceComplianceStandardRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ComplianceStandardResponse)
-	err := c.GET(fmt.Sprintf("/v3/compliance/standard/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/compliance/standard/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -182,7 +182,7 @@ func resourceComplianceStandardRead(ctx context.Context, d *schema.ResourceData,
 
 func resourceComplianceStandardUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -199,7 +199,7 @@ func resourceComplianceStandardUpdate(ctx context.Context, d *schema.ResourceDat
 			Name:        d.Get("name").(string),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/compliance/standard/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/compliance/standard/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -216,7 +216,7 @@ func resourceComplianceStandardUpdate(ctx context.Context, d *schema.ResourceDat
 		arrAddComplianceCheckIds, arrRemoveComplianceCheckIds, _, _ := hc.AssociationChanged(d, "compliance_checks")
 
 		if len(arrAddComplianceCheckIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/compliance/standard/%s/association", ID), hc.ComplianceStandardAssociationsAdd{
+			_, err := client.POST(fmt.Sprintf("/v3/compliance/standard/%s/association", ID), hc.ComplianceStandardAssociationsAdd{
 				ComplianceCheckIds: &arrAddComplianceCheckIds,
 			})
 			if err != nil {
@@ -230,7 +230,7 @@ func resourceComplianceStandardUpdate(ctx context.Context, d *schema.ResourceDat
 		}
 
 		if len(arrRemoveComplianceCheckIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/compliance/standard/%s/association", ID), hc.ComplianceStandardAssociationsRemove{
+			err := client.DELETE(fmt.Sprintf("/v3/compliance/standard/%s/association", ID), hc.ComplianceStandardAssociationsRemove{
 				ComplianceCheckIds: &arrRemoveComplianceCheckIds,
 			})
 			if err != nil {
@@ -253,7 +253,7 @@ func resourceComplianceStandardUpdate(ctx context.Context, d *schema.ResourceDat
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/compliance/standard/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/compliance/standard/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -269,7 +269,7 @@ func resourceComplianceStandardUpdate(ctx context.Context, d *schema.ResourceDat
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/compliance/standard/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/compliance/standard/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -293,10 +293,10 @@ func resourceComplianceStandardUpdate(ctx context.Context, d *schema.ResourceDat
 
 func resourceComplianceStandardDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v3/compliance/standard/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v3/compliance/standard/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

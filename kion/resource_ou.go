@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/ctclient"
+	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
 func resourceOU() *schema.Resource {
@@ -92,7 +92,7 @@ func resourceOU() *schema.Resource {
 
 func resourceOUCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 
 	post := hc.OUCreate{
 		Description:        d.Get("description").(string),
@@ -103,7 +103,7 @@ func resourceOUCreate(ctx context.Context, d *schema.ResourceData, m interface{}
 		PermissionSchemeID: d.Get("permission_scheme_id").(int),
 	}
 
-	resp, err := c.POST("/v3/ou", post)
+	resp, err := client.POST("/v3/ou", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -122,9 +122,9 @@ func resourceOUCreate(ctx context.Context, d *schema.ResourceData, m interface{}
 
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	if d.Get("labels") != nil {
+	if labels, ok := d.GetOk("labels"); ok && labels != nil {
 		ID := d.Id()
-		err = hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "ou", ID)
+		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "ou", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -143,11 +143,11 @@ func resourceOUCreate(ctx context.Context, d *schema.ResourceData, m interface{}
 
 func resourceOURead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.OUResponse)
-	err := c.GET(fmt.Sprintf("/v3/ou/%s", ID), resp)
+	err := client.GET(fmt.Sprintf("/v3/ou/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -183,7 +183,7 @@ func resourceOURead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	// Fetch labels
-	labelData, err := hc.ReadResourceLabels(c, "ou", ID)
+	labelData, err := hc.ReadResourceLabels(client, "ou", ID)
 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -209,7 +209,7 @@ func resourceOURead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
@@ -228,7 +228,7 @@ func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 			PermissionSchemeID: d.Get("permission_scheme_id").(int),
 		}
 
-		err := c.PATCH(fmt.Sprintf("/v3/ou/%s", ID), req)
+		err := client.PATCH(fmt.Sprintf("/v3/ou/%s", ID), req)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -241,7 +241,7 @@ func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 
 	// Allow moving an OU if the parent ID changes and updating permissions.
 	// Don't let codegen remove this.
-	diags, hasChanged = OUChanges(c, d, diags, hasChanged)
+	diags, hasChanged = OUChanges(client, d, diags, hasChanged)
 	if len(diags) > 0 {
 		return diags
 	}
@@ -255,7 +255,7 @@ func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 
 		if len(arrAddOwnerUserGroupIds) > 0 ||
 			len(arrAddOwnerUserIds) > 0 {
-			_, err := c.POST(fmt.Sprintf("/v3/ou/%s/owner", ID), hc.ChangeOwners{
+			_, err := client.POST(fmt.Sprintf("/v3/ou/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
@@ -271,7 +271,7 @@ func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 
 		if len(arrRemoveOwnerUserGroupIds) > 0 ||
 			len(arrRemoveOwnerUserIds) > 0 {
-			err := c.DELETE(fmt.Sprintf("/v3/ou/%s/owner", ID), hc.ChangeOwners{
+			err := client.DELETE(fmt.Sprintf("/v3/ou/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
@@ -289,7 +289,7 @@ func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 	if d.HasChanges("labels") {
 		hasChanged++
 
-		err := hc.PutAppLabelIDs(c, hc.FlattenAssociateLabels(d, "labels"), "ou", ID)
+		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "ou", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -310,10 +310,10 @@ func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 
 func resourceOUDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	c := m.(*hc.Client)
+	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := c.DELETE(fmt.Sprintf("/v2/ou/%s", ID), nil)
+	err := client.DELETE(fmt.Sprintf("/v2/ou/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

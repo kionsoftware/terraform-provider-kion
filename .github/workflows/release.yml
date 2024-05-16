@@ -1,12 +1,3 @@
-# This GitHub action publishes assets for a release when a tag is created.
-# It's configured to trigger on tags that match the pattern "v*" (e.g., v0.1.0).
-
-# We use the 'crazy-max/ghaction-import-gpg' action for GPG key handling.
-# Ensure your private key and passphrase are set in the `GPG_PRIVATE_KEY` and `PASSPHRASE` secrets, respectively.
-
-# For GoReleaser, ensure it is configured correctly for non-interactive mode as necessary.
-# This setup is streamlined for simplicity and efficiency in automating the release process.
-
 name: release
 
 on:
@@ -24,10 +15,19 @@ jobs:
       - name: Unshallow
         run: git fetch --prune --unshallow
 
+      - name: Verify Tag on Main Branch
+        id: verify_tag
+        run: |
+          BRANCH=$(git branch -r --contains $GITHUB_REF | grep 'origin/main' || true)
+          if [ -z "$BRANCH" ]; then
+            echo "Tag is not on the main branch. Exiting."
+            exit 1
+          fi
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '^1.21.5'
+          go-version: '^1.22.0'
 
       - name: Import GPG key
         id: import_gpg
@@ -36,11 +36,13 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
 
+      - name: Extract Tag Name
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
-          args: release --clean
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
