@@ -293,14 +293,14 @@ func resourceCloudRuleCreate(ctx context.Context, d *schema.ResourceData, m inte
 
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	if d.Get("labels") != nil {
+	if labels, ok := d.GetOk("labels"); ok && labels != nil {
 		ID := d.Id()
 		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "cloud-rule", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Unable to update cloud rule labels",
+				Summary:  "Unable to update Cloud Rule labels",
 				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 			})
 			return diags
