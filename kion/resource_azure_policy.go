@@ -92,6 +92,12 @@ func resourceAzurePolicyCreate(ctx context.Context, d *schema.ResourceData, m in
 	client := m.(*hc.Client)
 
 	post := hc.AzurePolicyCreate{
+        AzurePolicy: hc.AzurePolicy{
+			Description: d.Get("description").(string),
+			Name:        d.Get("name").(string),
+			Parameters:  d.Get("parameters").(string),
+			Policy:      d.Get("policy").(string),
+		},
 		OwnerUserGroups: hc.FlattenGenericIDPointer(d, "owner_user_groups"),
 		OwnerUsers:      hc.FlattenGenericIDPointer(d, "owner_users"),
 	}
