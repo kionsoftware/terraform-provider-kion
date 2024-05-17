@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.15] - 2024-05-17
+
+- No changes.  This change was needed to get the Terraform Registry back in sync with Github.
+
 ## [0.3.14] - 2024-05-15
 
 - Fixed an issue where the provider would attempt to update project labels even when labels were not defined in the HCL. The provider now checks if labels are explicitly set and non-empty before making update requests, preventing unnecessary API calls and avoiding the `405 Method Not Allowed error` from any Kion version before v3.7.7.
