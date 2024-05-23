@@ -387,7 +387,7 @@ func createAwsAccount(ctx context.Context, client *hc.Client, d *schema.Resource
 	return diags, respCache.RecordID
 }
 
-// logPostData logs the data being posted for account creation. It returns an error if marshalling fails.
+// logPostData logs the data being posted for account creation. It returns an error if marshaling fails.
 func logPostData(ctx context.Context, client *hc.Client, postData interface{}) error {
 	rb, err := json.Marshal(postData)
 	if err != nil {
