@@ -130,21 +130,24 @@ func FlattenGenericIDArray(d *schema.ResourceData, key string) []int {
 func FlattenGenericIDPointer(d *schema.ResourceData, key string) *[]int {
 	uid := d.Get(key)
 
-	// test for set
-	_, isSet := uid.(*schema.Set)
-	if isSet {
-		uid = uid.(*schema.Set).List()
-	}
-
-	uids := make([]int, 0)
-	for _, item := range uid.([]interface{}) {
-		v, ok := item.(map[string]interface{})
-		if ok {
-			uids = append(uids, v["id"].(int))
+	switch v := uid.(type) {
+	case []interface{}:
+		uids := make([]int, len(v))
+		for i, item := range v {
+			uids[i] = item.(int)
 		}
+		return &uids
+	case *schema.Set:
+		setList := v.List()
+		uids := make([]int, len(setList))
+		for i, item := range setList {
+			m := item.(map[string]interface{})
+			uids[i] = m["id"].(int)
+		}
+		return &uids
+	default:
+		return nil
 	}
-
-	return &uids
 }
 
 func FlattenTags(d *schema.ResourceData, key string) *[]Tag {
@@ -262,17 +265,31 @@ func FieldsChanged(iOld interface{}, iNew interface{}, fields []string) (map[str
 }
 
 func OptionalBool(d *schema.ResourceData, fieldname string) *bool {
-	if v, ok := d.Get(fieldname).(bool); ok {
-		return &v
+	b, ok := d.GetOkExists(fieldname)
+	if !ok {
+		return nil
 	}
-	return nil
+
+	ret, ok := b.(bool)
+	if !ok {
+		return nil
+	}
+
+	return &ret
 }
 
 func OptionalInt(d *schema.ResourceData, fieldname string) *int {
-	if v, ok := d.Get(fieldname).(int); ok {
-		return &v
+	v, ok := d.GetOkExists(fieldname)
+	if !ok {
+		return nil
 	}
-	return nil
+
+	ret, ok := v.(int)
+	if !ok {
+		return nil
+	}
+
+	return &ret
 }
 
 // AssociationChanged returns arrays of which values to change.
