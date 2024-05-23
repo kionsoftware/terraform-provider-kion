@@ -166,11 +166,14 @@ func (client *Client) DeleteWithResponse(urlPath string, sendData, returnData in
 			return err
 		}
 		req, err = http.NewRequest(http.MethodDelete, client.HostURL+urlPath, bytes.NewBuffer(rb))
+		if err != nil {
+			return err
+		}
 	} else {
 		req, err = http.NewRequest(http.MethodDelete, client.HostURL+urlPath, nil)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	body, statusCode, err := client.doRequest(req)
