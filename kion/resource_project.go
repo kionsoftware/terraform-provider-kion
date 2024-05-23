@@ -349,7 +349,8 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 	data["ou_id"] = item.OUID
 
 	for k, v := range data {
-		if err := d.Set(k, v); err != nil {
+		err := d.Set(k, v) // Use assignment instead of short declaration
+		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to read and set Project",
