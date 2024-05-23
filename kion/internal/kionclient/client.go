@@ -196,7 +196,8 @@ func (client *Client) DeleteWithResponse(urlPath string, sendData interface{}, r
 	var err error
 
 	if sendData != nil {
-		rb, err := json.Marshal(sendData)
+		var rb []byte
+		rb, err = json.Marshal(sendData)
 		if err != nil {
 			return err
 		}
