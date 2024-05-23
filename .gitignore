@@ -66,3 +66,5 @@ override.tf.json
 .terraformrc
 terraform.rc
 terraform
+
+importer-script/functions/__pycache__/*
