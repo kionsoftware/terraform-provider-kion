@@ -20,22 +20,21 @@ This resource allows for creating, reading, updating, and deleting project-speci
 
 ### Required
 
-- `amount_type` (String) Type of the amount. Valid values are 'custom', 'last_month'.
-- `enabled` (Boolean) Flag that specifies if the enforcement is enabled.
 - `project_id` (Number) ID of the project under enforcement.
-- `spend_option` (String) Type of spend option. Valid values are 'spend', 'remaining', 'spend_rate'.
 - `threshold` (Number) Threshold value. Either a dollar amount or a percentage, depending on the threshold type.
-- `threshold_type` (String) Type of the threshold value. Valid values are 'dollar', 'percent'.
 - `timeframe` (String) Timeframe of the enforcement. Valid values are 'lifetime', 'month', 'year', 'funding_source'.
 
 ### Optional
 
+- `amount_type` (String) Type of the amount. Valid values are 'custom', 'last_month'.
 - `cloud_rule_id` (Number) Defines a Cloud Rule ID associated with the enforcement.
 - `description` (String) Optional, user-provided description of the enforcement.
+- `enabled` (Boolean) Flag that specifies if the enforcement is enabled.
 - `notification_frequency` (String) Frequency at which notifications are sent for this enforcement.
-- `ou_id` (Number) If enforcement is from an Organizational Unit (OU), this is the ID of the OU.
 - `overburn` (Boolean) Flag that specifies if enforcement will place project in an overburn state when triggered.
 - `service_id` (Number) ID of the service related to the enforcement.
+- `spend_option` (String) Type of spend option. Valid values are 'spend', 'remaining'.
+- `threshold_type` (String) Type of the threshold value. Valid values are 'dollar', 'percent'.
 - `user_group_ids` (List of Number) List of user group IDs that will receive notifications from the enforcement.
 - `user_ids` (List of Number) List of user IDs that will receive notifications from the enforcement.
 
