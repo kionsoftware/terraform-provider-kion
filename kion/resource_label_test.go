@@ -31,7 +31,7 @@ var (
 
 func TestAccResourceLabelCreate(t *testing.T) {
 	config := testAccLabelGenerateResourceDeclaration(&initialTestLabel)
-	printHCLConfig(config) // Print the generated HCL configuration
+	hc.PrintHCLConfig(config) // Print the generated HCL configuration
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -49,8 +49,8 @@ func TestAccResourceLabelCreate(t *testing.T) {
 func TestAccResourceLabelUpdate(t *testing.T) {
 	initialConfig := testAccLabelGenerateResourceDeclaration(&initialTestLabel)
 	updatedConfig := testAccLabelGenerateResourceDeclaration(&updatedTestLabel)
-	printHCLConfig(initialConfig) // Print the initial HCL configuration
-	printHCLConfig(updatedConfig) // Print the updated HCL configuration
+	hc.PrintHCLConfig(initialConfig) // Print the initial HCL configuration
+	hc.PrintHCLConfig(updatedConfig) // Print the updated HCL configuration
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -71,7 +71,7 @@ func TestAccResourceLabelUpdate(t *testing.T) {
 
 func TestAccResourceLabelDelete(t *testing.T) {
 	config := testAccLabelGenerateResourceDeclaration(&initialTestLabel)
-	printHCLConfig(config) // Print the generated HCL configuration
+	hc.PrintHCLConfig(config) // Print the generated HCL configuration
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -99,11 +99,6 @@ func TestAccResourceLabelDelete(t *testing.T) {
 			},
 		},
 	})
-}
-
-func printHCLConfig(config string) {
-	fmt.Println("Generated HCL configuration:")
-	fmt.Println(config)
 }
 
 // testAccLabelCheckResource returns a slice of functions that validate the test resource's fields
