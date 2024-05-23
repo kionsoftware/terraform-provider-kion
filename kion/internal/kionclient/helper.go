@@ -448,3 +448,9 @@ func TestAccOUGenerateDataSourceDeclarationAll(dataSourceName, localName string)
 		data "%v" "%v" {}`, dataSourceName, localName,
 	)
 }
+
+// PrintHCLConfig prints the generated HCL configuration for unit tests.
+func PrintHCLConfig(config string) {
+	fmt.Println("Generated HCL configuration:")
+	fmt.Println(config)
+}
