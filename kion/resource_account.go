@@ -128,8 +128,6 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	hasChanged := 0
-
 	var accountLocation string
 	var oldProjectId, newProjectId int
 	{
@@ -138,38 +136,41 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		newProjectId = newId.(int)
 	}
 
+	// Handle conversion from cache account to project account
 	if oldProjectId == 0 && newProjectId != 0 {
-		// Handle conversion from cache account to project account
 		accountCacheId, err := strconv.Atoi(ID)
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to convert cached account to project account, invalid cached account id",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Unable to convert cached account to project account, invalid cached account id",
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+				},
+			}
 		}
 
 		tflog.Debug(ctx, "Converting from cached account to project account", map[string]interface{}{"oldProjectId": oldProjectId, "newProjectId": newProjectId})
 		newId, err := convertCacheAccountToProjectAccount(client, accountCacheId, newProjectId, d.Get("start_datecode").(string))
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to convert cached account to project account",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Unable to convert cached account to project account",
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+				},
+			}
 		}
 
 		accountLocation = ProjectLocation
 		ID = strconv.Itoa(newId)
 		if err := d.Set("location", accountLocation); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error setting location",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), accountLocation),
-			})
-			return diags
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Error setting location",
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), accountLocation),
+				},
+			}
 		}
 		d.SetId(ID)
 
@@ -177,35 +178,38 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		// Handle conversion from project account to cache account
 		accountId, err := strconv.Atoi(ID)
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to convert project account to cache account, invalid account id",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Unable to convert project account to cache account, invalid account id",
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+				},
+			}
 		}
 
 		tflog.Debug(ctx, "Converting from project account to cached account", map[string]interface{}{"oldProjectId": oldProjectId, "newProjectId": newProjectId})
 		newId, err := convertProjectAccountToCacheAccount(client, accountId)
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to convert project account to cache account",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Unable to convert project account to cache account",
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+				},
+			}
 		}
 
 		accountLocation = CacheLocation
 		ID = strconv.Itoa(newId)
 
 		if err := d.Set("location", accountLocation); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to set location",
-				Detail:   fmt.Sprintf("Error: %v", err),
-			})
-			return diags
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Unable to set location",
+					Detail:   fmt.Sprintf("Error: %v", err),
+				},
+			}
 		}
 
 		d.SetId(ID)
@@ -214,7 +218,6 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 		if accountLocation == ProjectLocation && oldProjectId != newProjectId {
 			// Handle moving to a different project
-
 			req := hc.AccountMove{
 				ProjectID:        d.Get("project_id").(int),
 				FinancialSetting: "move",
@@ -238,12 +241,13 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 			resp, err := client.POST(fmt.Sprintf("/v3/account/%s/move", ID), req)
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to move account to a different project",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-				})
-				return diags
+				return diag.Diagnostics{
+					{
+						Severity: diag.Error,
+						Summary:  "Unable to move account to a different project",
+						Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+					},
+				}
 			}
 
 			ID = strconv.Itoa(resp.RecordID)
@@ -252,15 +256,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	// Determine if the attributes that are updatable are changed.
-	if d.HasChanges("email",
-		"name",
-		"include_linked_account_spend",
-		"linked_role",
-		"skip_access_checking",
-		"start_datecode",
-		"use_org_account_info") {
-		hasChanged++
-
+	if d.HasChanges("email", "name", "include_linked_account_spend", "linked_role", "skip_access_checking", "start_datecode", "use_org_account_info") {
 		var req interface{}
 		var accountUrl string
 		switch accountLocation {
@@ -308,28 +304,32 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 		err := client.PATCH(accountUrl, req)
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to update account",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Unable to update account",
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+				},
+			}
 		}
 	}
 
 	if accountLocation == ProjectLocation && d.HasChanges("labels") {
-		hasChanged++
-
 		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
-
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to update account labels",
-				Detail:   fmt.Sprintf("Error: %v\nAccount ID: %v", err.Error(), ID),
-			})
-			return diags
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Unable to update account labels",
+					Detail:   fmt.Sprintf("Error: %v\nAccount ID: %v", err.Error(), ID),
+				},
+			}
 		}
+	}
+
+	if d.HasChanges("project_id", "email", "name", "include_linked_account_spend", "linked_role", "skip_access_checking", "start_datecode", "use_org_account_info", "labels") {
+		d.Set("last_updated", time.Now().Format(time.RFC850))
+		return resourceAccountRead(ctx, d, m)
 	}
 
 	return diags
