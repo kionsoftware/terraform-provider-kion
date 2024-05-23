@@ -24,7 +24,7 @@ jobs:
           cache: false
 
       - name: Run Linter
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.55.2
+          version: v1.58
           args: --out-format=github-actions --issues-exit-code=1
