@@ -72,7 +72,7 @@ output "kion_azure_account_id" {
 - `skip_access_checking` (Boolean) True to skip periodic access checking on the account.
 - `start_datecode` (String) Date when the Azure account will starting submitting payments against a funding source (YYYY-MM).  Required if placing an account within a project.
 - `subscription_name` (String) Name of the subscription as it appears in Azure.
-- `subscription_uuid` (String) The UUID of the Azure subscription.  If subscription_uuid is provided, the existing subscription will be imported into Kion.  If subscription_uuid is ommitted, a new subscription will be created.
+- `subscription_uuid` (String) The UUID of the Azure subscription.  If subscription_uuid is provided, the existing subscription will be imported into Kion.  If subscription_uuid is omitted, a new subscription will be created.
 
 ### Read-Only
 
@@ -117,4 +117,4 @@ Required:
 Optional:
 
 - `financials` (String) One of "move" or "preserve".  If "move", financial history will be moved to the new project beginning on the date specified by the move_datecode parameter.  If "preserve", financial history will be preserved on the current project.
-- `move_datecode` (Number) The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If ommitted or 0, all financial data will be moved to the new project.
+- `move_datecode` (Number) The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If omitted or 0, all financial data will be moved to the new project.

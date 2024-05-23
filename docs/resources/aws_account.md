@@ -63,7 +63,7 @@ output "kion_account_id" {
 
 ### Optional
 
-- `account_number` (String) The account number of the AWS account.  If account_number is provided, the existing account will be imported into Kion.  If account_number is ommitted, a new account will be created.
+- `account_number` (String) The account number of the AWS account.  If account_number is provided, the existing account will be imported into Kion.  If account_number is omitted, a new account will be created.
 - `account_type_id` (Number) An ID representing the account type within Kion.
 - `aws_organizational_unit` (Block Set, Max: 1) Where to place this account within AWS Organization when creating an account. (see [below for nested schema](#nestedblock--aws_organizational_unit))
 - `commercial_account_name` (String) The name used when creating new commercial account.
@@ -103,4 +103,4 @@ Required:
 Optional:
 
 - `financials` (String) One of "move" or "preserve".  If "move", financial history will be moved to the new project beginning on the date specified by the move_datecode parameter.  If "preserve", financial history will be preserved on the current project.
-- `move_datecode` (Number) The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If ommitted or 0, all financial data will be moved to the new project.
+- `move_datecode` (Number) The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If omitted or 0, all financial data will be moved to the new project.
