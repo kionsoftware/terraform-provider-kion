@@ -239,20 +239,8 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	hasChanged := 0
-
 	// Determine if the attributes that are updatable are changed.
-	// Leave out fields that are not allowed to be changed like
-	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
-	// schema instead.
-	if d.HasChanges(
-		"amount",
-		"description",
-		"end_datecode",
-		"name",
-		"ou_id",
-		"start_datecode") {
-		hasChanged++
+	if d.HasChanges("amount", "description", "end_datecode", "name", "ou_id", "start_datecode") {
 		req := hc.FundingSourceUpdate{
 			Amount:        d.Get("amount").(int),
 			Description:   d.Get("description").(string),
@@ -263,66 +251,63 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 		err := client.PATCH(fmt.Sprintf("/v3/funding-source/%s", ID), req)
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to update Funding Source",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
-		}
-	}
-
-	// Determine if the owners have changed.
-	if d.HasChanges("owner_users",
-		"owner_user_groups") {
-		hasChanged++
-		arrAddOwnerUserGroupIds, arrRemoveOwnerUserGroupIds, _, _ := hc.AssociationChanged(d, "owner_user_groups")
-		arrAddOwnerUserIds, arrRemoveOwnerUserIds, _, _ := hc.AssociationChanged(d, "owner_users")
-
-		patch := []hc.FundingSourcePermissionMapping{
-			{
-				AppRoleID:    1,
-				UserGroupIds: hc.FlattenGenericIDPointer(d, "owner_user_groups"),
-				UserIds:      hc.FlattenGenericIDPointer(d, "owner_users"),
-			},
-		}
-
-		if len(arrAddOwnerUserGroupIds) > 0 ||
-			len(arrAddOwnerUserIds) > 0 ||
-			len(arrRemoveOwnerUserGroupIds) > 0 ||
-			len(arrRemoveOwnerUserIds) > 0 {
-			err := client.PATCH(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), patch)
-			if err != nil {
-				diags = append(diags, diag.Diagnostic{
+			return diag.Diagnostics{
+				{
 					Severity: diag.Error,
-					Summary:  "Unable to change permission mapping on Funding Source",
+					Summary:  "Unable to update Funding Source",
 					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-				})
-				return diags
+				},
 			}
 		}
 	}
 
-	if hasChanged > 0 {
-		d.Set("last_updated", time.Now().Format(time.RFC850))
-	}
+	// Determine if the owners have changed.
+	if d.HasChanges("owner_users", "owner_user_groups") {
+		arrAddOwnerUserGroupIds, arrRemoveOwnerUserGroupIds, _, _ := hc.AssociationChanged(d, "owner_user_groups")
+		arrAddOwnerUserIds, arrRemoveOwnerUserIds, _, _ := hc.AssociationChanged(d, "owner_users")
 
-	if d.HasChanges("labels") {
-		hasChanged++
+		if len(arrAddOwnerUserGroupIds) > 0 || len(arrAddOwnerUserIds) > 0 || len(arrRemoveOwnerUserGroupIds) > 0 || len(arrRemoveOwnerUserIds) > 0 {
+			patch := []hc.FundingSourcePermissionMapping{
+				{
+					AppRoleID:    1,
+					UserGroupIds: hc.FlattenGenericIDPointer(d, "owner_user_groups"),
+					UserIds:      hc.FlattenGenericIDPointer(d, "owner_users"),
+				},
+			}
 
-		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
-
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to update funding source labels",
-				Detail:   fmt.Sprintf("Error: %v\nFunding source ID: %v", err.Error(), ID),
-			})
-			return diags
+			err := client.PATCH(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), patch)
+			if err != nil {
+				return diag.Diagnostics{
+					{
+						Severity: diag.Error,
+						Summary:  "Unable to change permission mapping on Funding Source",
+						Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+					},
+				}
+			}
 		}
 	}
 
-	return resourceFundingSourceRead(ctx, d, m)
+	// Check for label changes and update accordingly
+	if d.HasChanges("labels") {
+		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
+		if err != nil {
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Unable to update funding source labels",
+					Detail:   fmt.Sprintf("Error: %v\nFunding source ID: %v", err.Error(), ID),
+				},
+			}
+		}
+	}
+
+	if d.HasChanges("amount", "description", "end_datecode", "name", "ou_id", "start_datecode", "owner_users", "owner_user_groups", "labels") {
+		d.Set("last_updated", time.Now().Format(time.RFC850))
+		return resourceFundingSourceRead(ctx, d, m)
+	}
+
+	return diags
 }
 
 func resourceFundingSourceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
