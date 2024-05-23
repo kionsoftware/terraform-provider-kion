@@ -54,6 +54,8 @@ type ProjectEnforcementUpdate struct {
 	CloudRuleID   *int   `json:"cloud_rule_id,omitempty"`
 	Overburn      *bool  `json:"overburn,omitempty"`
 	Enabled       *bool  `json:"enabled,omitempty"`
+	UserGroupIds  *[]int `json:"user_group_ids,omitempty"`
+	UserIds       *[]int `json:"user_ids,omitempty"`
 }
 
 // ProjectEnforcementUsersCreate for: POST /api/v3/project/{id}/enforcement/{enforcement_id}/user
