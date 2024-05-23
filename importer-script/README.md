@@ -1,3 +1,4 @@
+
 # Terraform Importer Script
 
 The `terraform-importer.py` script was built to quickly import existing resources from a Kion installation and begin managing them (and creating new ones) using the Kion Terraform Provider.
@@ -8,8 +9,42 @@ The `terraform-importer.py` script was built to quickly import existing resource
 
 The system running the script will need to have python3 installed, and the requests library.
 
+### Setting up a Virtual Environment
+
+It's a good practice to use a virtual environment to manage dependencies. Here's how you can set up a virtual environment using `.venv` as the directory:
+
+1. **Create a Virtual Environment:**
+
+   ```bash
+   python3 -m venv .venv
+   ```
+
+2. **Activate the Virtual Environment:**
+
+   - On macOS and Linux:
+
+     ```bash
+     source .venv/bin/activate
+     ```
+
+   - On Windows:
+
+     ```bash
+     .venv\Scripts\activate
+     ```
+
+3. **Install the Required Libraries:**
+
+   ```bash
+   pip install requests
+   ```
+
+### Running the Script
+
+Once the virtual environment is set up and activated, you can run the `terraform-importer.py` script as follows:
+
 ```bash
-pip3 install requests
+python terraform-importer.py
 ```
 
 ## Required Terraform Files
