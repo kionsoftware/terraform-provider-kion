@@ -99,9 +99,32 @@ func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{
 	}
 	label := resp.Data
 
-	d.Set("key", label.Key)
-	d.Set("value", label.Value)
-	d.Set("color", label.Color)
+	if err := d.Set("key", label.Key); err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set key for label",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	if err := d.Set("value", label.Value); err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set value for label",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	if err := d.Set("color", label.Color); err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set color for label",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
 
 	return diags
 }
