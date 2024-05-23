@@ -113,9 +113,7 @@ func resourceLabelUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 
 	hasChanged := 0
 
-	if d.HasChanges("color",
-		"key",
-		"value") {
+	if d.HasChanges("color", "key", "value") {
 		hasChanged++
 		req := hc.LabelUpdatable{
 			Color: d.Get("color").(string),
@@ -134,7 +132,11 @@ func resourceLabelUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 		}
 	}
 
-	return resourceLabelRead(ctx, d, m)
+	if hasChanged > 0 {
+		return resourceLabelRead(ctx, d, m)
+	}
+
+	return diags
 }
 
 func resourceLabelDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
