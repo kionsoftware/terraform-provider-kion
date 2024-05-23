@@ -61,7 +61,7 @@ func resourceAwsAccount() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "The account number of the AWS account.  If account_number is provided, the existing account will be imported into Kion.  If account_number is ommitted, a new account will be created.",
+				Description: "The account number of the AWS account.  If account_number is provided, the existing account will be imported into Kion.  If account_number is omitted, a new account will be created.",
 				ForceNew:    true,
 			},
 			"linked_account_number": {
@@ -181,7 +181,7 @@ func resourceAwsAccount() *schema.Resource {
 						"move_datecode": {
 							Type:        schema.TypeInt,
 							Optional:    true,
-							Description: "The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If ommitted or 0, all financial data will be moved to the new project.",
+							Description: "The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If omitted or 0, all financial data will be moved to the new project.",
 						},
 					},
 				},
