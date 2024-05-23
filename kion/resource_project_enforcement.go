@@ -94,16 +94,18 @@ func resourceProjectEnforcement() *schema.Resource {
 				Description: "Flag that specifies if enforcement will place project in an overburn state when triggered.",
 			},
 			"user_group_ids": {
-				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeInt},
-				Optional:    true,
-				Description: "List of user group IDs that will receive notifications from the enforcement.",
+				Type:         schema.TypeList,
+				Elem:         &schema.Schema{Type: schema.TypeInt},
+				Optional:     true,
+				Description:  "List of user group IDs that will receive notifications from the enforcement.",
+				AtLeastOneOf: []string{"user_group_ids", "user_ids"},
 			},
 			"user_ids": {
-				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeInt},
-				Optional:    true,
-				Description: "List of user IDs that will receive notifications from the enforcement.",
+				Type:         schema.TypeList,
+				Elem:         &schema.Schema{Type: schema.TypeInt},
+				Optional:     true,
+				Description:  "List of user IDs that will receive notifications from the enforcement.",
+				AtLeastOneOf: []string{"user_group_ids", "user_ids"},
 			},
 			"triggered": {
 				Type:        schema.TypeBool,
@@ -129,6 +131,9 @@ func resourceProjectEnforcementCreate(ctx context.Context, d *schema.ResourceDat
 	}
 	projectIDInt := projectID.(int)
 
+	userGroupIds := hc.FlattenGenericIDPointer(d, "user_group_ids")
+	userIds := hc.FlattenGenericIDPointer(d, "user_ids")
+
 	post := hc.ProjectEnforcementCreate{
 		Description:   d.Get("description").(string),
 		Timeframe:     d.Get("timeframe").(string),
@@ -139,18 +144,29 @@ func resourceProjectEnforcementCreate(ctx context.Context, d *schema.ResourceDat
 		Threshold:     d.Get("threshold").(int),
 		CloudRuleID:   hc.OptionalInt(d, "cloud_rule_id"),
 		Overburn:      hc.OptionalBool(d, "overburn"),
-		UserGroupIds:  hc.FlattenGenericIDPointer(d, "user_group_ids"),
-		UserIds:       hc.FlattenGenericIDPointer(d, "user_ids"),
+		UserGroupIds:  userGroupIds,
+		UserIds:       userIds,
+	}
+
+	// Ensure at least one user group or user is provided
+	if (userGroupIds == nil || len(*userGroupIds) == 0) && (userIds == nil || len(*userIds) == 0) {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Invalid User or User Group",
+			Detail:   "At least one user or user group must be specified.",
+		})
+		return diags
+	}
+
+	// Debugging: Log the post payload
+	if rb, err := json.Marshal(post); err == nil {
+		tflog.Debug(ctx, fmt.Sprintf("Creating Project Enforcement with payload: %s", string(rb)))
 	}
 
 	// Build the endpoint URL for creation
 	projectEnforcementURL := fmt.Sprintf("/v3/project/%d/enforcement", projectIDInt)
 
 	// Send the create request
-	if rb, err := json.Marshal(post); err == nil {
-		tflog.Debug(ctx, fmt.Sprintf("Creating Project Enforcement via POST %s", projectEnforcementURL), map[string]interface{}{"postData": string(rb)})
-	}
-
 	resp, err := client.POST(projectEnforcementURL, post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -223,7 +239,7 @@ func resourceProjectEnforcementRead(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-func ModifyProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, m interface{}, add bool) diag.Diagnostics {
+func AddProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
@@ -233,13 +249,11 @@ func ModifyProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Invalid or missing project ID")
 	}
 
-	// Assuming projectID is always an integer based on your other function
 	projectIDInt, ok := projectID.(int)
 	if !ok {
 		return diag.Errorf("Project ID should be an integer, got %T", projectID)
 	}
 
-	// Use the FlattenGenericIDPointer function properly
 	arrAddUserIds := hc.FlattenGenericIDPointer(d, "user_ids")
 	arrAddUserGroupIds := hc.FlattenGenericIDPointer(d, "user_group_ids")
 
@@ -247,25 +261,60 @@ func ModifyProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("At least one user ID or user group ID must be provided")
 	}
 
-	// Prepare the request body
 	req := hc.ProjectEnforcementUsersCreate{
 		UserIds:      arrAddUserIds,
 		UserGroupIds: arrAddUserGroupIds,
 	}
 
-	var endpoint string
-	if add {
-		endpoint = fmt.Sprintf("/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
-		_, err := client.POST(endpoint, req)
-		if err != nil {
-			return diag.Errorf("Error adding users/user groups in Project Enforcement: %v", err)
-		}
-	} else {
-		endpoint = fmt.Sprintf("/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
-		err := client.DELETE(endpoint, req)
-		if err != nil {
-			return diag.Errorf("Error removing users/user groups in Project Enforcement: %v", err)
-		}
+	endpoint := fmt.Sprintf("/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
+	_, err := client.POST(endpoint, req)
+	if err != nil {
+		return diag.Errorf("Error adding users/user groups in Project Enforcement: %v", err)
+	}
+
+	return diags
+}
+
+func RemoveProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+	client := m.(*hc.Client)
+
+	enforcementID := d.Id()
+	projectID, ok := d.GetOk("project_id")
+	if !ok {
+		return diag.Errorf("Invalid or missing project ID")
+	}
+
+	projectIDInt, ok := projectID.(int)
+	if !ok {
+		return diag.Errorf("Project ID should be an integer, got %T", projectID)
+	}
+
+	// Get the current state of users and user groups
+	currentUserIds := hc.FlattenGenericIDPointer(d, "user_ids")
+	currentUserGroupIds := hc.FlattenGenericIDPointer(d, "user_group_ids")
+
+	// Get the previous state to identify what needs to be removed
+	prevUserIds, prevUserGroupIds := getPreviousEnforcementUserAndGroupIds(d)
+
+	// Determine which user IDs and user group IDs need to be removed
+	toRemoveUserIds := findEnforcementIdDifferences(prevUserIds, *currentUserIds)
+	toRemoveUserGroupIds := findEnforcementIdDifferences(prevUserGroupIds, *currentUserGroupIds)
+
+	// If there's nothing to remove, return early
+	if len(toRemoveUserIds) == 0 && len(toRemoveUserGroupIds) == 0 {
+		return diags
+	}
+
+	req := hc.ProjectEnforcementUsersCreate{
+		UserIds:      &toRemoveUserIds,
+		UserGroupIds: &toRemoveUserGroupIds,
+	}
+
+	endpoint := fmt.Sprintf("/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
+	err := client.DELETE(endpoint, req)
+	if err != nil {
+		return diag.Errorf("Error removing users/user groups in Project Enforcement: %v", err)
 	}
 
 	return diags
@@ -310,11 +359,14 @@ func resourceProjectEnforcementUpdate(ctx context.Context, d *schema.ResourceDat
 		}
 	}
 
-	// Check for changes in owner users or owner user groups
-	if d.HasChanges("user_group_ids", "user_ids") {
-		addDiags := ModifyProjectEnforcementUsers(ctx, d, m, true)
+	// Check for changes in user groups or users
+	if d.HasChange("user_group_ids") || d.HasChange("user_ids") {
+		// First add the new users/user groups to ensure there is always at least one
+		addDiags := AddProjectEnforcementUsers(ctx, d, m)
 		diags = append(diags, addDiags...)
-		removeDiags := ModifyProjectEnforcementUsers(ctx, d, m, false)
+
+		// Then remove any existing users/user groups that are no longer needed
+		removeDiags := RemoveProjectEnforcementUsers(ctx, d, m)
 		diags = append(diags, removeDiags...)
 	}
 
@@ -377,4 +429,46 @@ func safeSet(d *schema.ResourceData, key string, value interface{}) diag.Diagnos
 		}
 	}
 	return diags
+}
+
+// Helper function to get the previous state of user and user group IDs
+func getPreviousEnforcementUserAndGroupIds(d *schema.ResourceData) ([]int, []int) {
+	var prevUserIds, prevUserGroupIds []int
+
+	if d.HasChange("user_ids") {
+		oldValue, _ := d.GetChange("user_ids")
+		prevUserIds = convertInterfaceSliceToIntSliceEnforcement(oldValue.([]interface{}))
+	}
+
+	if d.HasChange("user_group_ids") {
+		oldValue, _ := d.GetChange("user_group_ids")
+		prevUserGroupIds = convertInterfaceSliceToIntSliceEnforcement(oldValue.([]interface{}))
+	}
+
+	return prevUserIds, prevUserGroupIds
+}
+
+// Helper function to convert an interface slice to an int slice for enforcement
+func convertInterfaceSliceToIntSliceEnforcement(interfaceSlice []interface{}) []int {
+	intSlice := make([]int, len(interfaceSlice))
+	for i, v := range interfaceSlice {
+		intSlice[i] = v.(int)
+	}
+	return intSlice
+}
+
+// Helper function to find the difference between two slices for enforcement
+func findEnforcementIdDifferences(slice1, slice2 []int) []int {
+	set := make(map[int]bool)
+	for _, v := range slice2 {
+		set[v] = true
+	}
+
+	var diff []int
+	for _, v := range slice1 {
+		if !set[v] {
+			diff = append(diff, v)
+		}
+	}
+	return diff
 }
