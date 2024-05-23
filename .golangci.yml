@@ -1,0 +1,72 @@
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+output:
+  print-issued-lines: true
+  print-linter-name: true
+linters-settings:
+  dupl:
+    threshold: 150
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+  goconst:
+    min-len: 3
+    min-occurrences: 5
+  gocyclo:
+    min-complexity: 30
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: https://github.com/kionsoftware/terraform-provider-kion
+  govet:
+    enable:
+      - shadow
+  lll:
+    line-length: 120
+    tab-width: 1
+  misspell:
+    locale: US
+    # ignore-words:
+    #   - cancelled
+  sloglint:
+    attr-only: true
+  unparam:
+    check-exported: false
+linters:
+  disable-all: true
+  enable:
+    - asciicheck
+    # - dupl
+    - errcheck
+    - bodyclose
+    - goconst
+    - gocyclo
+    - gofmt
+    # - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    # - lll
+    - misspell
+    - sloglint
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+issues:
+  # exclude:
+  max-same-issues: 0
+  exclude-dirs:
+    - importer-script/*
+    - docs
+    - examples
+    - provider-migration-script
+    - templates
+severity:
+  default-severity: error
+  rules:
+    - linters:
+        - gofmt
+      severity: info
