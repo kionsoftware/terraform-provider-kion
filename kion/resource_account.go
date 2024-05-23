@@ -332,6 +332,11 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
+	// Use hasChanged for logging or further logic
+	if hasChanged > 0 {
+		tflog.Info(ctx, fmt.Sprintf("Updated %d fields for account ID: %s", hasChanged, ID))
+	}
+
 	return diags
 }
 

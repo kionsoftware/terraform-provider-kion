@@ -303,7 +303,14 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	if d.HasChanges("amount", "description", "end_datecode", "name", "ou_id", "start_datecode", "owner_users", "owner_user_groups", "labels") {
-		d.Set("last_updated", time.Now().Format(time.RFC850))
+		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Failed to set last_updated",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 		return resourceFundingSourceRead(ctx, d, m)
 	}
 

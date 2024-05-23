@@ -353,7 +353,14 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 	}
 
 	if hasChanged > 0 {
-		d.Set("last_updated", time.Now().Format(time.RFC850))
+		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Failed to set last_updated",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 	}
 
 	return resourceProjectCloudAccessRoleRead(ctx, d, m)
