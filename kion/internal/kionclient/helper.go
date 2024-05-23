@@ -138,21 +138,24 @@ func ConvertToIntSlice(interfaceSlice []interface{}) []int {
 func FlattenGenericIDPointer(d *schema.ResourceData, key string) *[]int {
 	uid := d.Get(key)
 
-	// test for set
-	_, isSet := uid.(*schema.Set)
-	if isSet {
-		uid = uid.(*schema.Set).List()
-	}
-
-	uids := make([]int, 0)
-	for _, item := range uid.([]interface{}) {
-		v, ok := item.(map[string]interface{})
-		if ok {
-			uids = append(uids, v["id"].(int))
+	switch v := uid.(type) {
+	case []interface{}:
+		uids := make([]int, len(v))
+		for i, item := range v {
+			uids[i] = item.(int)
 		}
+		return &uids
+	case *schema.Set:
+		setList := v.List()
+		uids := make([]int, len(setList))
+		for i, item := range setList {
+			m := item.(map[string]interface{})
+			uids[i] = m["id"].(int)
+		}
+		return &uids
+	default:
+		return nil
 	}
-
-	return &uids
 }
 
 func FlattenTags(d *schema.ResourceData, key string) *[]Tag {
@@ -452,4 +455,10 @@ func TestAccOUGenerateDataSourceDeclarationAll(dataSourceName, localName string)
 	return fmt.Sprintf(`
 		data "%v" "%v" {}`, dataSourceName, localName,
 	)
+}
+
+// PrintHCLConfig prints the generated HCL configuration for unit tests.
+func PrintHCLConfig(config string) {
+	fmt.Println("Generated HCL configuration:")
+	fmt.Println(config)
 }
