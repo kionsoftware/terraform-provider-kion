@@ -119,7 +119,7 @@ func resourceGcpAccount() *schema.Resource {
 						"move_datecode": {
 							Type:        schema.TypeInt,
 							Optional:    true,
-							Description: "The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If ommitted or 0, all financial data will be moved to the new project.",
+							Description: "The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If omitted or 0, all financial data will be moved to the new project.",
 						},
 					},
 				},
