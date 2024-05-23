@@ -444,7 +444,11 @@ func customDiffComputedAccountLocation(ctx context.Context, d *schema.ResourceDi
 	}
 
 	if len(diags) > 0 {
-		return fmt.Errorf(diags[0].Detail)
+		var combinedErr strings.Builder
+		for _, d := range diags {
+			combinedErr.WriteString(d.Detail + "\n")
+		}
+		return fmt.Errorf(combinedErr.String())
 	}
 	return nil
 }
