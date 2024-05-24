@@ -92,7 +92,7 @@ func resourceAzurePolicyCreate(ctx context.Context, d *schema.ResourceData, m in
 	client := m.(*hc.Client)
 
 	post := hc.AzurePolicyCreate{
-        AzurePolicy: hc.AzurePolicy{
+		AzurePolicy: hc.AzurePolicy{
 			Description: d.Get("description").(string),
 			Name:        d.Get("name").(string),
 			Parameters:  d.Get("parameters").(string),
