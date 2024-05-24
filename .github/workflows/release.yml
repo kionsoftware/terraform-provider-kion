@@ -63,3 +63,27 @@ jobs:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ env.VERSION }}
+
+      - name: Update Makefile for next dev version
+        if: ${{ env.dry_run == 'false' }}
+        run: |
+          CURRENT_VERSION=${GITHUB_REF#refs/tags/v}
+          IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
+          MAJOR=${VERSION_PARTS[0]}
+          MINOR=${VERSION_PARTS[1]}
+          PATCH=${VERSION_PARTS[2]}
+          PATCH=$((PATCH + 1))
+          NEXT_DEV_VERSION="v${MAJOR}.${MINOR}.${PATCH}-dev"
+          sed -i "s/^VERSION = .*/VERSION = ${NEXT_DEV_VERSION}/" Makefile
+
+      - name: Commit and push changes
+        if: ${{ env.dry_run == 'false' }}
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout main
+          git add Makefile
+          git commit -m "Update Makefile to next dev version ${NEXT_DEV_VERSION}"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
