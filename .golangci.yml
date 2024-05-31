@@ -34,6 +34,10 @@ linters-settings:
     attr-only: true
   unparam:
     check-exported: false
+  staticcheck:
+    checks:
+      - all
+      - '-SA1019'
 linters:
   disable-all: true
   enable:
@@ -64,6 +68,10 @@ issues:
     - examples
     - provider-migration-script
     - templates
+  exclude-rules:
+    - linters:
+        - staticcheck
+      text: "d.GetOkExists is deprecated"
 severity:
   default-severity: error
   rules:
