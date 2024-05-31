@@ -92,6 +92,12 @@ func resourceAzurePolicyCreate(ctx context.Context, d *schema.ResourceData, m in
 	client := m.(*hc.Client)
 
 	post := hc.AzurePolicyCreate{
+		AzurePolicy: hc.AzurePolicy{
+			Description: d.Get("description").(string),
+			Name:        d.Get("name").(string),
+			Parameters:  d.Get("parameters").(string),
+			Policy:      d.Get("policy").(string),
+		},
 		OwnerUserGroups: hc.FlattenGenericIDPointer(d, "owner_user_groups"),
 		OwnerUsers:      hc.FlattenGenericIDPointer(d, "owner_users"),
 	}
@@ -240,7 +246,14 @@ func resourceAzurePolicyUpdate(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	if hasChanged > 0 {
-		d.Set("last_updated", time.Now().Format(time.RFC850))
+		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Failed to set last_updated",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 	}
 
 	return resourceAzurePolicyRead(ctx, d, m)
