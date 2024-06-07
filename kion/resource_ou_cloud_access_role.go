@@ -134,6 +134,7 @@ func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
+	// Create the request payload
 	post := hc.OUCloudAccessRoleCreate{
 		AwsIamPath:                d.Get("aws_iam_path").(string),
 		AwsIamPermissionsBoundary: hc.FlattenIntPointer(d, "aws_iam_permissions_boundary"),
@@ -150,26 +151,31 @@ func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData
 		WebAccess:                 d.Get("web_access").(bool),
 	}
 
+	// Send the POST request
 	resp, err := client.POST("/v3/ou-cloud-access-role", post)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
+		return append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to create OUCloudAccessRole",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), post),
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err, post),
 		})
-		return diags
-	} else if resp.RecordID == 0 {
-		diags = append(diags, diag.Diagnostic{
+	}
+
+	if resp.RecordID == 0 {
+		return append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to create OUCloudAccessRole",
 			Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), post),
 		})
-		return diags
 	}
 
+	// Set the ID for the created resource
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	resourceOUCloudAccessRoleRead(ctx, d, m)
+	// Read the resource to update the state
+	if readDiags := resourceOUCloudAccessRoleRead(ctx, d, m); readDiags.HasError() {
+		diags = append(diags, readDiags...)
+	}
 
 	return diags
 }
@@ -191,32 +197,20 @@ func resourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, 
 	}
 	item := resp.Data
 
-	data := make(map[string]interface{})
-	data["aws_iam_path"] = item.OUCloudAccessRole.AwsIamPath
-	if hc.InflateSingleObjectWithID(item.AwsIamPermissionsBoundary) != nil {
-		data["aws_iam_permissions_boundary"] = hc.InflateSingleObjectWithID(item.AwsIamPermissionsBoundary)
+	data := map[string]interface{}{
+		"aws_iam_path":                 item.OUCloudAccessRole.AwsIamPath,
+		"aws_iam_role_name":            item.OUCloudAccessRole.AwsIamRoleName,
+		"aws_iam_permissions_boundary": hc.InflateSingleObjectWithID(item.AwsIamPermissionsBoundary),
+		"long_term_access_keys":        item.OUCloudAccessRole.LongTermAccessKeys,
+		"name":                         item.OUCloudAccessRole.Name,
+		"ou_id":                        item.OUCloudAccessRole.OUID,
+		"short_term_access_keys":       item.OUCloudAccessRole.ShortTermAccessKeys,
+		"web_access":                   item.OUCloudAccessRole.WebAccess,
+		"aws_iam_policies":             hc.InflateObjectWithID(item.AwsIamPolicies),
+		"azure_role_definitions":       hc.InflateObjectWithID(item.AzureRoleDefinitions),
+		"gcp_iam_roles":                hc.InflateObjectWithID(item.GCPIamRoles),
+		"users":                        hc.InflateObjectWithID(item.Users),
 	}
-	if hc.InflateObjectWithID(item.AwsIamPolicies) != nil {
-		data["aws_iam_policies"] = hc.InflateObjectWithID(item.AwsIamPolicies)
-	}
-	data["aws_iam_role_name"] = item.OUCloudAccessRole.AwsIamRoleName
-	if hc.InflateObjectWithID(item.AzureRoleDefinitions) != nil {
-		data["azure_role_definitions"] = hc.InflateObjectWithID(item.AzureRoleDefinitions)
-	}
-	if hc.InflateObjectWithID(item.GCPIamRoles) != nil {
-		data["gcp_iam_roles"] = hc.InflateObjectWithID(item.GCPIamRoles)
-	}
-	data["long_term_access_keys"] = item.OUCloudAccessRole.LongTermAccessKeys
-	data["name"] = item.OUCloudAccessRole.Name
-	data["ou_id"] = item.OUCloudAccessRole.OUID
-	data["short_term_access_keys"] = item.OUCloudAccessRole.ShortTermAccessKeys
-	if hc.InflateObjectWithID(item.UserGroups) != nil {
-		data["user_groups"] = hc.InflateObjectWithID(item.UserGroups)
-	}
-	if hc.InflateObjectWithID(item.Users) != nil {
-		data["users"] = hc.InflateObjectWithID(item.Users)
-	}
-	data["web_access"] = item.OUCloudAccessRole.WebAccess
 
 	for k, v := range data {
 		if err := d.Set(k, v); err != nil {
@@ -237,17 +231,14 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	hasChanged := 0
+	var hasChanged bool
 
 	// Determine if the attributes that are updatable are changed.
 	// Leave out fields that are not allowed to be changed like
 	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
 	// schema instead.
-	if d.HasChanges("long_term_access_keys",
-		"name",
-		"short_term_access_keys",
-		"web_access") {
-		hasChanged++
+	if d.HasChanges("long_term_access_keys", "name", "short_term_access_keys", "web_access") {
+		hasChanged = true
 		req := hc.OUCloudAccessRoleUpdate{
 			LongTermAccessKeys:  d.Get("long_term_access_keys").(bool),
 			Name:                d.Get("name").(string),
@@ -255,8 +246,7 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 			WebAccess:           d.Get("web_access").(bool),
 		}
 
-		err := client.PATCH(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), req)
-		if err != nil {
+		if err := client.PATCH(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), req); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to update OUCloudAccessRole",
@@ -267,35 +257,44 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 	}
 
 	// Handle associations.
-	if d.HasChanges("aws_iam_permissions_boundary",
-		"aws_iam_policies",
-		"azure_role_definitions",
-		"gcp_iam_roles",
-		"user_groups",
-		"users") {
-		hasChanged++
-		arrAddAwsIamPermissionsBoundary, arrRemoveAwsIamPermissionsBoundary, _, _ := hc.AssociationChangedInt(d, "aws_iam_permissions_boundary")
-		arrAddAwsIamPolicies, arrRemoveAwsIamPolicies, _, _ := hc.AssociationChanged(d, "aws_iam_policies")
-		arrAddAzureRoleDefinitions, arrRemoveAzureRoleDefinitions, _, _ := hc.AssociationChanged(d, "azure_role_definitions")
-		arrAddGCPIamRoles, arrRemoveGCPIamRoles, _, _ := hc.AssociationChanged(d, "gcp_iam_roles")
-		arrAddUserGroupIds, arrRemoveUserGroupIds, _, _ := hc.AssociationChanged(d, "user_groups")
-		arrAddUserIds, arrRemoveUserIds, _, _ := hc.AssociationChanged(d, "users")
+	if d.HasChanges("aws_iam_permissions_boundary", "aws_iam_policies", "azure_role_definitions", "gcp_iam_roles", "user_groups", "users") {
+		hasChanged = true
 
-		if arrAddAwsIamPermissionsBoundary != nil ||
-			len(arrAddAwsIamPolicies) > 0 ||
-			len(arrAddUserGroupIds) > 0 ||
-			len(arrAddAzureRoleDefinitions) > 0 ||
-			len(arrAddGCPIamRoles) > 0 ||
-			len(arrAddUserIds) > 0 {
-			_, err := client.POST(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), hc.OUCloudAccessRoleAssociationsAdd{
-				AwsIamPermissionsBoundary: arrAddAwsIamPermissionsBoundary,
-				AwsIamPolicies:            &arrAddAwsIamPolicies,
-				AzureRoleDefinitions:      &arrAddAzureRoleDefinitions,
-				GCPIamRoles:               &arrAddGCPIamRoles,
-				UserGroupIds:              &arrAddUserGroupIds,
-				UserIds:                   &arrAddUserIds,
-			})
-			if err != nil {
+		var addCarAssociation hc.OUCloudAccessRoleAssociationsAdd
+		var removeCarAssociation hc.OUCloudAccessRoleAssociationsRemove
+
+		if addBoundary, removeBoundary, _, _ := hc.AssociationChangedInt(d, "aws_iam_permissions_boundary"); addBoundary != nil || removeBoundary != nil {
+			addCarAssociation.AwsIamPermissionsBoundary = addBoundary
+			removeCarAssociation.AwsIamPermissionsBoundary = removeBoundary
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "aws_iam_policies"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.AwsIamPolicies = &arrAdd
+			removeCarAssociation.AwsIamPolicies = &arrRemove
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "azure_role_definitions"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.AzureRoleDefinitions = &arrAdd
+			removeCarAssociation.AzureRoleDefinitions = &arrRemove
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "gcp_iam_roles"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.GCPIamRoles = &arrAdd
+			removeCarAssociation.GCPIamRoles = &arrRemove
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "user_groups"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.UserGroupIds = &arrAdd
+			removeCarAssociation.UserGroupIds = &arrRemove
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "users"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.UserIds = &arrAdd
+			removeCarAssociation.UserIds = &arrRemove
+		}
+
+		if addCarAssociation != (hc.OUCloudAccessRoleAssociationsAdd{}) {
+			if _, err := client.POST(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), addCarAssociation); err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
 					Summary:  "Unable to add associations on OUCloudAccessRole",
@@ -305,24 +304,11 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 			}
 		}
 
-		if arrRemoveAwsIamPermissionsBoundary != nil ||
-			len(arrRemoveAwsIamPolicies) > 0 ||
-			len(arrRemoveAzureRoleDefinitions) > 0 ||
-			len(arrRemoveGCPIamRoles) > 0 ||
-			len(arrRemoveUserGroupIds) > 0 ||
-			len(arrRemoveUserIds) > 0 {
-			err := client.DELETE(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), hc.OUCloudAccessRoleAssociationsRemove{
-				AwsIamPermissionsBoundary: arrRemoveAwsIamPermissionsBoundary,
-				AwsIamPolicies:            &arrRemoveAwsIamPolicies,
-				AzureRoleDefinitions:      &arrRemoveAzureRoleDefinitions,
-				GCPIamRoles:               &arrRemoveGCPIamRoles,
-				UserGroupIds:              &arrRemoveUserGroupIds,
-				UserIds:                   &arrRemoveUserIds,
-			})
-			if err != nil {
+		if removeCarAssociation != (hc.OUCloudAccessRoleAssociationsRemove{}) {
+			if err := client.DELETE(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), removeCarAssociation); err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  "Unable to remove owners on OUCloudAccessRole",
+					Summary:  "Unable to remove associations on OUCloudAccessRole",
 					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 				})
 				return diags
@@ -330,7 +316,7 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 		}
 	}
 
-	if hasChanged > 0 {
+	if hasChanged {
 		d.Set("last_updated", time.Now().Format(time.RFC850))
 	}
 
