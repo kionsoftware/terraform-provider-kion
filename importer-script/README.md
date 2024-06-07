@@ -1,15 +1,50 @@
+
 # Terraform Importer Script
 
 The `terraform-importer.py` script was built to quickly import existing resources from a Kion installation and begin managing them (and creating new ones) using the Kion Terraform Provider.
 
 ## Prerequisites
 
-### python3 and requests
+### python and requests
 
-The system running the script will need to have python3 installed, and the requests library.
+The system running the script will need to have python installed, and the requests library.
+
+### Setting up a Virtual Environment
+
+It's a good practice to use a virtual environment to manage dependencies. Here's how you can set up a virtual environment using `.venv` as the directory:
+
+1. **Create a Virtual Environment:**
+
+   ```bash
+   python -m venv .venv
+   ```
+
+2. **Activate the Virtual Environment:**
+
+   - On macOS and Linux:
+
+     ```bash
+     source .venv/bin/activate
+     ```
+
+   - On Windows:
+
+     ```bash
+     .venv\Scripts\activate
+     ```
+
+3. **Install the Required Libraries:**
+
+   ```bash
+   pip install requests
+   ```
+
+### Running the Script
+
+Once the virtual environment is set up and activated, you can run the `terraform-importer.py` script as follows:
 
 ```bash
-$ pip3 install requests
+python terraform-importer.py
 ```
 
 ## Required Terraform Files
@@ -46,8 +81,8 @@ Just copy and paste that command to run the script and generate the initial Terr
 
 Here is an example of usage and output:
 
-```
-$ python3 terraform-importer.py --import-dir ./kion/roles --kion-url https://kion.example.com --skip-cfts --skip-cloud-rules --skip-iams --prepend-id
+```bash
+$ python terraform-importer.py --import-dir ./kion/roles --kion-url https://kion.example.com --skip-cfts --skip-cloud-rules --skip-iams --prepend-id
 
 Beginning import from https://kion.example.com
 
@@ -95,7 +130,7 @@ For example, an OU with ID `5` and name `Central Services` will have a sub-direc
 
 Here is an example of what the folder structure will look like in the import directory for OU Cloud Access Roles.
 
-```
+```bash
 ├── 5-Central_Services
 │   ├── Account_Managers.metadata.json
 │   ├── Engineers.metadata.json
@@ -126,7 +161,7 @@ Here is a mapping.
 
 The script will tell you if any required folder is missing, and exit. For example:
 
-```
+```bash
 <import_dir> is missing the following sub-directories:
 - aws-cloudformation-template
 - aws-iam-policy
@@ -138,6 +173,7 @@ The script will tell you if any required folder is missing, and exit. For exampl
 ### Kion API key & user with permissions
 
 You will need a Kion app API key in order for the script to authenticate with Kion. The user for which this key is generated will need at least `Browse` permissions on:
+
 - Cloud Rules
 - AWS CloudFormation templates
 - AWS IAM policies
@@ -148,7 +184,7 @@ You will need a Kion app API key in order for the script to authenticate with Ki
 It is recommended to export this to the environment rather than providing the key as a CLI argument. For example:
 
 ```bash
-$ export KION_API_KEY='app_1_ksjdlZUisjdlFKSJdlfskj'
+export KION_API_KEY='app_1_ksjdlZUisjdlFKSJdlfskj'
 ```
 
 ## Required Arguments
@@ -160,7 +196,7 @@ The URL to Kion.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --kion-url https://kion.example.com
+python terraform-importer --kion-url https://kion.example.com
 ```
 
 ### `--import-dir`
@@ -170,7 +206,7 @@ The path to the root of the directory for the import. All resources will be kept
 Example usage:
 
 ```bash
-$ python3 terraform-importer --import-dir /Users/me/Code/kion/terraform/import
+python terraform-importer --import-dir /Users/me/Code/kion/terraform/import
 ```
 
 ## Optional Arguments
@@ -183,7 +219,7 @@ This is actually required if the environment variable hasn't been set
 Example usage:
 
 ```bash
-$ python3 terraform-importer --kion-api-key app_thisshouldreallybeanenvironmentvariable
+python terraform-importer --kion-api-key app_thisshouldreallybeanenvironmentvariable
 ```
 
 This can also be set as an environment variable called `KION_API_KEY`. (preferred)
@@ -191,7 +227,7 @@ This can also be set as an environment variable called `KION_API_KEY`. (preferre
 Here is an example of doing that:
 
 ```bash
-$ export KION_API_KEY='app_1_ksjdlZUisjdlFKSJdlfskj'
+export KION_API_KEY='app_1_ksjdlZUisjdlFKSJdlfskj'
 ```
 
 ### `--skip-cfts`
@@ -201,7 +237,7 @@ Skip importing AWS CloudFormation templates.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --skip-cfts
+python terraform-importer --skip-cfts
 ```
 
 ### `--skip-iams`
@@ -211,7 +247,7 @@ Skip importing AWS IAM policies.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --skip-iams
+python terraform-importer --skip-iams
 ```
 
 ### `--skip-project-roles`
@@ -221,7 +257,7 @@ Skip importing Project Cloud Access Roles.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --skip-project-roles
+python terraform-importer --skip-project-roles
 ```
 
 ### `--skip-ou-roles`
@@ -231,7 +267,7 @@ Skip importing OU Cloud Access Roles.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --skip-ou-roles
+python terraform-importer --skip-ou-roles
 ```
 
 ### `--skip-cloud-rules`
@@ -241,7 +277,7 @@ Skip importing Cloud Rules.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --skip-cloud-rules
+python terraform-importer --skip-cloud-rules
 ```
 
 ### `--skip-checks`
@@ -251,7 +287,7 @@ Skip importing Compliance Checks.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --skip-checks
+python terraform-importer --skip-checks
 ```
 
 ### `--skip-standards`
@@ -261,7 +297,7 @@ Skip importing Compliance Standards.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --skip-standards
+python terraform-importer --skip-standards
 ```
 
 ### `--skip-azure-policies`
@@ -271,7 +307,7 @@ Skip importing Azure Policies.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --skip-azure-policies
+python terraform-importer --skip-azure-policies
 ```
 
 ### `--skip-azure-roles`
@@ -281,7 +317,7 @@ Skip importing Azure Roles.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --skip-azure-roles
+python terraform-importer --skip-azure-roles
 ```
 
 ### `--skip-ssl-verify`
@@ -295,7 +331,7 @@ Using this will output a warning message during the import and may affect functi
 Example usage:
 
 ```bash
-$ python3 terraform-importer --skip-ssl-verify
+python terraform-importer --skip-ssl-verify
 ```
 
 ### `--clone-system-managed`
@@ -335,7 +371,7 @@ You must provide this flag or `--clone-user-ids` or both when cloning.
 Example of cloning and providing all flags:
 
 ```bash
-$ python3 terraform-importer --clone-system-managed --clone-prefix MYCLONE_ --clone-user-ids 1 2 --clone-user-group-ids 3 4
+python terraform-importer --clone-system-managed --clone-prefix MYCLONE_ --clone-user-ids 1 2 --clone-user-group-ids 3 4
 ```
 
 ### `--import-aws-managed`
@@ -352,7 +388,7 @@ They will also not be listed in the `import_resource_state.sh` bash script as th
 purpose in importing them into the Terraform state since they cannot be managed.
 
 ```bash
-$ python3 terraform-importer --import-aws-managed
+python terraform-importer --import-aws-managed
 ```
 
 ### `--overwrite`
@@ -368,7 +404,7 @@ up to date prior to using source control exclusively for making changes.
 Example usage:
 
 ```bash
-$ python3 terraform-importer --overwrite
+python terraform-importer --overwrite
 ```
 
 ### `--prepend-id`
@@ -395,7 +431,7 @@ For example, the following Cloud Rule metadata file contains IAM policy `4`:
 
 By setting this flag, the resource and metadata files that manage that IAM policy will have `4-` prepended to their names:
 
-```
+```bash
 4-AWSServicesOnlyInUSA.json
 4-AWSServicesOnlyInUSA.metadata.json
 ```
@@ -405,5 +441,5 @@ One caveat to this is that you will need to manually maintain this naming scheme
 Example usage:
 
 ```bash
-$ python3 terraform-importer --prepend-id
+python terraform-importer --prepend-id
 ```
