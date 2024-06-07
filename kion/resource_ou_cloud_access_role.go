@@ -69,6 +69,18 @@ func resourceOUCloudAccessRole() *schema.Resource {
 				Type:     schema.TypeSet,
 				Optional: true,
 			},
+			"gcp_iam_roles": {
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+					},
+				},
+				Type:     schema.TypeSet,
+				Optional: true,
+			},
 			"long_term_access_keys": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -128,6 +140,7 @@ func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData
 		AwsIamPolicies:            hc.FlattenGenericIDPointer(d, "aws_iam_policies"),
 		AwsIamRoleName:            d.Get("aws_iam_role_name").(string),
 		AzureRoleDefinitions:      hc.FlattenGenericIDPointer(d, "azure_role_definitions"),
+		GCPIamRoles:               hc.FlattenGenericIDPointer(d, "gcp_iam_roles"),
 		LongTermAccessKeys:        d.Get("long_term_access_keys").(bool),
 		Name:                      d.Get("name").(string),
 		OUID:                      d.Get("ou_id").(int),
@@ -189,6 +202,9 @@ func resourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, 
 	data["aws_iam_role_name"] = item.OUCloudAccessRole.AwsIamRoleName
 	if hc.InflateObjectWithID(item.AzureRoleDefinitions) != nil {
 		data["azure_role_definitions"] = hc.InflateObjectWithID(item.AzureRoleDefinitions)
+	}
+	if hc.InflateObjectWithID(item.GCPIamRoles) != nil {
+		data["gcp_iam_roles"] = hc.InflateObjectWithID(item.GCPIamRoles)
 	}
 	data["long_term_access_keys"] = item.OUCloudAccessRole.LongTermAccessKeys
 	data["name"] = item.OUCloudAccessRole.Name
@@ -254,12 +270,14 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 	if d.HasChanges("aws_iam_permissions_boundary",
 		"aws_iam_policies",
 		"azure_role_definitions",
+		"gcp_iam_roles",
 		"user_groups",
 		"users") {
 		hasChanged++
 		arrAddAwsIamPermissionsBoundary, arrRemoveAwsIamPermissionsBoundary, _, _ := hc.AssociationChangedInt(d, "aws_iam_permissions_boundary")
 		arrAddAwsIamPolicies, arrRemoveAwsIamPolicies, _, _ := hc.AssociationChanged(d, "aws_iam_policies")
 		arrAddAzureRoleDefinitions, arrRemoveAzureRoleDefinitions, _, _ := hc.AssociationChanged(d, "azure_role_definitions")
+		arrAddGCPIamRoles, arrRemoveGCPIamRoles, _, _ := hc.AssociationChanged(d, "gcp_iam_roles")
 		arrAddUserGroupIds, arrRemoveUserGroupIds, _, _ := hc.AssociationChanged(d, "user_groups")
 		arrAddUserIds, arrRemoveUserIds, _, _ := hc.AssociationChanged(d, "users")
 
@@ -267,11 +285,13 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 			len(arrAddAwsIamPolicies) > 0 ||
 			len(arrAddUserGroupIds) > 0 ||
 			len(arrAddAzureRoleDefinitions) > 0 ||
+			len(arrAddGCPIamRoles) > 0 ||
 			len(arrAddUserIds) > 0 {
 			_, err := client.POST(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), hc.OUCloudAccessRoleAssociationsAdd{
 				AwsIamPermissionsBoundary: arrAddAwsIamPermissionsBoundary,
 				AwsIamPolicies:            &arrAddAwsIamPolicies,
 				AzureRoleDefinitions:      &arrAddAzureRoleDefinitions,
+				GCPIamRoles:               &arrAddGCPIamRoles,
 				UserGroupIds:              &arrAddUserGroupIds,
 				UserIds:                   &arrAddUserIds,
 			})
@@ -288,12 +308,14 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 		if arrRemoveAwsIamPermissionsBoundary != nil ||
 			len(arrRemoveAwsIamPolicies) > 0 ||
 			len(arrRemoveAzureRoleDefinitions) > 0 ||
+			len(arrRemoveGCPIamRoles) > 0 ||
 			len(arrRemoveUserGroupIds) > 0 ||
 			len(arrRemoveUserIds) > 0 {
 			err := client.DELETE(fmt.Sprintf("/v3/ou-cloud-access-role/%s/association", ID), hc.OUCloudAccessRoleAssociationsRemove{
 				AwsIamPermissionsBoundary: arrRemoveAwsIamPermissionsBoundary,
 				AwsIamPolicies:            &arrRemoveAwsIamPolicies,
 				AzureRoleDefinitions:      &arrRemoveAzureRoleDefinitions,
+				GCPIamRoles:               &arrRemoveGCPIamRoles,
 				UserGroupIds:              &arrRemoveUserGroupIds,
 				UserIds:                   &arrRemoveUserIds,
 			})
