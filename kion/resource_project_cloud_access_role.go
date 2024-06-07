@@ -160,6 +160,7 @@ func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.Resourc
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
+	// Create the request payload
 	post := hc.ProjectCloudAccessRoleCreate{
 		AccountIds:                hc.FlattenGenericIDPointer(d, "accounts"),
 		ApplyToAllAccounts:        d.Get("apply_to_all_accounts").(bool),
@@ -179,26 +180,31 @@ func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.Resourc
 		WebAccess:                 d.Get("web_access").(bool),
 	}
 
+	// Send the POST request
 	resp, err := client.POST("/v3/project-cloud-access-role", post)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
+		return append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to create ProjectCloudAccessRole",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), post),
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err, post),
 		})
-		return diags
-	} else if resp.RecordID == 0 {
-		diags = append(diags, diag.Diagnostic{
+	}
+
+	if resp.RecordID == 0 {
+		return append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to create ProjectCloudAccessRole",
 			Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), post),
 		})
-		return diags
 	}
 
+	// Set the ID for the created resource
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	resourceProjectCloudAccessRoleRead(ctx, d, m)
+	// Read the resource to update the state
+	if readDiags := resourceProjectCloudAccessRoleRead(ctx, d, m); readDiags.HasError() {
+		diags = append(diags, readDiags...)
+	}
 
 	return diags
 }
@@ -220,37 +226,24 @@ func resourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.ResourceD
 	}
 	item := resp.Data
 
-	data := make(map[string]interface{})
-	if hc.InflateObjectWithID(item.Accounts) != nil {
-		data["accounts"] = hc.InflateObjectWithID(item.Accounts)
+	data := map[string]interface{}{
+		"apply_to_all_accounts":        item.ProjectCloudAccessRole.ApplyToAllAccounts,
+		"aws_iam_path":                 item.ProjectCloudAccessRole.AwsIamPath,
+		"aws_iam_role_name":            item.ProjectCloudAccessRole.AwsIamRoleName,
+		"aws_iam_permissions_boundary": hc.InflateSingleObjectWithID(item.AwsIamPermissionsBoundary),
+		"long_term_access_keys":        item.ProjectCloudAccessRole.LongTermAccessKeys,
+		"name":                         item.ProjectCloudAccessRole.Name,
+		"project_id":                   item.ProjectCloudAccessRole.ProjectID,
+		"short_term_access_keys":       item.ProjectCloudAccessRole.ShortTermAccessKeys,
+		"web_access":                   item.ProjectCloudAccessRole.WebAccess,
+		"accounts":                     hc.InflateObjectWithID(item.Accounts),
+		"aws_iam_policies":             hc.InflateObjectWithID(item.AwsIamPolicies),
+		"azure_role_definitions":       hc.InflateObjectWithID(item.AzureRoleDefinitions),
+		"gcp_iam_roles":                hc.InflateObjectWithID(item.GCPIamRoles),
+		"user_groups":                  hc.InflateObjectWithID(item.UserGroups),
+		"users":                        hc.InflateObjectWithID(item.Users),
+		"future_accounts":              item.ProjectCloudAccessRole.FutureAccounts,
 	}
-	data["apply_to_all_accounts"] = item.ProjectCloudAccessRole.ApplyToAllAccounts
-	data["aws_iam_path"] = item.ProjectCloudAccessRole.AwsIamPath
-	if hc.InflateSingleObjectWithID(item.AwsIamPermissionsBoundary) != nil {
-		data["aws_iam_permissions_boundary"] = hc.InflateSingleObjectWithID(item.AwsIamPermissionsBoundary)
-	}
-	if hc.InflateObjectWithID(item.AwsIamPolicies) != nil {
-		data["aws_iam_policies"] = hc.InflateObjectWithID(item.AwsIamPolicies)
-	}
-	data["aws_iam_role_name"] = item.ProjectCloudAccessRole.AwsIamRoleName
-	if hc.InflateObjectWithID(item.AzureRoleDefinitions) != nil {
-		data["azure_role_definitions"] = hc.InflateObjectWithID(item.AzureRoleDefinitions)
-	}
-	data["future_accounts"] = item.ProjectCloudAccessRole.FutureAccounts
-	if hc.InflateObjectWithID(item.GCPIamRoles) != nil {
-		data["gcp_iam_roles"] = hc.InflateObjectWithID(item.GCPIamRoles)
-	}
-	data["long_term_access_keys"] = item.ProjectCloudAccessRole.LongTermAccessKeys
-	data["name"] = item.ProjectCloudAccessRole.Name
-	data["project_id"] = item.ProjectCloudAccessRole.ProjectID
-	data["short_term_access_keys"] = item.ProjectCloudAccessRole.ShortTermAccessKeys
-	if hc.InflateObjectWithID(item.UserGroups) != nil {
-		data["user_groups"] = hc.InflateObjectWithID(item.UserGroups)
-	}
-	if hc.InflateObjectWithID(item.Users) != nil {
-		data["users"] = hc.InflateObjectWithID(item.Users)
-	}
-	data["web_access"] = item.ProjectCloudAccessRole.WebAccess
 
 	for k, v := range data {
 		if err := d.Set(k, v); err != nil {
@@ -271,19 +264,11 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	hasChanged := 0
+	var hasChanged bool
 
 	// Determine if the attributes that are updatable are changed.
-	// Leave out fields that are not allowed to be changed like
-	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
-	// schema instead.
-	if d.HasChanges("apply_to_all_accounts",
-		"future_accounts",
-		"long_term_access_keys",
-		"name",
-		"short_term_access_keys",
-		"web_access") {
-		hasChanged++
+	if d.HasChanges("apply_to_all_accounts", "future_accounts", "long_term_access_keys", "name", "short_term_access_keys", "web_access") {
+		hasChanged = true
 		req := hc.ProjectCloudAccessRoleUpdate{
 			ApplyToAllAccounts:  d.Get("apply_to_all_accounts").(bool),
 			FutureAccounts:      d.Get("future_accounts").(bool),
@@ -293,8 +278,7 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 			WebAccess:           d.Get("web_access").(bool),
 		}
 
-		err := client.PATCH(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), req)
-		if err != nil {
+		if err := client.PATCH(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), req); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to update ProjectCloudAccessRole",
@@ -305,68 +289,63 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 	}
 
 	// Handle associations.
-	if d.HasChanges("accounts",
-		"aws_iam_permissions_boundary",
-		"aws_iam_policies",
-		"azure_role_definitions",
-		"gcp_iam_roles",
-		"user_groups",
-		"users") {
-		hasChanged++
-		arrAddAccountIds, arrRemoveAccountIds, _, _ := hc.AssociationChanged(d, "accounts")
-		arrAddAwsIamPermissionsBoundary, arrRemoveAwsIamPermissionsBoundary, _, _ := hc.AssociationChangedInt(d, "aws_iam_permissions_boundary")
-		arrAddAwsIamPolicies, arrRemoveAwsIamPolicies, _, _ := hc.AssociationChanged(d, "aws_iam_policies")
-		arrAddAzureRoleDefinitions, arrRemoveAzureRoleDefinitions, _, _ := hc.AssociationChanged(d, "azure_role_definitions")
-		arrAddGCPIamRoles, arrRemoveGCPIamRoles, _, _ := hc.AssociationChanged(d, "gcp_iam_roles")
-		arrAddUserGroupIds, arrRemoveUserGroupIds, _, _ := hc.AssociationChanged(d, "user_groups")
-		arrAddUserIds, arrRemoveUserIds, _, _ := hc.AssociationChanged(d, "users")
+	if d.HasChanges("accounts", "aws_iam_permissions_boundary", "aws_iam_policies", "azure_role_definitions", "gcp_iam_roles", "user_groups", "users") {
+		hasChanged = true
 
-		if len(arrAddAccountIds) > 0 ||
-			arrAddAwsIamPermissionsBoundary != nil ||
-			len(arrAddAwsIamPolicies) > 0 ||
-			len(arrAddAzureRoleDefinitions) > 0 ||
-			len(arrAddGCPIamRoles) > 0 ||
-			len(arrAddUserGroupIds) > 0 ||
-			len(arrAddUserIds) > 0 {
-			_, err := client.POST(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), hc.ProjectCloudAccessRoleAssociationsAdd{
-				AccountIds:                &arrAddAccountIds,
-				AwsIamPermissionsBoundary: arrAddAwsIamPermissionsBoundary,
-				AwsIamPolicies:            &arrAddAwsIamPolicies,
-				AzureRoleDefinitions:      &arrAddAzureRoleDefinitions,
-				GCPIamRoles:               &arrAddGCPIamRoles,
-				UserGroupIds:              &arrAddUserGroupIds,
-				UserIds:                   &arrAddUserIds,
-			})
-			if err != nil {
+		var addCarAssociation hc.ProjectCloudAccessRoleAssociationsAdd
+		var removeCarAssociation hc.ProjectCloudAccessRoleAssociationsRemove
+
+		if addBoundary, removeBoundary, _, _ := hc.AssociationChangedInt(d, "aws_iam_permissions_boundary"); addBoundary != nil || removeBoundary != nil {
+			addCarAssociation.AwsIamPermissionsBoundary = addBoundary
+			removeCarAssociation.AwsIamPermissionsBoundary = removeBoundary
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "accounts"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.AccountIds = &arrAdd
+			removeCarAssociation.AccountIds = &arrRemove
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "aws_iam_policies"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.AwsIamPolicies = &arrAdd
+			removeCarAssociation.AwsIamPolicies = &arrRemove
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "azure_role_definitions"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.AzureRoleDefinitions = &arrAdd
+			removeCarAssociation.AzureRoleDefinitions = &arrRemove
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "gcp_iam_roles"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.GCPIamRoles = &arrAdd
+			removeCarAssociation.GCPIamRoles = &arrRemove
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "user_groups"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.UserGroupIds = &arrAdd
+			removeCarAssociation.UserGroupIds = &arrRemove
+		}
+
+		if arrAdd, arrRemove, _, _ := hc.AssociationChanged(d, "users"); len(arrAdd) > 0 || len(arrRemove) > 0 {
+			addCarAssociation.UserIds = &arrAdd
+			removeCarAssociation.UserIds = &arrRemove
+		}
+
+		if addCarAssociation != (hc.ProjectCloudAccessRoleAssociationsAdd{}) {
+			if _, err := client.POST(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), addCarAssociation); err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  "Unable to add owners on ProjectCloudAccessRole",
+					Summary:  "Unable to add associations on ProjectCloudAccessRole",
 					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 				})
 				return diags
 			}
 		}
 
-		if len(arrRemoveAccountIds) > 0 ||
-			arrRemoveAwsIamPermissionsBoundary != nil ||
-			len(arrRemoveAwsIamPolicies) > 0 ||
-			len(arrRemoveAzureRoleDefinitions) > 0 ||
-			len(arrRemoveGCPIamRoles) > 0 ||
-			len(arrRemoveUserGroupIds) > 0 ||
-			len(arrRemoveUserIds) > 0 {
-			err := client.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), hc.ProjectCloudAccessRoleAssociationsRemove{
-				AccountIds:                &arrRemoveAccountIds,
-				AwsIamPermissionsBoundary: arrRemoveAwsIamPermissionsBoundary,
-				AwsIamPolicies:            &arrRemoveAwsIamPolicies,
-				AzureRoleDefinitions:      &arrRemoveAzureRoleDefinitions,
-				GCPIamRoles:               &arrRemoveGCPIamRoles,
-				UserGroupIds:              &arrRemoveUserGroupIds,
-				UserIds:                   &arrRemoveUserIds,
-			})
-			if err != nil {
+		if removeCarAssociation != (hc.ProjectCloudAccessRoleAssociationsRemove{}) {
+			if err := client.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s/association", ID), removeCarAssociation); err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  "Unable to remove owners on ProjectCloudAccessRole",
+					Summary:  "Unable to remove associations on ProjectCloudAccessRole",
 					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 				})
 				return diags
@@ -374,7 +353,7 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 		}
 	}
 
-	if hasChanged > 0 {
+	if hasChanged {
 		d.Set("last_updated", time.Now().Format(time.RFC850))
 	}
 
@@ -386,18 +365,19 @@ func resourceProjectCloudAccessRoleDelete(ctx context.Context, d *schema.Resourc
 	client := m.(*hc.Client)
 	ID := d.Id()
 
+	// Make the DELETE request using the client and context
 	err := client.DELETE(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), nil)
 	if err != nil {
+		// Add detailed diagnostic information on error
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to delete ProjectCloudAccessRole",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			Detail:   fmt.Sprintf("Error deleting ProjectCloudAccessRole with ID %s: %v", ID, err),
 		})
 		return diags
 	}
 
-	// d.SetId("") is automatically called assuming delete returns no errors, but
-	// it is added here for explicitness.
+	// Explicitly clear the resource ID to indicate deletion
 	d.SetId("")
 
 	return diags
