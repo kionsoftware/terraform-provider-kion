@@ -7,6 +7,7 @@ type ProjectCloudAccessRoleResponse struct {
 		AwsIamPermissionsBoundary *ObjectWithID  `json:"aws_iam_permissions_boundary"`
 		AwsIamPolicies            []ObjectWithID `json:"aws_iam_policies"`
 		AzureRoleDefinitions      []ObjectWithID `json:"azure_role_definitions"`
+		GCPIamRoles               []ObjectWithID `json:"gcp_iam_roles"`
 		ProjectCloudAccessRole    struct {
 			ApplyToAllAccounts  bool   `json:"apply_to_all_accounts"`
 			AwsIamPath          string `json:"aws_iam_path"`
@@ -35,6 +36,7 @@ type ProjectCloudAccessRoleCreate struct {
 	AwsIamRoleName            string `json:"aws_iam_role_name"`
 	AzureRoleDefinitions      *[]int `json:"azure_role_definitions"`
 	FutureAccounts            bool   `json:"future_accounts"`
+	GCPIamRoles               *[]int `json:"gcp_iam_roles"`
 	LongTermAccessKeys        bool   `json:"long_term_access_keys"`
 	Name                      string `json:"name"`
 	ProjectID                 int    `json:"project_id"`
@@ -60,6 +62,7 @@ type ProjectCloudAccessRoleAssociationsAdd struct {
 	AwsIamPermissionsBoundary *int   `json:"aws_iam_permissions_boundary"`
 	AwsIamPolicies            *[]int `json:"aws_iam_policies"`
 	AzureRoleDefinitions      *[]int `json:"azure_role_definitions"`
+	GCPIamRoles               *[]int `json:"gcp_iam_roles"`
 	UserGroupIds              *[]int `json:"user_group_ids"`
 	UserIds                   *[]int `json:"user_ids"`
 }
@@ -70,6 +73,7 @@ type ProjectCloudAccessRoleAssociationsRemove struct {
 	AwsIamPermissionsBoundary *int   `json:"aws_iam_permissions_boundary"`
 	AwsIamPolicies            *[]int `json:"aws_iam_policies"`
 	AzureRoleDefinitions      *[]int `json:"azure_role_definitions"`
+	GCPIamRoles               *[]int `json:"gcp_iam_roles"`
 	UserGroupIds              *[]int `json:"user_group_ids"`
 	UserIds                   *[]int `json:"user_ids"`
 }
