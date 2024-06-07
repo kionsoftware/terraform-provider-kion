@@ -328,18 +328,19 @@ func resourceOUCloudAccessRoleDelete(ctx context.Context, d *schema.ResourceData
 	client := m.(*hc.Client)
 	ID := d.Id()
 
+	// Make the DELETE request using the client and context
 	err := client.DELETE(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), nil)
 	if err != nil {
+		// Add detailed diagnostic information on error
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to delete OUCloudAccessRole",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			Detail:   fmt.Sprintf("Error deleting OUCloudAccessRole with ID %s: %v", ID, err),
 		})
 		return diags
 	}
 
-	// d.SetId("") is automatically called assuming delete returns no errors, but
-	// it is added here for explicitness.
+	// Explicitly clear the resource ID to indicate deletion
 	d.SetId("")
 
 	return diags
