@@ -415,12 +415,14 @@ func resourceProjectEnforcementDelete(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-// Handle setting Terraform schema values, centralizing error reporting and ensuring non-nil values
+// safeSet handles setting Terraform schema values, centralizing error reporting and ensuring non-nil values.
 func safeSet(d *schema.ResourceData, key string, value interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	// Check if the value is non-nil before setting
+	// Check if the value is non-nil before setting it in the schema
 	if value != nil {
+		// Attempt to set the value in the schema
 		if err := d.Set(key, value); err != nil {
+			// Append a diagnostic message if there's an error while setting the value
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error setting field",
@@ -431,40 +433,53 @@ func safeSet(d *schema.ResourceData, key string, value interface{}) diag.Diagnos
 	return diags
 }
 
-// Helper function to get the previous state of user and user group IDs
+// getPreviousEnforcementUserAndGroupIds retrieves the previous state of user and user group IDs
+// from the Terraform resource data.
 func getPreviousEnforcementUserAndGroupIds(d *schema.ResourceData) ([]int, []int) {
 	var prevUserIds, prevUserGroupIds []int
 
+	// Check if the "user_ids" field has changed
 	if d.HasChange("user_ids") {
+		// Get the previous value of the "user_ids" field
 		oldValue, _ := d.GetChange("user_ids")
+		// Convert the previous value to a slice of integers
 		prevUserIds = convertInterfaceSliceToIntSliceEnforcement(oldValue.([]interface{}))
 	}
 
+	// Check if the "user_group_ids" field has changed
 	if d.HasChange("user_group_ids") {
+		// Get the previous value of the "user_group_ids" field
 		oldValue, _ := d.GetChange("user_group_ids")
+		// Convert the previous value to a slice of integers
 		prevUserGroupIds = convertInterfaceSliceToIntSliceEnforcement(oldValue.([]interface{}))
 	}
 
 	return prevUserIds, prevUserGroupIds
 }
 
-// Helper function to convert an interface slice to an int slice for enforcement
+// convertInterfaceSliceToIntSliceEnforcement converts a slice of interfaces to a slice of integers
+// for enforcement purposes.
 func convertInterfaceSliceToIntSliceEnforcement(interfaceSlice []interface{}) []int {
+	// Create a slice of integers with the same length as the input slice
 	intSlice := make([]int, len(interfaceSlice))
+	// Iterate over the input slice, casting each element to an integer
 	for i, v := range interfaceSlice {
 		intSlice[i] = v.(int)
 	}
 	return intSlice
 }
 
-// Helper function to find the difference between two slices for enforcement
+// findEnforcementIdDifferences finds the differences between two slices of integers,
+// returning the elements that are present in slice1 but not in slice2.
 func findEnforcementIdDifferences(slice1, slice2 []int) []int {
+	// Create a set from the second slice for efficient lookups
 	set := make(map[int]bool)
 	for _, v := range slice2 {
 		set[v] = true
 	}
 
 	var diff []int
+	// Iterate over the first slice and find elements not present in the second slice
 	for _, v := range slice1 {
 		if !set[v] {
 			diff = append(diff, v)
