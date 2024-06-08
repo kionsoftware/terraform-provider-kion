@@ -128,7 +128,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	hasChanged := 0
+	var hasChanged bool
 
 	var accountLocation string
 	var oldProjectId, newProjectId int
@@ -252,14 +252,8 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	// Determine if the attributes that are updatable are changed.
-	if d.HasChanges("email",
-		"name",
-		"include_linked_account_spend",
-		"linked_role",
-		"skip_access_checking",
-		"start_datecode",
-		"use_org_account_info") {
-		hasChanged++
+	if d.HasChanges("email", "name", "include_linked_account_spend", "linked_role", "skip_access_checking", "start_datecode", "use_org_account_info") {
+		hasChanged = true
 
 		var req interface{}
 		var accountUrl string
@@ -318,7 +312,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	if accountLocation == ProjectLocation && d.HasChanges("labels") {
-		hasChanged++
+		hasChanged = true
 
 		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
@@ -332,9 +326,16 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
-	// Use hasChanged for logging or further logic
-	if hasChanged > 0 {
-		tflog.Info(ctx, fmt.Sprintf("Updated %d fields for account ID: %s", hasChanged, ID))
+	if hasChanged {
+		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to set last_updated",
+				Detail:   fmt.Sprintf("Error: %v", err),
+			})
+			return diags
+		}
+		tflog.Info(ctx, fmt.Sprintf("Updated account ID: %s", ID))
 	}
 
 	return diags
