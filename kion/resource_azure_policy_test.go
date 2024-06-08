@@ -51,7 +51,8 @@ var (
 
 func TestAccResourceAzurePolicyCreate(t *testing.T) {
 	config := testAccAzurePolicyGenerateResourceDeclaration(&initialTestAzurePolicy)
-	hc.PrintHCLConfig(config) // Print the generated HCL configuration
+	// Uncomment the following lines to print the configurations for debugging
+	// hc.PrintHCLConfig(config) // Print the generated HCL configuration
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -69,8 +70,9 @@ func TestAccResourceAzurePolicyCreate(t *testing.T) {
 func TestAccResourceAzurePolicyUpdate(t *testing.T) {
 	initialConfig := testAccAzurePolicyGenerateResourceDeclaration(&initialTestAzurePolicy)
 	updatedConfig := testAccAzurePolicyGenerateResourceDeclaration(&updatedTestAzurePolicy)
-	hc.PrintHCLConfig(initialConfig) // Print the initial HCL configuration
-	hc.PrintHCLConfig(updatedConfig) // Print the updated HCL configuration
+	// Uncomment the following lines to print the configurations for debugging
+	// hc.PrintHCLConfig(initialConfig) // Print the initial HCL configuration
+	// hc.PrintHCLConfig(updatedConfig) // Print the updated HCL configuration
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -91,7 +93,8 @@ func TestAccResourceAzurePolicyUpdate(t *testing.T) {
 
 func TestAccResourceAzurePolicyDelete(t *testing.T) {
 	config := testAccAzurePolicyGenerateResourceDeclaration(&initialTestAzurePolicy)
-	hc.PrintHCLConfig(config) // Print the generated HCL configuration
+	// Uncomment the following lines to print the configurations for debugging
+	// hc.PrintHCLConfig(config) // Print the generated HCL configuration // Print the generated HCL configuration
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
