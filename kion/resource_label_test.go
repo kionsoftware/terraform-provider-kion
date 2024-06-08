@@ -49,8 +49,8 @@ func TestAccResourceLabelCreate(t *testing.T) {
 func TestAccResourceLabelUpdate(t *testing.T) {
 	initialConfig := testAccLabelGenerateResourceDeclaration(&initialTestLabel)
 	updatedConfig := testAccLabelGenerateResourceDeclaration(&updatedTestLabel)
-	hc.PrintHCLConfig(initialConfig) // Print the initial HCL configuration
-	hc.PrintHCLConfig(updatedConfig) // Print the updated HCL configuration
+	// hc.PrintHCLConfig(initialConfig) // Print the initial HCL configuration
+	// hc.PrintHCLConfig(updatedConfig) // Print the updated HCL configuration
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
