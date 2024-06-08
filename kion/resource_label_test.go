@@ -31,7 +31,7 @@ var (
 
 func TestAccResourceLabelCreate(t *testing.T) {
 	config := testAccLabelGenerateResourceDeclaration(&initialTestLabel)
-	hc.PrintHCLConfig(config) // Print the generated HCL configuration
+	// hc.PrintHCLConfig(config) // Print the generated HCL configuration
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -71,7 +71,7 @@ func TestAccResourceLabelUpdate(t *testing.T) {
 
 func TestAccResourceLabelDelete(t *testing.T) {
 	config := testAccLabelGenerateResourceDeclaration(&initialTestLabel)
-	hc.PrintHCLConfig(config) // Print the generated HCL configuration
+	// hc.PrintHCLConfig(config) // Print the generated HCL configuration
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
