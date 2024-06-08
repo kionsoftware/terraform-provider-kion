@@ -31,7 +31,8 @@ var (
 
 func TestAccResourceLabelCreate(t *testing.T) {
 	config := testAccLabelGenerateResourceDeclaration(&initialTestLabel)
-	// hc.PrintHCLConfig(config) // Print the generated HCL configuration
+	// Uncomment the following lines to print the configurations for debugging
+	// hc.PrintHCLConfig(config) // Print the generated HCL configuration for debugging
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -40,7 +41,12 @@ func TestAccResourceLabelCreate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: config,
-				Check:  resource.ComposeTestCheckFunc(testAccLabelCheckResource(&initialTestLabel)...),
+				Check: resource.ComposeTestCheckFunc(
+					// Check that the resource was created with the expected attributes
+					resource.TestCheckResourceAttr(resourceTypeLabel+"."+resourceNameLabel, "color", initialTestLabel.Color),
+					resource.TestCheckResourceAttr(resourceTypeLabel+"."+resourceNameLabel, "key", initialTestLabel.Key),
+					resource.TestCheckResourceAttr(resourceTypeLabel+"."+resourceNameLabel, "value", initialTestLabel.Value),
+				),
 			},
 		},
 	})
@@ -49,6 +55,8 @@ func TestAccResourceLabelCreate(t *testing.T) {
 func TestAccResourceLabelUpdate(t *testing.T) {
 	initialConfig := testAccLabelGenerateResourceDeclaration(&initialTestLabel)
 	updatedConfig := testAccLabelGenerateResourceDeclaration(&updatedTestLabel)
+
+	// Uncomment the following lines to print the configurations for debugging
 	// hc.PrintHCLConfig(initialConfig) // Print the initial HCL configuration
 	// hc.PrintHCLConfig(updatedConfig) // Print the updated HCL configuration
 
@@ -58,12 +66,24 @@ func TestAccResourceLabelUpdate(t *testing.T) {
 		CheckDestroy: testAccLabelCheckResourceDestroy,
 		Steps: []resource.TestStep{
 			{
+				// Apply the initial configuration
 				Config: initialConfig,
-				Check:  resource.ComposeTestCheckFunc(testAccLabelCheckResource(&initialTestLabel)...),
+				Check: resource.ComposeTestCheckFunc(
+					// Check that the resource was created with the initial attributes
+					resource.TestCheckResourceAttr(resourceTypeLabel+"."+resourceNameLabel, "color", initialTestLabel.Color),
+					resource.TestCheckResourceAttr(resourceTypeLabel+"."+resourceNameLabel, "key", initialTestLabel.Key),
+					resource.TestCheckResourceAttr(resourceTypeLabel+"."+resourceNameLabel, "value", initialTestLabel.Value),
+				),
 			},
 			{
+				// Apply the updated configuration
 				Config: updatedConfig,
-				Check:  resource.ComposeTestCheckFunc(testAccLabelCheckResource(&updatedTestLabel)...),
+				Check: resource.ComposeTestCheckFunc(
+					// Check that the resource was updated with the new attributes
+					resource.TestCheckResourceAttr(resourceTypeLabel+"."+resourceNameLabel, "color", updatedTestLabel.Color),
+					resource.TestCheckResourceAttr(resourceTypeLabel+"."+resourceNameLabel, "key", updatedTestLabel.Key),
+					resource.TestCheckResourceAttr(resourceTypeLabel+"."+resourceNameLabel, "value", updatedTestLabel.Value),
+				),
 			},
 		},
 	})
@@ -71,6 +91,7 @@ func TestAccResourceLabelUpdate(t *testing.T) {
 
 func TestAccResourceLabelDelete(t *testing.T) {
 	config := testAccLabelGenerateResourceDeclaration(&initialTestLabel)
+	// Uncomment the following lines to print the configurations for debugging
 	// hc.PrintHCLConfig(config) // Print the generated HCL configuration
 
 	resource.Test(t, resource.TestCase{
