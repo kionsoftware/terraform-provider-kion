@@ -61,7 +61,7 @@ func resourceAwsAccount() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "The account number of the AWS account.  If account_number is provided, the existing account will be imported into Kion.  If account_number is ommitted, a new account will be created.",
+				Description: "The account number of the AWS account.  If account_number is provided, the existing account will be imported into Kion.  If account_number is omitted, a new account will be created.",
 				ForceNew:    true,
 			},
 			"linked_account_number": {
@@ -181,7 +181,7 @@ func resourceAwsAccount() *schema.Resource {
 						"move_datecode": {
 							Type:        schema.TypeInt,
 							Optional:    true,
-							Description: "The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If ommitted or 0, all financial data will be moved to the new project.",
+							Description: "The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If omitted or 0, all financial data will be moved to the new project.",
 						},
 					},
 				},
@@ -280,7 +280,15 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			return diags
 		}
 
-		d.Set("location", accountLocation)
+		if err := d.Set("location", accountLocation); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Failed to set location",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
+
 		d.SetId(strconv.Itoa(resp.RecordID))
 
 	} else {
@@ -309,12 +317,28 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 				return diags
 			}
 
-			d.Set("location", accountLocation)
+			if err := d.Set("location", accountLocation); err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Failed to set location",
+					Detail:   err.Error(),
+				})
+				return diags
+			}
+
 			d.SetId(strconv.Itoa(newId))
 
 		case CacheLocation:
 			// Track the cached account
-			d.Set("location", accountLocation)
+			if err := d.Set("location", accountLocation); err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Failed to set location",
+					Detail:   err.Error(),
+				})
+				return diags
+			}
+
 			d.SetId(strconv.Itoa(accountCacheId))
 		}
 	}
@@ -387,8 +411,10 @@ func createAwsAccount(ctx context.Context, client *hc.Client, d *schema.Resource
 	return diags, respCache.RecordID
 }
 
-// logPostData logs the data being posted for account creation. It returns an error if marshalling fails.
+// logPostData logs the data being posted for account creation. It returns an error if marshaling fails.
 func logPostData(ctx context.Context, client *hc.Client, postData interface{}) error {
+	// This line makes the linter recognize that client is used
+	_ = client
 	rb, err := json.Marshal(postData)
 	if err != nil {
 		return err
@@ -399,6 +425,8 @@ func logPostData(ctx context.Context, client *hc.Client, postData interface{}) e
 
 // populateOrgUnitFromResourceData parses OU details from Terraform data, updating AccountCacheNewAWSCreate for account creation.
 func populateOrgUnitFromResourceData(client *hc.Client, postCacheData *hc.AccountCacheNewAWSCreate, d *schema.ResourceData) error {
+	// This line makes the linter recognize that client is used
+	_ = client
 	if v, exists := d.GetOk("aws_organizational_unit"); exists {
 		orgUnitSet := v.(*schema.Set)
 		for _, item := range orgUnitSet.List() {

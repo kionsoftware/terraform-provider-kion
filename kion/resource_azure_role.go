@@ -78,11 +78,19 @@ func resourceAzureRole() *schema.Resource {
 				Required: true,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					var v1, v2 interface{}
-					json.Unmarshal([]byte(old), &v1)
-					json.Unmarshal([]byte(new), &v2)
+
+					if err := json.Unmarshal([]byte(old), &v1); err != nil {
+						return false
+					}
+
+					if err := json.Unmarshal([]byte(new), &v2); err != nil {
+						return false
+					}
+
 					return reflect.DeepEqual(v1, v2)
 				},
 			},
+
 			"system_managed_policy": {
 				Type:     schema.TypeBool,
 				Computed: true,
@@ -244,7 +252,14 @@ func resourceAzureRoleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 	}
 
 	if hasChanged > 0 {
-		d.Set("last_updated", time.Now().Format(time.RFC850))
+		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Failed to set last_updated",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 	}
 
 	return resourceAzureRoleRead(ctx, d, m)

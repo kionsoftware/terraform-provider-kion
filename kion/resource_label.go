@@ -99,9 +99,32 @@ func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{
 	}
 	label := resp.Data
 
-	d.Set("key", label.Key)
-	d.Set("value", label.Value)
-	d.Set("color", label.Color)
+	if err := d.Set("key", label.Key); err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set key for label",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	if err := d.Set("value", label.Value); err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set value for label",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	if err := d.Set("color", label.Color); err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to set color for label",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
 
 	return diags
 }
@@ -113,9 +136,7 @@ func resourceLabelUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 
 	hasChanged := 0
 
-	if d.HasChanges("color",
-		"key",
-		"value") {
+	if d.HasChanges("color", "key", "value") {
 		hasChanged++
 		req := hc.LabelUpdatable{
 			Color: d.Get("color").(string),
@@ -134,7 +155,11 @@ func resourceLabelUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 		}
 	}
 
-	return resourceLabelRead(ctx, d, m)
+	if hasChanged > 0 {
+		return resourceLabelRead(ctx, d, m)
+	}
+
+	return diags
 }
 
 func resourceLabelDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -20,6 +21,8 @@ import (
 //   kion/resource_azure_subscription_account.go
 
 func resourceAccountRead(resource string, ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	// Acknowledge the context parameter to avoid linter errors
+	_ = ctx
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
@@ -73,7 +76,14 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 
 	if locationChanged {
 		d.SetId(ID)
-		d.Set("location", accountLocation)
+		if err := d.Set("location", accountLocation); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to set location for account",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			})
+			return diags
+		}
 	}
 
 	data := resp.ToMap(resource)
@@ -102,8 +112,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 		}
 
 		// Set labels
-		err = d.Set("labels", labelData)
-		if err != nil {
+		if err := d.Set("labels", labelData); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to set labels for account",
@@ -120,7 +129,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	hasChanged := 0
+	var hasChanged bool
 
 	var accountLocation string
 	var oldProjectId, newProjectId int
@@ -155,7 +164,14 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 		accountLocation = ProjectLocation
 		ID = strconv.Itoa(newId)
-		d.Set("location", accountLocation)
+		if err := d.Set("location", accountLocation); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error setting location",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), accountLocation),
+			})
+			return diags
+		}
 		d.SetId(ID)
 
 	} else if oldProjectId != 0 && newProjectId == 0 {
@@ -183,9 +199,17 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 		accountLocation = CacheLocation
 		ID = strconv.Itoa(newId)
-		d.Set("location", accountLocation)
-		d.SetId(ID)
 
+		if err := d.Set("location", accountLocation); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to set location",
+				Detail:   fmt.Sprintf("Error: %v", err),
+			})
+			return diags
+		}
+
+		d.SetId(ID)
 	} else {
 		accountLocation = getKionAccountLocation(d)
 
@@ -229,14 +253,8 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	// Determine if the attributes that are updatable are changed.
-	if d.HasChanges("email",
-		"name",
-		"include_linked_account_spend",
-		"linked_role",
-		"skip_access_checking",
-		"start_datecode",
-		"use_org_account_info") {
-		hasChanged++
+	if d.HasChanges("email", "name", "include_linked_account_spend", "linked_role", "skip_access_checking", "start_datecode", "use_org_account_info") {
+		hasChanged = true
 
 		var req interface{}
 		var accountUrl string
@@ -295,7 +313,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	if accountLocation == ProjectLocation && d.HasChanges("labels") {
-		hasChanged++
+		hasChanged = true
 
 		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "account", ID)
 
@@ -309,10 +327,25 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
+	if hasChanged {
+		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to set last_updated",
+				Detail:   fmt.Sprintf("Error: %v", err),
+			})
+			return diags
+		}
+		tflog.Info(ctx, fmt.Sprintf("Updated account ID: %s", ID))
+	}
+
 	return diags
 }
 
 func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	// Acknowledge the context parameter to avoid linter errors
+	_ = ctx
+
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
@@ -339,8 +372,6 @@ func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interf
 		return diags
 	}
 
-	// d.SetId("") is automatically called assuming delete returns no errors, but
-	// it is added here for explicitness.
 	d.SetId("")
 
 	return diags
@@ -394,10 +425,32 @@ func getKionAccountLocation(d *schema.ResourceData) string {
 
 // Show the account location computed attribute in the diff
 func customDiffComputedAccountLocation(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+	var diags diag.Diagnostics
+
 	if _, exists := d.GetOk("project_id"); exists {
-		d.SetNew("location", ProjectLocation)
+		if err := d.SetNew("location", ProjectLocation); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to set new computed location for project",
+				Detail:   fmt.Sprintf("Error setting new computed location to ProjectLocation: %v", err),
+			})
+		}
 	} else {
-		d.SetNew("location", CacheLocation)
+		if err := d.SetNew("location", CacheLocation); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to set new computed location for cache",
+				Detail:   fmt.Sprintf("Error setting new computed location to CacheLocation: %v", err),
+			})
+		}
+	}
+
+	if len(diags) > 0 {
+		var combinedErr strings.Builder
+		for _, d := range diags {
+			combinedErr.WriteString(d.Detail + "\n")
+		}
+		return fmt.Errorf(combinedErr.String())
 	}
 	return nil
 }

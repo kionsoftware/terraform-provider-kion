@@ -57,7 +57,7 @@ func resourceAzureAccount() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.IsUUID,
 				AtLeastOneOf: []string{"ea", "csp", "mca"},
-				Description:  "The UUID of the Azure subscription.  If subscription_uuid is provided, the existing subscription will be imported into Kion.  If subscription_uuid is ommitted, a new subscription will be created.",
+				Description:  "The UUID of the Azure subscription.  If subscription_uuid is provided, the existing subscription will be imported into Kion.  If subscription_uuid is omitted, a new subscription will be created.",
 			},
 			"subscription_name": {
 				Type:         schema.TypeString,
@@ -185,7 +185,7 @@ func resourceAzureAccount() *schema.Resource {
 						"move_datecode": {
 							Type:        schema.TypeInt,
 							Optional:    true,
-							Description: "The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If ommitted or 0, all financial data will be moved to the new project.",
+							Description: "The start date to use when moving financial data in YYYYMM format.  This only applies when financials is set to move.  If provided, only financial data from this date to the current month will be moved to the new project.  If omitted or 0, all financial data will be moved to the new project.",
 						},
 					},
 				},
@@ -268,7 +268,14 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			return diags
 		}
 
-		d.Set("location", accountLocation)
+		if err := d.Set("location", accountLocation); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Failed to set location",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 		d.SetId(strconv.Itoa(resp.RecordID))
 
 	} else {
@@ -397,12 +404,26 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 				return diags
 			}
 
-			d.Set("location", accountLocation)
+			if err := d.Set("location", accountLocation); err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Failed to set location",
+					Detail:   err.Error(),
+				})
+				return diags
+			}
 			d.SetId(strconv.Itoa(newId))
 
 		case CacheLocation:
 			// Track the cached account
-			d.Set("location", accountLocation)
+			if err := d.Set("location", accountLocation); err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Failed to set location",
+					Detail:   err.Error(),
+				})
+				return diags
+			}
 			d.SetId(strconv.Itoa(accountCacheId))
 		}
 	}

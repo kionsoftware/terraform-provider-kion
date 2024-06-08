@@ -172,7 +172,8 @@ func resourceOURead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	data["permission_scheme_id"] = item.OU.PermissionSchemeID
 
 	for k, v := range data {
-		if err := d.Set(k, v); err != nil {
+		err = d.Set(k, v) // Use assignment instead of short declaration
+		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to read and set OU",
@@ -302,7 +303,14 @@ func resourceOUUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 	}
 
 	if hasChanged > 0 {
-		d.Set("last_updated", time.Now().Format(time.RFC850))
+		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Failed to set last_updated",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 	}
 
 	return resourceOURead(ctx, d, m)
