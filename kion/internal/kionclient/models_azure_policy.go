@@ -36,16 +36,19 @@ type AzurePolicyResponse struct {
 	Status int `json:"status"`
 }
 
+// AzurePolicy for AzurePolicyCreate
+type AzurePolicy struct {
+	Description string `json:"description"`
+	Name        string `json:"name"`
+	Parameters  string `json:"parameters"`
+	Policy      string `json:"policy"`
+}
+
 // AzurePolicyCreate for: POST /api/v3/azure-policy
 type AzurePolicyCreate struct {
-	AzurePolicy struct {
-		Description string `json:"description"`
-		Name        string `json:"name"`
-		Parameters  string `json:"parameters"`
-		Policy      string `json:"policy"`
-	} `json:"azure_policy"`
-	OwnerUserGroups *[]int `json:"owner_user_groups"`
-	OwnerUsers      *[]int `json:"owner_users"`
+	AzurePolicy     AzurePolicy `json:"azure_policy"`
+	OwnerUserGroups *[]int      `json:"owner_user_groups"`
+	OwnerUsers      *[]int      `json:"owner_users"`
 }
 
 // AzurePolicyDefinitionUpdate for: PATCH /api/v3/azure-policy/{id}

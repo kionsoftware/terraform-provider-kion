@@ -109,29 +109,12 @@ func (client *Client) GET(urlPath string, returnData interface{}) error {
 
 // POST creates an element in Kion.
 func (client *Client) POST(urlPath string, sendData interface{}) (*Creation, error) {
-	return client.doPostPutPatch(http.MethodPost, urlPath, sendData)
-}
-
-// PATCH updates an element in Kion.
-func (client *Client) PATCH(urlPath string, sendData interface{}) error {
-	_, err := client.doPostPutPatch(http.MethodPatch, urlPath, sendData)
-	return err
-}
-
-// PUT updates an element in Kion.
-func (client *Client) PUT(urlPath string, sendData interface{}) error {
-	_, err := client.doPostPutPatch(http.MethodPut, urlPath, sendData)
-	return err
-}
-
-// doPostPutPatch is a helper for POST, PUT, and PATCH methods.
-func (client *Client) doPostPutPatch(method, urlPath string, sendData interface{}) (*Creation, error) {
 	rb, err := json.Marshal(sendData)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(method, client.HostURL+urlPath, bytes.NewBuffer(rb))
+	req, err := http.NewRequest(http.MethodPost, client.HostURL+urlPath, bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -149,6 +132,32 @@ func (client *Client) doPostPutPatch(method, urlPath string, sendData interface{
 	return &data, nil
 }
 
+// PATCH updates an element in Kion.
+func (client *Client) PATCH(urlPath string, sendData interface{}) error {
+	return client.doPutPatch(http.MethodPatch, urlPath, sendData)
+}
+
+// PUT updates an element in Kion.
+func (client *Client) PUT(urlPath string, sendData interface{}) error {
+	return client.doPutPatch(http.MethodPut, urlPath, sendData)
+}
+
+// doPutPatch is a helper for PUT and PATCH methods.
+func (client *Client) doPutPatch(method, urlPath string, sendData interface{}) error {
+	rb, err := json.Marshal(sendData)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(method, client.HostURL+urlPath, bytes.NewBuffer(rb))
+	if err != nil {
+		return err
+	}
+
+	_, _, err = client.doRequest(req)
+	return err
+}
+
 // DELETE removes an element from Kion. sendData can be nil.
 func (client *Client) DELETE(urlPath string, sendData interface{}) error {
 	return client.DeleteWithResponse(urlPath, sendData, nil)
@@ -160,8 +169,7 @@ func (client *Client) DeleteWithResponse(urlPath string, sendData, returnData in
 	var err error
 
 	if sendData != nil {
-		var rb []byte
-		rb, err = json.Marshal(sendData)
+		rb, err := json.Marshal(sendData)
 		if err != nil {
 			return err
 		}

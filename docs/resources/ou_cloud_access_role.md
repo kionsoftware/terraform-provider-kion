@@ -48,6 +48,7 @@ output "ou_car_id" {
 - `aws_iam_permissions_boundary` (Number)
 - `aws_iam_policies` (Block Set) (see [below for nested schema](#nestedblock--aws_iam_policies))
 - `azure_role_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_role_definitions))
+- `gcp_iam_roles` (Block Set) (see [below for nested schema](#nestedblock--gcp_iam_roles))
 - `last_updated` (String)
 - `long_term_access_keys` (Boolean)
 - `short_term_access_keys` (Boolean)
@@ -69,6 +70,14 @@ Read-Only:
 
 <a id="nestedblock--azure_role_definitions"></a>
 ### Nested Schema for `azure_role_definitions`
+
+Read-Only:
+
+- `id` (Number) The ID of this resource.
+
+
+<a id="nestedblock--gcp_iam_roles"></a>
+### Nested Schema for `gcp_iam_roles`
 
 Read-Only:
 
