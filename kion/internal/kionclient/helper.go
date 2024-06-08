@@ -175,31 +175,42 @@ func FlattenAssociateLabels(d *schema.ResourceData, key string) *[]AssociateLabe
 	return &labels
 }
 
-// InflateObjectWithID -
+// InflateObjectWithID takes a slice of ObjectWithID and converts it into a slice of maps,
+// where each map contains the ID of an ObjectWithID. If the input slice is nil, it returns an empty slice.
 func InflateObjectWithID(arr []ObjectWithID) []interface{} {
 	if arr != nil {
+		// Create an empty slice to hold the converted items
 		final := make([]interface{}, 0)
 
+		// Iterate over each item in the input slice
 		for _, item := range arr {
+			// Create a map to hold the item data
 			it := make(map[string]interface{})
 
+			// Add the ID to the map
 			it["id"] = item.ID
 
+			// Append the map to the final slice
 			final = append(final, it)
 		}
 
+		// Return the final slice of maps
 		return final
 	}
 
+	// Return an empty slice if the input is nil
 	return make([]interface{}, 0)
 }
 
-// InflateSingleObjectWithID -
+// InflateSingleObjectWithID takes a pointer to an ObjectWithID and returns its ID.
+// If the input is nil, it returns nil.
 func InflateSingleObjectWithID(single *ObjectWithID) interface{} {
 	if single != nil {
+		// Return the ID of the non-nil ObjectWithID
 		return single.ID
 	}
 
+	// Return nil if the input is nil
 	return nil
 }
 
