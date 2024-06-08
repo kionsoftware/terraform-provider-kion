@@ -56,7 +56,7 @@ output "policy_id" {
 
 ### Optional
 
-- `apipath` (String) The base path of the API.  Defaults to /api
+- `apipath` (String) The base path of the API. Defaults to /api
 - `skipsslvalidation` (Boolean) If true, will skip SSL validation.
 
 ### Environment Variables
