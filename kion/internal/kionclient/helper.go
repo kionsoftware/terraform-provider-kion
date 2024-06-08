@@ -126,26 +126,48 @@ func FlattenGenericIDArray(d *schema.ResourceData, key string) []int {
 	return uids
 }
 
-// FlattenGenericIDPointer -
+func ConvertToIntSlice(interfaceSlice []interface{}) []int {
+	intSlice := make([]int, len(interfaceSlice))
+	for i, v := range interfaceSlice {
+		intSlice[i] = v.(int)
+	}
+	return intSlice
+}
+
+// FlattenGenericIDPointer retrieves and converts the value associated with the given key from the schema.ResourceData.
+// It handles different types of input ([]interface{} and *schema.Set) and returns a pointer to a slice of integers.
 func FlattenGenericIDPointer(d *schema.ResourceData, key string) *[]int {
+	// Retrieve the value from the resource data using the provided key
 	uid := d.Get(key)
 
+	// Determine the type of the retrieved value
 	switch v := uid.(type) {
+	// Handle the case where the value is a slice of interfaces
 	case []interface{}:
+		// Create a slice of integers with the same length as the input slice
 		uids := make([]int, len(v))
+		// Iterate over the input slice, casting each element to an integer
 		for i, item := range v {
 			uids[i] = item.(int)
 		}
+		// Return a pointer to the resulting slice of integers
 		return &uids
+	// Handle the case where the value is a schema.Set
 	case *schema.Set:
+		// Convert the set to a list of interfaces
 		setList := v.List()
+		// Create a slice of integers with the same length as the set list
 		uids := make([]int, len(setList))
+		// Iterate over the set list, extracting the "id" field from each map and casting it to an integer
 		for i, item := range setList {
 			m := item.(map[string]interface{})
 			uids[i] = m["id"].(int)
 		}
+		// Return a pointer to the resulting slice of integers
 		return &uids
+	// Handle the default case where the type is not recognized
 	default:
+		// Return nil if the type is not handled
 		return nil
 	}
 }
