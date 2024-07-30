@@ -3,6 +3,7 @@ package kionclient
 import (
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -486,4 +487,76 @@ func TestAccOUGenerateDataSourceDeclarationAll(dataSourceName, localName string)
 func PrintHCLConfig(config string) {
 	fmt.Println("Generated HCL configuration:")
 	fmt.Println(config)
+}
+
+// ConvertInterfaceSliceToIntSlice converts a slice of interfaces to a slice of integers.
+func ConvertInterfaceSliceToIntSlice(input []interface{}) []int {
+	// Create a slice of integers with the same length as the input slice.
+	output := make([]int, len(input))
+	// Iterate over the input slice, casting each element to an integer.
+	for i, v := range input {
+		output[i] = v.(int)
+	}
+	return output
+}
+
+// GetPreviousUserAndGroupIds retrieves the previous state of user and user group IDs
+// from the Terraform resource data.
+func GetPreviousUserAndGroupIds(d *schema.ResourceData) ([]int, []int) {
+	var prevUserIds, prevUserGroupIds []int
+
+	// Check if the "user_ids" field has changed
+	if d.HasChange("user_ids") {
+		// Get the previous value of the "user_ids" field
+		oldValue, _ := d.GetChange("user_ids")
+		// Convert the previous value to a slice of integers
+		prevUserIds = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
+	}
+
+	// Check if the "user_group_ids" field has changed
+	if d.HasChange("user_group_ids") {
+		// Get the previous value of the "user_group_ids" field
+		oldValue, _ := d.GetChange("user_group_ids")
+		// Convert the previous value to a slice of integers
+		prevUserGroupIds = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
+	}
+
+	return prevUserIds, prevUserGroupIds
+}
+
+// FindIdDifferences finds the differences between two slices of integers,
+// returning the elements that are present in slice1 but not in slice2.
+func FindIdDifferences(slice1, slice2 []int) []int {
+	// Create a set from the second slice for efficient lookups
+	set := make(map[int]bool)
+	for _, v := range slice2 {
+		set[v] = true
+	}
+
+	var diff []int
+	// Iterate over the first slice and find elements not present in the second slice
+	for _, v := range slice1 {
+		if !set[v] {
+			diff = append(diff, v)
+		}
+	}
+	return diff
+}
+
+// SafeSet handles setting Terraform schema values, centralizing error reporting and ensuring non-nil values.
+func SafeSet(d *schema.ResourceData, key string, value interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+	// Check if the value is non-nil before setting it in the schema
+	if value != nil {
+		// Attempt to set the value in the schema
+		if err := d.Set(key, value); err != nil {
+			// Append a diagnostic message if there's an error while setting the value
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error setting field",
+				Detail:   fmt.Sprintf("Error setting %s: %s", key, err),
+			})
+		}
+	}
+	return diags
 }
