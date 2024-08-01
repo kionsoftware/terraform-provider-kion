@@ -32,16 +32,16 @@ func resourceFundingSourcePermissionsMapping() *schema.Resource {
 				Description: "Application role ID for the permission mapping.",
 			},
 			"user_groups_ids": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
-				Description: "List of user group IDs for the permission mapping (must be provided in numerical order).",
+				Description: "Set of user group IDs for the permission mapping (must be provided in numerical order).",
 			},
 			"user_ids": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
-				Description: "List of user IDs for the permission mapping (must be provided in numerical order).",
+				Description: "Set of user IDs for the permission mapping (must be provided in numerical order).",
 			},
 		},
 	}
@@ -50,11 +50,11 @@ func resourceFundingSourcePermissionsMapping() *schema.Resource {
 func resourceFundingSourcePermissionsMappingCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
-	ouID := d.Get("funding_source_id").(int)
+	fundingSourceID := d.Get("funding_source_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
-	userGroupsIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").([]interface{}))
-	userIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").([]interface{}))
+	userGroupsIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List())
+	userIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List())
 
 	mapping := hc.FundingSourcePermissionsMapping{
 		AppRoleID:     appRoleID,
@@ -62,12 +62,12 @@ func resourceFundingSourcePermissionsMappingCreate(ctx context.Context, d *schem
 		UserIDs:       userIDs,
 	}
 
-	err := client.PATCH(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", ouID), []hc.FundingSourcePermissionsMapping{mapping})
+	err := client.PATCH(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", fundingSourceID), []hc.FundingSourcePermissionsMapping{mapping})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(fmt.Sprintf("funding-source_%d-%d", ouID, appRoleID))
+	d.SetId(fmt.Sprintf("%d-%d", fundingSourceID, appRoleID))
 
 	// Ensure the state reflects the provided list
 	d.Set("user_groups_ids", userGroupsIDs)
@@ -80,21 +80,21 @@ func resourceFundingSourcePermissionsMappingRead(ctx context.Context, d *schema.
 	client := m.(*hc.Client)
 
 	parts := strings.Split(d.Id(), "-")
-	if len(parts) != 3 {
-		return diag.Errorf("invalid resource ID format, expected funding-source_{funding_source_id}-{app_role_id}")
+	if len(parts) != 2 {
+		return diag.Errorf("invalid resource ID format, expected {funding_source_id}-{app_role_id}")
 	}
 
-	ouID, err := strconv.Atoi(parts[1])
+	fundingSourceID, err := strconv.Atoi(parts[0])
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	appRoleID, err := strconv.Atoi(parts[2])
+	appRoleID, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	resp := new(hc.FundingSourcePermissionsMappingListResponse)
-	err = client.GET(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", ouID), resp)
+	err = client.GET(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", fundingSourceID), resp)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -105,7 +105,7 @@ func resourceFundingSourcePermissionsMappingRead(ctx context.Context, d *schema.
 	for _, mapping := range resp.Data {
 		if mapping.AppRoleID == appRoleID {
 			// Set lists to the state as provided
-			diags = append(diags, hc.SafeSet(d, "funding_source_id", ouID)...)
+			diags = append(diags, hc.SafeSet(d, "funding_source_id", fundingSourceID)...)
 			diags = append(diags, hc.SafeSet(d, "app_role_id", appRoleID)...)
 			diags = append(diags, hc.SafeSet(d, "user_groups_ids", mapping.UserGroupsIDs)...)
 			diags = append(diags, hc.SafeSet(d, "user_ids", mapping.UserIDs)...)
@@ -124,11 +124,11 @@ func resourceFundingSourcePermissionsMappingRead(ctx context.Context, d *schema.
 func resourceFundingSourcePermissionsMappingUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
-	ouID := d.Get("funding_source_id").(int)
+	fundingSourceID := d.Get("funding_source_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
-	userGroupsIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").([]interface{}))
-	userIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").([]interface{}))
+	userGroupsIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List())
+	userIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List())
 
 	mapping := hc.FundingSourcePermissionsMapping{
 		AppRoleID:     appRoleID,
@@ -137,7 +137,7 @@ func resourceFundingSourcePermissionsMappingUpdate(ctx context.Context, d *schem
 	}
 
 	resp := new(hc.FundingSourcePermissionsMappingListResponse)
-	err := client.GET(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", ouID), resp)
+	err := client.GET(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", fundingSourceID), resp)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -159,7 +159,7 @@ func resourceFundingSourcePermissionsMappingUpdate(ctx context.Context, d *schem
 		updatedMappings = append(updatedMappings, mapping)
 	}
 
-	err = client.PATCH(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", ouID), updatedMappings)
+	err = client.PATCH(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", fundingSourceID), updatedMappings)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -174,34 +174,29 @@ func resourceFundingSourcePermissionsMappingUpdate(ctx context.Context, d *schem
 func resourceFundingSourcePermissionsMappingDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
+	// Expecting ID format "{funding_source_id}-{app_role_id}"
 	parts := strings.Split(d.Id(), "-")
-	if len(parts) != 3 {
-		return diag.Errorf("invalid resource ID format, expected funding-source_{funding_source_id}-{app_role_id}")
+	if len(parts) != 2 {
+		return diag.Errorf("invalid resource ID format, expected {funding_source_id}-{app_role_id}")
 	}
 
-	ouID, err := strconv.Atoi(parts[1])
+	fundingSourceID, err := strconv.Atoi(parts[0])
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	appRoleID, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	resp := new(hc.FundingSourcePermissionsMappingListResponse)
-	err = client.GET(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", ouID), resp)
+	appRoleID, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	remainingMappings := make([]hc.FundingSourcePermissionsMapping, 0)
-	for _, existing := range resp.Data {
-		if existing.AppRoleID != appRoleID {
-			remainingMappings = append(remainingMappings, hc.FundingSourcePermissionsMapping(existing))
-		}
+	// Create the mapping with empty user IDs and user group IDs
+	mapping := hc.FundingSourcePermissionsMapping{
+		AppRoleID:     appRoleID,
+		UserGroupsIDs: []int{},
+		UserIDs:       []int{},
 	}
 
-	err = client.PATCH(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", ouID), remainingMappings)
+	err = client.PATCH(fmt.Sprintf("/v3/funding-source/%d/permission-mapping", fundingSourceID), []hc.FundingSourcePermissionsMapping{mapping})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -213,20 +208,20 @@ func resourceFundingSourcePermissionsMappingDelete(ctx context.Context, d *schem
 
 func resourceFundingSourcePermissionsMappingImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	parts := strings.Split(d.Id(), "-")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid ID format, expected funding-source_{funding_source_id}-{app_role_id}")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid ID format, expected {funding_source_id}-{app_role_id}")
 	}
 
-	ouID, err := strconv.Atoi(parts[1])
+	fundingSourceID, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return nil, fmt.Errorf("invalid FundingSource ID, must be an integer")
+		return nil, fmt.Errorf("invalid Funding Source ID, must be an integer")
 	}
-	appRoleID, err := strconv.Atoi(parts[2])
+	appRoleID, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return nil, fmt.Errorf("invalid app role ID, must be an integer")
 	}
 
-	d.Set("funding_source_id", ouID)
+	d.Set("funding_source_id", fundingSourceID)
 	d.Set("app_role_id", appRoleID)
 
 	return []*schema.ResourceData{d}, nil

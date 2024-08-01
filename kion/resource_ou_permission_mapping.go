@@ -32,16 +32,16 @@ func resourceOUPermissionMapping() *schema.Resource {
 				Description: "Application role ID for the permission mapping.",
 			},
 			"user_groups_ids": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
-				Description: "List of user group IDs for the permission mapping (must be provided in numerical order).",
+				Description: "Set of user group IDs for the permission mapping.",
 			},
 			"user_ids": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
-				Description: "List of user IDs for the permission mapping (must be provided in numerical order).",
+				Description: "Set of user IDs for the permission mapping.",
 			},
 		},
 	}
@@ -53,8 +53,8 @@ func resourceOUPermissionMappingCreate(ctx context.Context, d *schema.ResourceDa
 	ouID := d.Get("ou_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
-	userGroupsIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").([]interface{}))
-	userIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").([]interface{}))
+	userGroupsIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List())
+	userIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List())
 
 	mapping := hc.OUPermissionMapping{
 		AppRoleID:     appRoleID,
@@ -69,7 +69,7 @@ func resourceOUPermissionMappingCreate(ctx context.Context, d *schema.ResourceDa
 
 	d.SetId(fmt.Sprintf("OU-%d-%d", ouID, appRoleID))
 
-	// Ensure the state reflects the provided list
+	// Ensure the state reflects the provided set
 	d.Set("user_groups_ids", userGroupsIDs)
 	d.Set("user_ids", userIDs)
 
@@ -104,7 +104,7 @@ func resourceOUPermissionMappingRead(ctx context.Context, d *schema.ResourceData
 	found := false
 	for _, mapping := range resp.Data {
 		if mapping.AppRoleID == appRoleID {
-			// Set lists to the state as provided
+			// Set sets to the state as provided
 			diags = append(diags, hc.SafeSet(d, "ou_id", ouID)...)
 			diags = append(diags, hc.SafeSet(d, "app_role_id", appRoleID)...)
 			diags = append(diags, hc.SafeSet(d, "user_groups_ids", mapping.UserGroupsIDs)...)
@@ -127,8 +127,8 @@ func resourceOUPermissionMappingUpdate(ctx context.Context, d *schema.ResourceDa
 	ouID := d.Get("ou_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
-	userGroupsIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").([]interface{}))
-	userIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").([]interface{}))
+	userGroupsIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List())
+	userIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List())
 
 	mapping := hc.OUPermissionMapping{
 		AppRoleID:     appRoleID,
@@ -164,7 +164,7 @@ func resourceOUPermissionMappingUpdate(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	// Ensure the state reflects the provided list
+	// Ensure the state reflects the provided set
 	d.Set("user_groups_ids", userGroupsIDs)
 	d.Set("user_ids", userIDs)
 
@@ -188,20 +188,14 @@ func resourceOUPermissionMappingDelete(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	resp := new(hc.OUPermissionMappingListResponse)
-	err = client.GET(fmt.Sprintf("/v3/ou/%d/permission-mapping", ouID), resp)
-	if err != nil {
-		return diag.FromErr(err)
+	// Create the mapping with empty user IDs and user group IDs
+	mapping := hc.OUPermissionMapping{
+		AppRoleID:     appRoleID,
+		UserGroupsIDs: []int{},
+		UserIDs:       []int{},
 	}
 
-	remainingMappings := make([]hc.OUPermissionMapping, 0)
-	for _, existing := range resp.Data {
-		if existing.AppRoleID != appRoleID {
-			remainingMappings = append(remainingMappings, hc.OUPermissionMapping(existing))
-		}
-	}
-
-	err = client.PATCH(fmt.Sprintf("/v3/ou/%d/permission-mapping", ouID), remainingMappings)
+	err = client.PATCH(fmt.Sprintf("/v3/ou/%d/permission-mapping", ouID), []hc.OUPermissionMapping{mapping})
 	if err != nil {
 		return diag.FromErr(err)
 	}
