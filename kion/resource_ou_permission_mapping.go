@@ -70,8 +70,12 @@ func resourceOUPermissionMappingCreate(ctx context.Context, d *schema.ResourceDa
 	d.SetId(fmt.Sprintf("OU-%d-%d", ouID, appRoleID))
 
 	// Ensure the state reflects the provided set
-	d.Set("user_groups_ids", userGroupsIDs)
-	d.Set("user_ids", userIDs)
+	if err := d.Set("user_groups_ids", userGroupsIDs); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("user_ids", userIDs); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return resourceOUPermissionMappingRead(ctx, d, m)
 }
@@ -165,8 +169,12 @@ func resourceOUPermissionMappingUpdate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Ensure the state reflects the provided set
-	d.Set("user_groups_ids", userGroupsIDs)
-	d.Set("user_ids", userIDs)
+	if err := d.Set("user_groups_ids", userGroupsIDs); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("user_ids", userIDs); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return resourceOUPermissionMappingRead(ctx, d, m)
 }
@@ -220,8 +228,12 @@ func resourceOUPermissionMappingImport(ctx context.Context, d *schema.ResourceDa
 		return nil, fmt.Errorf("invalid app role ID, must be an integer")
 	}
 
-	d.Set("ou_id", ouID)
-	d.Set("app_role_id", appRoleID)
+	if err := d.Set("ou_id", ouID); err != nil {
+		return nil, err
+	}
+	if err := d.Set("app_role_id", appRoleID); err != nil {
+		return nil, err
+	}
 
 	return []*schema.ResourceData{d}, nil
 }

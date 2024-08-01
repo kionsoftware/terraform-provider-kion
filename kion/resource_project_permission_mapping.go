@@ -70,8 +70,12 @@ func resourceProjectPermissionMappingCreate(ctx context.Context, d *schema.Resou
 	d.SetId(fmt.Sprintf("project-%d-%d", projectID, appRoleID))
 
 	// Ensure the state reflects the provided set
-	d.Set("user_groups_ids", userGroupsIDs)
-	d.Set("user_ids", userIDs)
+	if err := d.Set("user_groups_ids", userGroupsIDs); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("user_ids", userIDs); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return resourceProjectPermissionMappingRead(ctx, d, m)
 }
@@ -165,8 +169,12 @@ func resourceProjectPermissionMappingUpdate(ctx context.Context, d *schema.Resou
 	}
 
 	// Ensure the state reflects the provided set
-	d.Set("user_groups_ids", userGroupsIDs)
-	d.Set("user_ids", userIDs)
+	if err := d.Set("user_groups_ids", userGroupsIDs); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("user_ids", userIDs); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return resourceProjectPermissionMappingRead(ctx, d, m)
 }
@@ -220,8 +228,12 @@ func resourceProjectPermissionMappingImport(ctx context.Context, d *schema.Resou
 		return nil, fmt.Errorf("invalid app role ID, must be an integer")
 	}
 
-	d.Set("project_id", projectID)
-	d.Set("app_role_id", appRoleID)
+	if err := d.Set("project_id", projectID); err != nil {
+		return nil, err
+	}
+	if err := d.Set("app_role_id", appRoleID); err != nil {
+		return nil, err
+	}
 
 	return []*schema.ResourceData{d}, nil
 }

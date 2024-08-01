@@ -70,8 +70,12 @@ func resourceFundingSourcePermissionsMappingCreate(ctx context.Context, d *schem
 	d.SetId(fmt.Sprintf("%d-%d", fundingSourceID, appRoleID))
 
 	// Ensure the state reflects the provided list
-	d.Set("user_groups_ids", userGroupsIDs)
-	d.Set("user_ids", userIDs)
+	if err := d.Set("user_groups_ids", userGroupsIDs); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("user_ids", userIDs); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return resourceFundingSourcePermissionsMappingRead(ctx, d, m)
 }
@@ -165,8 +169,12 @@ func resourceFundingSourcePermissionsMappingUpdate(ctx context.Context, d *schem
 	}
 
 	// Ensure the state reflects the provided list
-	d.Set("user_groups_ids", userGroupsIDs)
-	d.Set("user_ids", userIDs)
+	if err := d.Set("user_groups_ids", userGroupsIDs); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("user_ids", userIDs); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return resourceFundingSourcePermissionsMappingRead(ctx, d, m)
 }
@@ -221,8 +229,12 @@ func resourceFundingSourcePermissionsMappingImport(ctx context.Context, d *schem
 		return nil, fmt.Errorf("invalid app role ID, must be an integer")
 	}
 
-	d.Set("funding_source_id", fundingSourceID)
-	d.Set("app_role_id", appRoleID)
+	if err := d.Set("funding_source_id", fundingSourceID); err != nil {
+		return nil, err
+	}
+	if err := d.Set("app_role_id", appRoleID); err != nil {
+		return nil, err
+	}
 
 	return []*schema.ResourceData{d}, nil
 }

@@ -188,7 +188,9 @@ func resourceGlobalPermissionMappingImport(ctx context.Context, d *schema.Resour
 		return nil, fmt.Errorf("invalid app role ID, must be an integer")
 	}
 
-	d.Set("app_role_id", appRoleID)
+	if err := d.Set("app_role_id", appRoleID); err != nil {
+		return nil, err
+	}
 
 	return []*schema.ResourceData{d}, nil
 }
