@@ -25,12 +25,12 @@ func dataSourceGlobalPermissionMapping() *schema.Resource {
 							Computed: true,
 						},
 						"user_groups_ids": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Computed: true,
 							Elem:     &schema.Schema{Type: schema.TypeInt},
 						},
 						"user_ids": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Computed: true,
 							Elem:     &schema.Schema{Type: schema.TypeInt},
 						},

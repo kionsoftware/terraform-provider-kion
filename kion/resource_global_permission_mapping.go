@@ -28,16 +28,16 @@ func resourceGlobalPermissionMapping() *schema.Resource {
 				Description: "Application role ID for the permission mapping.",
 			},
 			"user_groups_ids": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
-				Description: "List of user group IDs for the permission mapping.",
+				Description: "Set of user group IDs for the permission mapping.",
 			},
 			"user_ids": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
-				Description: "List of user IDs for the permission mapping.",
+				Description: "Set of user IDs for the permission mapping.",
 			},
 		},
 	}
@@ -50,8 +50,8 @@ func resourceGlobalPermissionMappingCreate(ctx context.Context, d *schema.Resour
 
 	mapping := hc.GlobalPermissionMapping{
 		AppRoleID:     appRoleID,
-		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").([]interface{})),
-		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").([]interface{})),
+		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List()),
+		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List()),
 	}
 
 	_, err := client.POST("/v3/global/permission-mapping", []hc.GlobalPermissionMapping{mapping})
@@ -113,8 +113,8 @@ func resourceGlobalPermissionMappingUpdate(ctx context.Context, d *schema.Resour
 
 	mapping := hc.GlobalPermissionMapping{
 		AppRoleID:     appRoleID,
-		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").([]interface{})),
-		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").([]interface{})),
+		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List()),
+		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List()),
 	}
 
 	resp := new(hc.GlobalPermissionMappingListResponse)
@@ -160,20 +160,14 @@ func resourceGlobalPermissionMappingDelete(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 
-	resp := new(hc.GlobalPermissionMappingListResponse)
-	err = client.GET("/v3/global/permission-mapping", resp)
-	if err != nil {
-		return diag.FromErr(err)
+	// Create the mapping with empty user IDs and user group IDs
+	mapping := hc.GlobalPermissionMapping{
+		AppRoleID:     appRoleID,
+		UserGroupsIDs: []int{},
+		UserIDs:       []int{},
 	}
 
-	remainingMappings := make([]hc.GlobalPermissionMapping, 0)
-	for _, existing := range resp.Data {
-		if existing.AppRoleID != appRoleID {
-			remainingMappings = append(remainingMappings, hc.GlobalPermissionMapping(existing))
-		}
-	}
-
-	err = client.PATCH("/v3/global/permission-mapping", remainingMappings)
+	err = client.PATCH("/v3/global/permission-mapping", []hc.GlobalPermissionMapping{mapping})
 	if err != nil {
 		return diag.FromErr(err)
 	}
