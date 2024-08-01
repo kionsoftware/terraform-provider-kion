@@ -111,7 +111,8 @@ func resourceGlobalPermissionMappingUpdate(ctx context.Context, d *schema.Resour
 
 	appRoleID := d.Get("app_role_id").(int)
 
-	mapping := hc.GlobalPermissionMapping{
+	// Create the updated mapping based on the input data
+	updatedMapping := hc.GlobalPermissionMapping{
 		AppRoleID:     appRoleID,
 		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List()),
 		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List()),
@@ -128,15 +129,16 @@ func resourceGlobalPermissionMappingUpdate(ctx context.Context, d *schema.Resour
 	found := false
 	for _, existing := range existingMappings {
 		if existing.AppRoleID == appRoleID {
-			updatedMappings = append(updatedMappings, hc.GlobalPermissionMapping(existing))
+			updatedMappings = append(updatedMappings, updatedMapping)
 			found = true
 		} else {
-			updatedMappings = append(updatedMappings, hc.GlobalPermissionMapping(existing))
+			updatedMappings = append(updatedMappings, existing)
 		}
 	}
 
 	if !found {
-		updatedMappings = append(updatedMappings, mapping)
+		// If the mapping was not found, add the new mapping
+		updatedMappings = append(updatedMappings, updatedMapping)
 	}
 
 	err = client.PATCH("/v3/global/permission-mapping", updatedMappings)
@@ -146,7 +148,6 @@ func resourceGlobalPermissionMappingUpdate(ctx context.Context, d *schema.Resour
 
 	return resourceGlobalPermissionMappingRead(ctx, d, m)
 }
-
 func resourceGlobalPermissionMappingDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
