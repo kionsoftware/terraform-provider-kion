@@ -152,11 +152,9 @@ func resourceProjectPermissionMappingUpdate(ctx context.Context, d *schema.Resou
 		if existing.AppRoleID == appRoleID {
 			existing.UserGroupsIDs = userGroupsIDs
 			existing.UserIDs = userIDs
-			updatedMappings = append(updatedMappings, existing)
 			found = true
-		} else {
-			updatedMappings = append(updatedMappings, existing)
 		}
+		updatedMappings = append(updatedMappings, existing)
 	}
 
 	if !found {
