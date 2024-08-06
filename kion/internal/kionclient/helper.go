@@ -2,6 +2,8 @@ package kionclient
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -541,4 +543,24 @@ func SafeSet(d *schema.ResourceData, key string, value interface{}) diag.Diagnos
 		}
 	}
 	return diags
+}
+
+// ParseResourceID parses a resource ID string into its components based on the expected number of parts.
+// It returns the extracted ID components as integers and any error encountered during parsing.
+func ParseResourceID(resourceID string, expectedParts int, idNames ...string) ([]int, error) {
+	parts := strings.Split(resourceID, "-")
+	if len(parts) != expectedParts {
+		return nil, fmt.Errorf("invalid resource ID format, expected %s with %d parts", strings.Join(idNames, "-"), expectedParts)
+	}
+
+	ids := make([]int, len(idNames))
+	for i, name := range idNames {
+		id, err := strconv.Atoi(parts[i])
+		if err != nil {
+			return nil, fmt.Errorf("invalid %s, must be an integer", name)
+		}
+		ids[i] = id
+	}
+
+	return ids, nil
 }

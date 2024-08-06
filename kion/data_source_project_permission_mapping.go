@@ -11,7 +11,7 @@ import (
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
-func dataSourceProjectPermissionMapping() *schema.Resource {
+func dataSourceProjectPermissionsMapping() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceProjectPermissionMappingRead,
 		Schema: map[string]*schema.Schema{

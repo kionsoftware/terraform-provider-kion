@@ -12,7 +12,7 @@ import (
 )
 
 // resourceGlobalPermissionMapping returns a schema.Resource for managing global permission mappings in Kion.
-func resourceGlobalPermissionMapping() *schema.Resource {
+func resourceGlobalPermissionsMapping() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceGlobalPermissionMappingCreate,
 		ReadContext:   resourceGlobalPermissionMappingRead,

@@ -10,7 +10,7 @@ import (
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
-func dataSourceGlobalPermissionMapping() *schema.Resource {
+func dataSourceGlobalPermissionsMapping() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceGlobalPermissionMappingRead,
 		Schema: map[string]*schema.Schema{

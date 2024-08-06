@@ -3,22 +3,21 @@ package kion
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
-func resourceProjectPermissionMapping() *schema.Resource {
+// resourceProjectPermissionsMapping returns a schema.Resource for managing project permission mappings in Kion.
+func resourceProjectPermissionsMapping() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceProjectPermissionMappingCreate,
-		ReadContext:   resourceProjectPermissionMappingRead,
-		UpdateContext: resourceProjectPermissionMappingUpdate,
-		DeleteContext: resourceProjectPermissionMappingDelete,
+		CreateContext: resourceProjectPermissionsMappingCreate,
+		ReadContext:   resourceProjectPermissionsMappingRead,
+		UpdateContext: resourceProjectPermissionsMappingUpdate,
+		DeleteContext: resourceProjectPermissionsMappingDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: resourceProjectPermissionMappingImport,
+			StateContext: resourceProjectPermissionsMappingImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"project_id": {
@@ -35,67 +34,56 @@ func resourceProjectPermissionMapping() *schema.Resource {
 				Type:        schema.TypeSet,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
-				Description: "Set of user group IDs for the permission mapping.",
+				Description: "Set of user group IDs for the permission mapping (must be provided in numerical order).",
 			},
 			"user_ids": {
 				Type:        schema.TypeSet,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
-				Description: "Set of user IDs for the permission mapping.",
+				Description: "Set of user IDs for the permission mapping (must be provided in numerical order).",
 			},
 		},
 	}
 }
 
-func resourceProjectPermissionMappingCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+// resourceProjectPermissionsMappingCreate handles the creation of the resource
+func resourceProjectPermissionsMappingCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
 	projectID := d.Get("project_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
-	userGroupsIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List())
-	userIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List())
-
+	// Create a ProjectPermissionsMapping object using the provided data
 	mapping := hc.ProjectPermissionMapping{
 		AppRoleID:     appRoleID,
-		UserGroupsIDs: userGroupsIDs,
-		UserIDs:       userIDs,
+		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List()),
+		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List()),
 	}
 
+	// Make a PATCH request to the Kion API to create the permission mapping
 	err := client.PATCH(fmt.Sprintf("/v3/project/%d/permission-mapping", projectID), []hc.ProjectPermissionMapping{mapping})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(fmt.Sprintf("project-%d-%d", projectID, appRoleID))
+	// Set the resource ID using the projectID and appRoleID
+	d.SetId(fmt.Sprintf("%d-%d", projectID, appRoleID))
 
-	// Ensure the state reflects the provided set
-	if err := d.Set("user_groups_ids", userGroupsIDs); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("user_ids", userIDs); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return resourceProjectPermissionMappingRead(ctx, d, m)
+	// Ensure the state reflects the provided list
+	return resourceProjectPermissionsMappingRead(ctx, d, m)
 }
 
-func resourceProjectPermissionMappingRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+// resourceProjectPermissionsMappingRead retrieves the state of the resource from the Kion API
+func resourceProjectPermissionsMappingRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
-	parts := strings.Split(d.Id(), "-")
-	if len(parts) != 3 {
-		return diag.Errorf("invalid resource ID format, expected project-{project_id}-{app_role_id}")
+	// Use the generic ParseResourceID function to extract projectID and appRoleID
+	ids, err := hc.ParseResourceID(d.Id(), 2, "project_id", "app_role_id")
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
-	projectID, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	appRoleID, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	projectID, appRoleID := ids[0], ids[1]
 
 	resp := new(hc.ProjectPermissionMappingListResponse)
 	err = client.GET(fmt.Sprintf("/v3/project/%d/permission-mapping", projectID), resp)
@@ -108,7 +96,6 @@ func resourceProjectPermissionMappingRead(ctx context.Context, d *schema.Resourc
 	found := false
 	for _, mapping := range resp.Data {
 		if mapping.AppRoleID == appRoleID {
-			// Set sets to the state as provided
 			diags = append(diags, hc.SafeSet(d, "project_id", projectID)...)
 			diags = append(diags, hc.SafeSet(d, "app_role_id", appRoleID)...)
 			diags = append(diags, hc.SafeSet(d, "user_groups_ids", mapping.UserGroupsIDs)...)
@@ -125,107 +112,99 @@ func resourceProjectPermissionMappingRead(ctx context.Context, d *schema.Resourc
 	return diags
 }
 
-func resourceProjectPermissionMappingUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+// resourceProjectPermissionsMappingUpdate handles updating the resource
+func resourceProjectPermissionsMappingUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
 	projectID := d.Get("project_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
-	userGroupsIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List())
-	userIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List())
-
-	mapping := hc.ProjectPermissionMapping{
+	// Create an updated ProjectPermissionsMapping object using the provided data
+	updatedMapping := hc.ProjectPermissionMapping{
 		AppRoleID:     appRoleID,
-		UserGroupsIDs: userGroupsIDs,
-		UserIDs:       userIDs,
+		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List()),
+		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List()),
 	}
 
+	// Fetch existing mappings from the API
 	resp := new(hc.ProjectPermissionMappingListResponse)
 	err := client.GET(fmt.Sprintf("/v3/project/%d/permission-mapping", projectID), resp)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	existingMappings := resp.Data
 	updatedMappings := make([]hc.ProjectPermissionMapping, 0)
 	found := false
-	for _, existing := range resp.Data {
+
+	// Iterate through existing mappings to update the matching one
+	for _, existing := range existingMappings {
 		if existing.AppRoleID == appRoleID {
-			existing.UserGroupsIDs = userGroupsIDs
-			existing.UserIDs = userIDs
+			// Replace the existing mapping with the updated one
+			updatedMappings = append(updatedMappings, updatedMapping)
 			found = true
+		} else {
+			updatedMappings = append(updatedMappings, existing)
 		}
-		updatedMappings = append(updatedMappings, existing)
 	}
 
+	// If the mapping wasn't found, add it as a new mapping
 	if !found {
-		updatedMappings = append(updatedMappings, mapping)
+		updatedMappings = append(updatedMappings, updatedMapping)
 	}
 
+	// Send the updated mappings to the Kion API
 	err = client.PATCH(fmt.Sprintf("/v3/project/%d/permission-mapping", projectID), updatedMappings)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// Ensure the state reflects the provided set
-	if err := d.Set("user_groups_ids", userGroupsIDs); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("user_ids", userIDs); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return resourceProjectPermissionMappingRead(ctx, d, m)
+	// Ensure the state reflects the provided list
+	return resourceProjectPermissionsMappingRead(ctx, d, m)
 }
 
-func resourceProjectPermissionMappingDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+// resourceProjectPermissionsMappingDelete handles the deletion of the resource
+func resourceProjectPermissionsMappingDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
-	parts := strings.Split(d.Id(), "-")
-	if len(parts) != 3 {
-		return diag.Errorf("invalid resource ID format, expected project-{project_id}-{app_role_id}")
-	}
-
-	projectID, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	appRoleID, err := strconv.Atoi(parts[2])
+	// Use the generic ParseResourceID function to extract projectID and appRoleID
+	ids, err := hc.ParseResourceID(d.Id(), 2, "project_id", "app_role_id")
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// Create the mapping with empty user IDs and user group IDs
+	projectID, appRoleID := ids[0], ids[1]
+
+	// Create a mapping with empty user IDs and user group IDs to effectively delete it
 	mapping := hc.ProjectPermissionMapping{
 		AppRoleID:     appRoleID,
 		UserGroupsIDs: []int{},
 		UserIDs:       []int{},
 	}
 
+	// Send the delete request to the Kion API
 	err = client.PATCH(fmt.Sprintf("/v3/project/%d/permission-mapping", projectID), []hc.ProjectPermissionMapping{mapping})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	// Remove the resource ID to indicate it has been deleted
 	d.SetId("")
 
 	return nil
 }
 
-func resourceProjectPermissionMappingImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-	parts := strings.Split(d.Id(), "-")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid ID format, expected project-{project_id}-{app_role_id}")
+// resourceProjectPermissionsMappingImport handles the import of existing resources into Terraform
+func resourceProjectPermissionsMappingImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	// Use the generic ParseResourceID function to extract projectID and appRoleID
+	ids, err := hc.ParseResourceID(d.Id(), 2, "project_id", "app_role_id")
+	if err != nil {
+		return nil, err
 	}
 
-	projectID, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return nil, fmt.Errorf("invalid project ID, must be an integer")
-	}
-	appRoleID, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return nil, fmt.Errorf("invalid app role ID, must be an integer")
-	}
+	projectID, appRoleID := ids[0], ids[1]
 
+	// Set the project_id and app_role_id fields in the resource data
 	if err := d.Set("project_id", projectID); err != nil {
 		return nil, err
 	}
@@ -233,5 +212,6 @@ func resourceProjectPermissionMappingImport(ctx context.Context, d *schema.Resou
 		return nil, err
 	}
 
+	// Return the resource data for importing
 	return []*schema.ResourceData{d}, nil
 }
