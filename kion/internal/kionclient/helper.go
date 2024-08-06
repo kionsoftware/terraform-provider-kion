@@ -73,16 +73,6 @@ func FlattenIntPointer(d *schema.ResourceData, key string) *int {
 	return nil
 }
 
-// FlattenIntArray -
-func FlattenIntArray(items []interface{}) []int {
-	arr := make([]int, 0)
-	for _, item := range items {
-		arr = append(arr, item.(int))
-	}
-
-	return arr
-}
-
 // FlattenIntArrayPointer -
 func FlattenIntArrayPointer(items []interface{}) *[]int {
 	arr := make([]int, 0)
@@ -125,14 +115,6 @@ func FlattenGenericIDArray(d *schema.ResourceData, key string) []int {
 	}
 
 	return uids
-}
-
-func ConvertToIntSlice(interfaceSlice []interface{}) []int {
-	intSlice := make([]int, len(interfaceSlice))
-	for i, v := range interfaceSlice {
-		intSlice[i] = v.(int)
-	}
-	return intSlice
 }
 
 // FlattenGenericIDPointer retrieves and converts the value associated with the given key from the schema.ResourceData.
@@ -491,10 +473,10 @@ func PrintHCLConfig(config string) {
 
 // ConvertInterfaceSliceToIntSlice converts a slice of interfaces to a slice of integers.
 func ConvertInterfaceSliceToIntSlice(input []interface{}) []int {
-	// Create a slice of integers with the same length as the input slice.
+	// Pre-allocate the output slice for better performance.
 	output := make([]int, len(input))
-	// Iterate over the input slice, casting each element to an integer.
 	for i, v := range input {
+		// Type assertion to convert interface{} to int.
 		output[i] = v.(int)
 	}
 	return output
@@ -524,16 +506,16 @@ func GetPreviousUserAndGroupIds(d *schema.ResourceData) ([]int, []int) {
 	return prevUserIds, prevUserGroupIds
 }
 
-// FindIdDifferences finds the differences between two slices of integers,
-// returning the elements that are present in slice1 but not in slice2.
-func FindIdDifferences(slice1, slice2 []int) []int {
+// FindDifferences finds the differences between two slices, returning the
+// elements that are present in slice1 but not in slice2.
+func FindDifferences[T comparable](slice1, slice2 []T) []T {
 	// Create a set from the second slice for efficient lookups
-	set := make(map[int]bool)
+	set := make(map[T]bool)
 	for _, v := range slice2 {
 		set[v] = true
 	}
 
-	var diff []int
+	var diff []T
 	// Iterate over the first slice and find elements not present in the second slice
 	for _, v := range slice1 {
 		if !set[v] {

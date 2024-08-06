@@ -298,8 +298,8 @@ func RemoveProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, 
 	prevUserIds, prevUserGroupIds := hc.GetPreviousUserAndGroupIds(d)
 
 	// Determine which user IDs and user group IDs need to be removed
-	toRemoveUserIds := hc.FindIdDifferences(prevUserIds, *currentUserIds)
-	toRemoveUserGroupIds := hc.FindIdDifferences(prevUserGroupIds, *currentUserGroupIds)
+	toRemoveUserIds := hc.FindDifferences(prevUserIds, *currentUserIds)
+	toRemoveUserGroupIds := hc.FindDifferences(prevUserGroupIds, *currentUserGroupIds)
 
 	// If there's nothing to remove, return early
 	if len(toRemoveUserIds) == 0 && len(toRemoveUserGroupIds) == 0 {
