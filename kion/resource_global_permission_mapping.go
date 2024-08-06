@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -59,7 +58,8 @@ func resourceGlobalPermissionMappingCreate(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 
-	d.SetId(fmt.Sprintf("global-%d", appRoleID))
+	// Use appRoleID as the resource ID directly
+	d.SetId(fmt.Sprintf("%d", appRoleID))
 
 	return resourceGlobalPermissionMappingRead(ctx, d, m)
 }
@@ -67,12 +67,8 @@ func resourceGlobalPermissionMappingCreate(ctx context.Context, d *schema.Resour
 func resourceGlobalPermissionMappingRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
-	parts := strings.Split(d.Id(), "-")
-	if len(parts) != 2 {
-		return diag.Errorf("invalid resource ID format, expected global-{app_role_id}")
-	}
-
-	appRoleID, err := strconv.Atoi(parts[1])
+	// Use the ID directly as an integer
+	appRoleID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -148,15 +144,12 @@ func resourceGlobalPermissionMappingUpdate(ctx context.Context, d *schema.Resour
 
 	return resourceGlobalPermissionMappingRead(ctx, d, m)
 }
+
 func resourceGlobalPermissionMappingDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
-	parts := strings.Split(d.Id(), "-")
-	if len(parts) != 2 {
-		return diag.Errorf("invalid resource ID format, expected global-{app_role_id}")
-	}
-
-	appRoleID, err := strconv.Atoi(parts[1])
+	// Use the ID directly as an integer
+	appRoleID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -179,12 +172,8 @@ func resourceGlobalPermissionMappingDelete(ctx context.Context, d *schema.Resour
 }
 
 func resourceGlobalPermissionMappingImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-	parts := strings.Split(d.Id(), "-")
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid ID format, expected global-{app_role_id}")
-	}
-
-	appRoleID, err := strconv.Atoi(parts[1])
+	// Use the ID directly as an integer
+	appRoleID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return nil, fmt.Errorf("invalid app role ID, must be an integer")
 	}
