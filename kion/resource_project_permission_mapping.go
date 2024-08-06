@@ -119,6 +119,24 @@ func resourceProjectPermissionsMappingUpdate(ctx context.Context, d *schema.Reso
 	projectID := d.Get("project_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
+	// Check if the app_role_id has changed
+	if d.HasChange("app_role_id") {
+		// Fetch the old app_role_id
+		oldAppRoleID, _ := d.GetChange("app_role_id")
+
+		// Remove the old mapping
+		oldMapping := hc.ProjectPermissionMapping{
+			AppRoleID:     oldAppRoleID.(int),
+			UserGroupsIDs: []int{},
+			UserIDs:       []int{},
+		}
+
+		err := client.PATCH(fmt.Sprintf("/v3/project/%d/permission-mapping", projectID), []hc.ProjectPermissionMapping{oldMapping})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	// Create an updated ProjectPermissionsMapping object using the provided data
 	updatedMapping := hc.ProjectPermissionMapping{
 		AppRoleID:     appRoleID,

@@ -119,6 +119,24 @@ func resourceGlobalPermissionMappingUpdate(ctx context.Context, d *schema.Resour
 
 	appRoleID := d.Get("app_role_id").(int) // Retrieve app_role_id from the resource data
 
+	// Check if the app_role_id has changed
+	if d.HasChange("app_role_id") {
+		// Fetch the old app_role_id
+		oldAppRoleID, _ := d.GetChange("app_role_id")
+
+		// Remove the old mapping
+		oldMapping := hc.GlobalPermissionMapping{
+			AppRoleID:     oldAppRoleID.(int),
+			UserGroupsIDs: []int{},
+			UserIDs:       []int{},
+		}
+
+		err := client.PATCH("/v3/global/permission-mapping", []hc.GlobalPermissionMapping{oldMapping})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	// Create an updated GlobalPermissionMapping object using the provided data
 	updatedMapping := hc.GlobalPermissionMapping{
 		AppRoleID:     appRoleID,

@@ -119,6 +119,24 @@ func resourceOUPermissionMappingUpdate(ctx context.Context, d *schema.ResourceDa
 	ouID := d.Get("ou_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
+	// Check if the app_role_id has changed
+	if d.HasChange("app_role_id") {
+		// Fetch the old app_role_id
+		oldAppRoleID, _ := d.GetChange("app_role_id")
+
+		// Remove the old mapping
+		oldMapping := hc.OUPermissionMapping{
+			AppRoleID:     oldAppRoleID.(int),
+			UserGroupsIDs: []int{},
+			UserIDs:       []int{},
+		}
+
+		err := client.PATCH(fmt.Sprintf("/v3/ou/%d/permission-mapping", ouID), []hc.OUPermissionMapping{oldMapping})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	// Create an updated OUPermissionMapping object using the provided data
 	updatedMapping := hc.OUPermissionMapping{
 		AppRoleID:     appRoleID,
