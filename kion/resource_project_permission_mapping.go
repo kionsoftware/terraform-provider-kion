@@ -49,7 +49,6 @@ func resourceProjectPermissionsMapping() *schema.Resource {
 // resourceProjectPermissionsMappingCreate handles the creation of the resource
 func resourceProjectPermissionsMappingCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
-
 	projectID := d.Get("project_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
@@ -59,6 +58,9 @@ func resourceProjectPermissionsMappingCreate(ctx context.Context, d *schema.Reso
 		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List()),
 		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List()),
 	}
+
+	// Log the mapping details
+	fmt.Printf("Creating project permission mapping: project_id=%d, app_role_id=%d, user_groups_ids=%v, user_ids=%v\n", projectID, appRoleID, mapping.UserGroupsIDs, mapping.UserIDs)
 
 	// Make a PATCH request to the Kion API to create the permission mapping
 	err := client.PATCH(fmt.Sprintf("/v3/project/%d/permission-mapping", projectID), []hc.ProjectPermissionMapping{mapping})
@@ -85,6 +87,8 @@ func resourceProjectPermissionsMappingRead(ctx context.Context, d *schema.Resour
 
 	projectID, appRoleID := ids[0], ids[1]
 
+	fmt.Printf("Reading project permission mapping: project_id=%d, app_role_id=%d\n", projectID, appRoleID)
+
 	resp := new(hc.ProjectPermissionMappingListResponse)
 	err = client.GET(fmt.Sprintf("/v3/project/%d/permission-mapping", projectID), resp)
 	if err != nil {
@@ -96,6 +100,7 @@ func resourceProjectPermissionsMappingRead(ctx context.Context, d *schema.Resour
 	found := false
 	for _, mapping := range resp.Data {
 		if mapping.AppRoleID == appRoleID {
+			fmt.Printf("Found mapping: project_id=%d, app_role_id=%d, user_groups_ids=%v, user_ids=%v\n", projectID, appRoleID, mapping.UserGroupsIDs, mapping.UserIDs)
 			diags = append(diags, hc.SafeSet(d, "project_id", projectID)...)
 			diags = append(diags, hc.SafeSet(d, "app_role_id", appRoleID)...)
 			diags = append(diags, hc.SafeSet(d, "user_groups_ids", mapping.UserGroupsIDs)...)
@@ -106,6 +111,7 @@ func resourceProjectPermissionsMappingRead(ctx context.Context, d *schema.Resour
 	}
 
 	if !found {
+		fmt.Printf("Mapping not found for app_role_id=%d in project_id=%d, setting ID to empty\n", appRoleID, projectID)
 		d.SetId("")
 	}
 
@@ -119,6 +125,8 @@ func resourceProjectPermissionsMappingUpdate(ctx context.Context, d *schema.Reso
 	projectID := d.Get("project_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
+	fmt.Printf("Updating project permission mapping: project_id=%d, app_role_id=%d\n", projectID, appRoleID)
+
 	// Check if the app_role_id has changed
 	if d.HasChange("app_role_id") {
 		// Fetch the old app_role_id
@@ -130,6 +138,8 @@ func resourceProjectPermissionsMappingUpdate(ctx context.Context, d *schema.Reso
 			UserGroupsIDs: []int{},
 			UserIDs:       []int{},
 		}
+
+		fmt.Printf("Removing old mapping for app_role_id=%d\n", oldAppRoleID)
 
 		err := client.PATCH(fmt.Sprintf("/v3/project/%d/permission-mapping", projectID), []hc.ProjectPermissionMapping{oldMapping})
 		if err != nil {
@@ -158,6 +168,7 @@ func resourceProjectPermissionsMappingUpdate(ctx context.Context, d *schema.Reso
 	// Iterate through existing mappings to update the matching one
 	for _, existing := range existingMappings {
 		if existing.AppRoleID == appRoleID {
+			fmt.Printf("Updating existing mapping: project_id=%d, app_role_id=%d\n", projectID, appRoleID)
 			// Replace the existing mapping with the updated one
 			updatedMappings = append(updatedMappings, updatedMapping)
 			found = true
@@ -168,6 +179,7 @@ func resourceProjectPermissionsMappingUpdate(ctx context.Context, d *schema.Reso
 
 	// If the mapping wasn't found, add it as a new mapping
 	if !found {
+		fmt.Printf("Adding new mapping: project_id=%d, app_role_id=%d\n", projectID, appRoleID)
 		updatedMappings = append(updatedMappings, updatedMapping)
 	}
 
@@ -193,6 +205,8 @@ func resourceProjectPermissionsMappingDelete(ctx context.Context, d *schema.Reso
 
 	projectID, appRoleID := ids[0], ids[1]
 
+	fmt.Printf("Deleting project permission mapping: project_id=%d, app_role_id=%d\n", projectID, appRoleID)
+
 	// Create a mapping with empty user IDs and user group IDs to effectively delete it
 	mapping := hc.ProjectPermissionMapping{
 		AppRoleID:     appRoleID,
@@ -208,6 +222,7 @@ func resourceProjectPermissionsMappingDelete(ctx context.Context, d *schema.Reso
 
 	// Remove the resource ID to indicate it has been deleted
 	d.SetId("")
+	fmt.Printf("Successfully deleted project permission mapping: project_id=%d, app_role_id=%d\n", projectID, appRoleID)
 
 	return nil
 }
@@ -221,6 +236,8 @@ func resourceProjectPermissionsMappingImport(ctx context.Context, d *schema.Reso
 	}
 
 	projectID, appRoleID := ids[0], ids[1]
+
+	fmt.Printf("Importing project permission mapping: project_id=%d, app_role_id=%d\n", projectID, appRoleID)
 
 	// Set the project_id and app_role_id fields in the resource data
 	if err := d.Set("project_id", projectID); err != nil {

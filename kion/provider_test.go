@@ -1,7 +1,6 @@
 package kion
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -23,32 +22,30 @@ func init() {
 // testAccProviderFactories sets up provider instances for testing
 var testAccProviderFactories = map[string]func() (*schema.Provider, error){
 	"kion": func() (*schema.Provider, error) {
-		return Provider(), nil
+		p := Provider()
+		err := p.InternalValidate() // Ensure provider configuration is validated
+		if err != nil {
+			return nil, err
+		}
+		return p, nil
 	},
-}
-
-// TestMain is the entry point for all acceptance tests
-// It sets up the environment and runs the tests.
-func TestMain(m *testing.M) {
-	// Ensure necessary environment variables are set for testing
-	if os.Getenv("KION_URL") == "" || os.Getenv("KION_APIKEY") == "" {
-		// Skip all tests if necessary environment variables are not set
-		fmt.Println("Skipping tests due to missing environment variables")
-		os.Exit(0)
-	}
-
-	os.Exit(m.Run())
 }
 
 // testAccPreCheck verifies that required environment variables are set
 // before running acceptance tests.
 func testAccPreCheck(t *testing.T) {
-	if v := os.Getenv("KION_URL"); v == "" {
+	url := os.Getenv("KION_URL")
+	apiKey := os.Getenv("KION_APIKEY")
+
+	if url == "" {
 		t.Fatal("KION_URL must be set for acceptance tests")
 	}
-	if v := os.Getenv("KION_APIKEY"); v == "" {
+	if apiKey == "" {
 		t.Fatal("KION_APIKEY must be set for acceptance tests")
 	}
+
+	t.Logf("Using KION_URL: %s", url)
+	t.Logf("Using KION_APIKEY: %s", apiKey)
 }
 
 // TestProvider checks if the provider can be validated correctly
