@@ -564,3 +564,37 @@ func ParseResourceID(resourceID string, expectedParts int, idNames ...string) ([
 
 	return ids, nil
 }
+
+// HandleError creates a diagnostic message for a given error.
+func HandleError(err error) diag.Diagnostics {
+	if err != nil {
+		return diag.Errorf("error occurred: %v", err)
+	}
+	return nil
+}
+
+// AtLeastOneFieldPresent validates that at least one of the provided fields is non-empty.
+func AtLeastOneFieldPresent(fields map[string]interface{}) error {
+	for _, field := range fields {
+		switch v := field.(type) {
+		case []uint:
+			if len(v) > 0 {
+				return nil
+			}
+		case *schema.Set:
+			if v.Len() > 0 {
+				return nil
+			}
+		default:
+			// Add other cases as needed for different field types
+		}
+	}
+
+	// Construct a detailed error message listing the required fields
+	var fieldNames []string
+	for name := range fields {
+		fieldNames = append(fieldNames, name)
+	}
+
+	return fmt.Errorf("at least one of the following fields must be specified: %v", fieldNames)
+}

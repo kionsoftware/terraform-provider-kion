@@ -65,7 +65,7 @@ func Provider() *schema.Provider {
 			"kion_saml_group_association":      resourceSamlGroupAssociation(),
 			"kion_service_control_policy":      resourceServiceControlPolicy(),
 			"kion_user_group":                  resourceUserGroup(),
-			"kion_webhook":                     resourceWebhooks(),
+			"kion_webhook":                     resourceWebhook(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"kion_account":                     dataSourceAccount(),
@@ -87,7 +87,7 @@ func Provider() *schema.Provider {
 			"kion_saml_group_association":      dataSourceSamlGroupAssociation(),
 			"kion_service_control_policy":      dataServiceControlPolicy(),
 			"kion_user_group":                  dataSourceUserGroup(),
-			"kion_webhook":                     dataSourceWebhooks(),
+			"kion_webhook":                     dataSourceWebhook(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
