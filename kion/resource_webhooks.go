@@ -191,7 +191,7 @@ func resourceWebhooksDelete(ctx context.Context, d *schema.ResourceData, m inter
 	webhookID := d.Id()
 
 	// Send a DELETE request to remove the webhook
-	err := client.DELETE(fmt.Sprintf("/v3/webhook/%s", webhookID))
+	err := client.DELETE(fmt.Sprintf("/v3/webhook/%s", webhookID), nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
