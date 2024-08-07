@@ -51,21 +51,21 @@ type AccountResponse struct {
 func (r AccountResponse) ToMap(resource string) map[string]interface{} {
 	accountNumberAttr := accountNumberAttr(resource)
 	data := map[string]interface{}{
-		accountNumberAttr:      r.Data.AccountNumber,
-		"name":                 r.Data.Name,
-		"project_id":           r.Data.ProjectID,
-		"payer_id":             r.Data.PayerID,
 		"account_type_id":      r.Data.AccountTypeID,
-		"start_datecode":       r.Data.StartDatecode,
-		"skip_access_checking": r.Data.SkipAccessChecking,
+		accountNumberAttr:      r.Data.AccountNumber,
 		"created_at":           r.Data.CreatedAt,
+		"name":                 r.Data.Name,
+		"payer_id":             r.Data.PayerID,
+		"project_id":           r.Data.ProjectID,
+		"skip_access_checking": r.Data.SkipAccessChecking,
+		"start_datecode":       r.Data.StartDatecode,
 	}
 	if resource == "kion_aws_account" {
-		data["email"] = r.Data.Email
-		data["linked_role"] = r.Data.LinkedRole
-		data["linked_account_number"] = r.Data.LinkedAccountNumber
-		data["include_linked_account_spend"] = r.Data.IncludeLinkedAccountSpend
 		data["car_external_id"] = r.Data.CARExternalID
+		data["email"] = r.Data.Email
+		data["include_linked_account_spend"] = r.Data.IncludeLinkedAccountSpend
+		data["linked_account_number"] = r.Data.LinkedAccountNumber
+		data["linked_role"] = r.Data.LinkedRole
 		data["service_external_id"] = r.Data.ServiceExternalID
 		data["use_org_account_info"] = r.Data.UseOrgAccountInfo
 	}
