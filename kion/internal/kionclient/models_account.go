@@ -5,20 +5,21 @@ type AccountListResponse struct {
 	Data []struct {
 		ID                        uint   `json:"id"`
 		AccountNumber             string `json:"account_number"`
-		Name                      string `json:"account_name"`
-		Email                     string `json:"account_email"`
-		LinkedRole                string `json:"linked_role"`
-		ProjectID                 uint   `json:"project_id"`
-		PayerID                   uint   `json:"payer_id"`
 		AccountTypeID             uint   `json:"account_type_id"`
-		StartDatecode             string `json:"start_datecode"`
-		SkipAccessChecking        bool   `json:"skip_access_checking"`
-		UseOrgAccountInfo         bool   `json:"use_org_account_info"`
-		LinkedAccountNumber       string `json:"linked_account_number"`
-		IncludeLinkedAccountSpend bool   `json:"include_linked_account_spend"`
+		Alias                     string `json:"account_alias"`
 		CARExternalID             string `json:"car_external_id"`
-		ServiceExternalID         string `json:"service_external_id"`
 		CreatedAt                 string `json:"created_at"`
+		Email                     string `json:"account_email"`
+		IncludeLinkedAccountSpend bool   `json:"include_linked_account_spend"`
+		LinkedAccountNumber       string `json:"linked_account_number"`
+		LinkedRole                string `json:"linked_role"`
+		Name                      string `json:"account_name"`
+		PayerID                   uint   `json:"payer_id"`
+		ProjectID                 uint   `json:"project_id"`
+		ServiceExternalID         string `json:"service_external_id"`
+		SkipAccessChecking        bool   `json:"skip_access_checking"`
+		StartDatecode             string `json:"start_datecode"`
+		UseOrgAccountInfo         bool   `json:"use_org_account_info"`
 	} `json:"data"`
 	Status int `json:"status"`
 }
@@ -28,20 +29,21 @@ type AccountResponse struct {
 	Data struct {
 		ID                        uint   `json:"id"`
 		AccountNumber             string `json:"account_number"`
-		Name                      string `json:"account_name"`
-		Email                     string `json:"account_email"`
-		LinkedRole                string `json:"linked_role"`
-		ProjectID                 uint   `json:"project_id"`
-		PayerID                   uint   `json:"payer_id"`
 		AccountTypeID             uint   `json:"account_type_id"`
-		StartDatecode             string `json:"start_datecode"`
-		SkipAccessChecking        bool   `json:"skip_access_checking"`
-		UseOrgAccountInfo         bool   `json:"use_org_account_info"`
-		LinkedAccountNumber       string `json:"linked_account_number"`
-		IncludeLinkedAccountSpend bool   `json:"include_linked_account_spend"`
+		Alias                     string `json:"account_alias"`
 		CARExternalID             string `json:"car_external_id"`
-		ServiceExternalID         string `json:"service_external_id"`
 		CreatedAt                 string `json:"created_at"`
+		Email                     string `json:"account_email"`
+		IncludeLinkedAccountSpend bool   `json:"include_linked_account_spend"`
+		LinkedAccountNumber       string `json:"linked_account_number"`
+		LinkedRole                string `json:"linked_role"`
+		Name                      string `json:"account_name"`
+		PayerID                   uint   `json:"payer_id"`
+		ProjectID                 uint   `json:"project_id"`
+		ServiceExternalID         string `json:"service_external_id"`
+		SkipAccessChecking        bool   `json:"skip_access_checking"`
+		StartDatecode             string `json:"start_datecode"`
+		UseOrgAccountInfo         bool   `json:"use_org_account_info"`
 	}
 	Status int `json:"status"`
 }
@@ -75,18 +77,19 @@ type AccountCacheListResponse struct {
 	Data []struct {
 		ID                        uint   `json:"id"`
 		AccountNumber             string `json:"account_number"`
-		Name                      string `json:"account_name"`
-		Email                     string `json:"account_email"`
-		LinkedRole                string `json:"linked_role"`
-		PayerID                   uint   `json:"payer_id"`
 		AccountTypeID             uint   `json:"account_type_id"`
+		Alias                     string `json:"account_alias"`
+		CARExternalID             string `json:"car_external_id"`
+		CreatedAt                 string `json:"created_at"`
+		Email                     string `json:"account_email"`
+		IncludeLinkedAccountSpend bool   `json:"include_linked_account_spend"`
+		LinkedAccountNumber       string `json:"linked_account_number"`
+		LinkedRole                string `json:"linked_role"`
+		Name                      string `json:"account_name"`
+		PayerID                   uint   `json:"payer_id"`
+		ServiceExternalID         string `json:"service_external_id"`
 		SkipAccessChecking        bool   `json:"skip_access_checking"`
 		UseOrgAccountInfo         bool   `json:"use_org_account_info"`
-		LinkedAccountNumber       string `json:"linked_account_number"`
-		IncludeLinkedAccountSpend bool   `json:"include_linked_account_spend"`
-		CARExternalID             string `json:"car_external_id"`
-		ServiceExternalID         string `json:"service_external_id"`
-		CreatedAt                 string `json:"created_at"`
 	} `json:"data"`
 	Status int `json:"status"`
 }
@@ -96,17 +99,18 @@ type AccountCacheResponse struct {
 	Data struct {
 		ID                        uint   `json:"id"`
 		AccountNumber             string `json:"account_number"`
-		Name                      string `json:"account_name"`
-		Email                     string `json:"account_email"`
-		LinkedRole                string `json:"linked_role"`
-		PayerID                   uint   `json:"payer_id"`
 		AccountTypeID             uint   `json:"account_type_id"`
-		SkipAccessChecking        bool   `json:"skip_access_checking"`
-		LinkedAccountNumber       string `json:"linked_account_number"`
-		IncludeLinkedAccountSpend bool   `json:"include_linked_account_spend"`
+		Alias                     string `json:"account_alias"`
 		CARExternalID             string `json:"car_external_id"`
-		ServiceExternalID         string `json:"service_external_id"`
 		CreatedAt                 string `json:"created_at"`
+		Email                     string `json:"account_email"`
+		IncludeLinkedAccountSpend bool   `json:"include_linked_account_spend"`
+		LinkedAccountNumber       string `json:"linked_account_number"`
+		LinkedRole                string `json:"linked_role"`
+		Name                      string `json:"account_name"`
+		PayerID                   uint   `json:"payer_id"`
+		ServiceExternalID         string `json:"service_external_id"`
+		SkipAccessChecking        bool   `json:"skip_access_checking"`
 	}
 	Status int `json:"status"`
 }
@@ -148,26 +152,28 @@ func accountNumberAttr(resource string) string {
 
 // AccountCacheNewAWSCreate for: POST /api/v3/account-cache/create?account-type=aws
 type AccountCacheNewAWSCreate struct {
-	Name                      string                   `json:"account_name"`
-	PayerID                   int                      `json:"payer_id"`
 	AccountEmail              string                   `json:"account_email,omitempty"`
+	Alias                     string                   `json:"account_alias,omitempty"`
 	CommercialAccountName     string                   `json:"commercial_account_name,omitempty"`
-	GovAccountName            string                   `json:"gov_account_name,omitempty"`
 	CreateGovcloud            *bool                    `json:"create_govcloud,omitempty"`
+	GovAccountName            string                   `json:"gov_account_name,omitempty"`
 	IncludeLinkedAccountSpend *bool                    `json:"include_linked_account_spend,omitempty"`
 	LinkedRole                string                   `json:"linked_role,omitempty"`
+	Name                      string                   `json:"account_name"`
 	OrganizationalUnit        *PayerOrganizationalUnit `json:"organizational_unit,omitempty"`
+	PayerID                   int                      `json:"payer_id"`
 }
 
 // AccountNewAWSImport for: POST /api/v3/account?account-type=aws
 type AccountNewAWSImport struct {
 	AccountEmail              string `json:"account_email,omitempty"`
-	Name                      string `json:"account_name"`
 	AccountNumber             string `json:"account_number"`
 	AccountTypeID             *int   `json:"account_type_id,omitempty"`
+	Alias                     string `json:"account_alias,omitempty"`
 	IncludeLinkedAccountSpend *bool  `json:"include_linked_account_spend,omitempty"`
 	LinkedAccountNumber       string `json:"linked_aws_account_number,omitempty"`
 	LinkedRole                string `json:"linked_role,omitempty"`
+	Name                      string `json:"account_name"`
 	PayerID                   int    `json:"payer_id"`
 	ProjectID                 int    `json:"project_id"`
 	SkipAccessChecking        *bool  `json:"skip_access_checking,omitempty"`
@@ -178,12 +184,13 @@ type AccountNewAWSImport struct {
 // AccountCacheNewAWSImport for: POST /api/v3/account-cache?account-type=aws
 type AccountCacheNewAWSImport struct {
 	AccountEmail              string `json:"account_email,omitempty"`
-	Name                      string `json:"account_name"`
 	AccountNumber             string `json:"account_number"`
 	AccountTypeID             *int   `json:"account_type_id,omitempty"`
+	Alias                     string `json:"account_alias,omitempty"`
 	IncludeLinkedAccountSpend *bool  `json:"include_linked_account_spend,omitempty"`
 	LinkedAccountNumber       string `json:"linked_aws_account_number,omitempty"`
 	LinkedRole                string `json:"linked_role,omitempty"`
+	Name                      string `json:"account_name"`
 	PayerID                   int    `json:"payer_id"`
 	SkipAccessChecking        *bool  `json:"skip_access_checking,omitempty"`
 }
@@ -196,63 +203,69 @@ type PayerOrganizationalUnit struct {
 
 // AccountCacheNewGCPCreate for: POST /api/v3/account-cache/create?account-type=google-cloud
 type AccountCacheNewGCPCreate struct {
+	Alias                 string `json:"account_alias,omitempty"`
 	DisplayName           string `json:"display_name"`
-	PayerID               int    `json:"payer_id"`
 	GoogleCloudParentName string `json:"google_cloud_parent_name,omitempty"`
 	GoogleCloudProjectID  string `json:"google_cloud_project_id,omitempty"`
+	PayerID               int    `json:"payer_id"`
 }
 
 // AccountNewGCPImport for: POST /api/v3/account?account-type=google-cloud
 type AccountNewGCPImport struct {
+	AccountTypeID        *int   `json:"account_type_id,omitempty"`
+	Alias                string `json:"account_alias,omitempty"`
+	GoogleCloudProjectID string `json:"google_cloud_project_id"`
 	Name                 string `json:"account_name"`
 	PayerID              int    `json:"payer_id"`
-	AccountTypeID        *int   `json:"account_type_id,omitempty"`
-	GoogleCloudProjectID string `json:"google_cloud_project_id"`
-	SkipAccessChecking   *bool  `json:"skip_access_checking,omitempty"`
 	ProjectID            int    `json:"project_id"`
+	SkipAccessChecking   *bool  `json:"skip_access_checking,omitempty"`
 	StartDatecode        string `json:"start_datecode"`
 }
 
 // AccountCacheNewGCPImport for: POST /api/v3/account-cache?account-type=google-cloud
 type AccountCacheNewGCPImport struct {
+	AccountTypeID        *int   `json:"account_type_id,omitempty"`
+	Alias                string `json:"account_alias,omitempty"`
+	GoogleCloudProjectID string `json:"google_cloud_project_id"`
 	Name                 string `json:"account_name"`
 	PayerID              int    `json:"payer_id"`
-	AccountTypeID        *int   `json:"account_type_id,omitempty"`
-	GoogleCloudProjectID string `json:"google_cloud_project_id"`
 	SkipAccessChecking   *bool  `json:"skip_access_checking,omitempty"`
 }
 
 // AccountCacheNewAzureCreate for: POST /api/v3/account-cache/create?account-type=azure
 type AccountCacheNewAzureCreate struct {
+	Alias                      string                      `json:"account_alias,omitempty"`
 	Name                       string                      `json:"account_name"`
-	SubscriptionName           string                      `json:"name"`
 	ParentManagementGroupID    string                      `json:"parent_management_group_id,omitempty"`
 	PayerID                    int                         `json:"payer_id"`
+	SubscriptionCSPBillingInfo *SubscriptionCSPBillingInfo `json:"csp,omitempty"`
 	SubscriptionEABillingInfo  *SubscriptionEABillingInfo  `json:"ea,omitempty"`
 	SubscriptionMCABillingInfo *SubscriptionMCABillingInfo `json:"mca,omitempty"`
-	SubscriptionCSPBillingInfo *SubscriptionCSPBillingInfo `json:"csp,omitempty"`
+	SubscriptionName           string                      `json:"name"`
 }
 
 // AccountNewAzureImport for: POST /api/v3/account?account-type=azure
 type AccountNewAzureImport struct {
-	SubscriptionUUID   string `json:"subscription_uuid"`
-	Name               string `json:"account_name"`
-	ProjectID          int    `json:"project_id"`
-	PayerID            int    `json:"payer_id"`
-	StartDatecode      string `json:"start_datecode"`
-	SkipAccessChecking *bool  `json:"skip_access_checking,omitempty"`
 	AccountTypeID      *int   `json:"account_type_id,omitempty"`
+	Alias              string `json:"account_alias,omitempty"`
+	Name               string `json:"account_name"`
+	PayerID            int    `json:"payer_id"`
+	ProjectID          int    `json:"project_id"`
+	SkipAccessChecking *bool  `json:"skip_access_checking,omitempty"`
+	StartDatecode      string `json:"start_datecode"`
+	SubscriptionUUID   string `json:"subscription_uuid"`
 }
 
 // AccountCacheNewAzureImport for: POST /api/v3/account-cache?account-type=azure
 type AccountCacheNewAzureImport struct {
-	SubscriptionUUID   string `json:"subscription_uuid"`
-	ResourceGroupName  string `json:"resource_group_name,omitempty"`
-	Name               string `json:"account_name"`
-	Email              string `json:"account_email,omitempty"`
-	PayerID            int    `json:"payer_id"`
-	SkipAccessChecking *bool  `json:"skip_access_checking,omitempty"`
 	AccountTypeID      *int   `json:"account_type_id,omitempty"`
+	Alias              string `json:"account_alias,omitempty"`
+	Email              string `json:"account_email,omitempty"`
+	Name               string `json:"account_name"`
+	PayerID            int    `json:"payer_id"`
+	ResourceGroupName  string `json:"resource_group_name,omitempty"`
+	SkipAccessChecking *bool  `json:"skip_access_checking,omitempty"`
+	SubscriptionUUID   string `json:"subscription_uuid"`
 }
 
 type SubscriptionEABillingInfo struct {
@@ -280,21 +293,23 @@ type AccountRevertResponse struct {
 // AccountUpdatable for: PATCH /api/v3/account/{id}
 type AccountUpdatable struct {
 	AccountEmail              string `json:"account_email,omitempty"`
-	Name                      string `json:"account_name,omitempty"`
-	LinkedRole                string `json:"linked_role,omitempty"`
-	StartDatecode             string `json:"start_datecode,omitempty"`
+	Alias                     string `json:"account_alias,omitempty"`
 	IncludeLinkedAccountSpend *bool  `json:"include_linked_account_spend,omitempty"`
-	SkipAccessChecking        *bool  `json:"skip_access_checking,omitempty"`
-	UseOrgAccountInfo         *bool  `json:"use_org_account_info,omitempty"`
+	LinkedRole                string `json:"linked_role,omitempty"`
+	Name                      string `json:"account_name,omitempty"`
 	ResetNotificationTime     *bool  `json:"reset_notification_tyime,omitempty"`
+	SkipAccessChecking        *bool  `json:"skip_access_checking,omitempty"`
+	StartDatecode             string `json:"start_datecode,omitempty"`
+	UseOrgAccountInfo         *bool  `json:"use_org_account_info,omitempty"`
 }
 
 // AccountCacheUpdatable for: PATCH /api/v3/account-account/{id}
 type AccountCacheUpdatable struct {
 	AccountEmail              string `json:"account_email,omitempty"`
-	Name                      string `json:"account_name,omitempty"`
+	Alias                     string `json:"account_alias,omitempty"`
 	IncludeLinkedAccountSpend *bool  `json:"include_linked_account_spend,omitempty"`
 	LinkedRole                string `json:"linked_role,omitempty"`
+	Name                      string `json:"account_name,omitempty"`
 	SkipAccessChecking        *bool  `json:"skip_access_checking,omitempty"`
 }
 
