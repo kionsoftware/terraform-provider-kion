@@ -268,7 +268,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		}
 
 		if rb, err := json.Marshal(postAccountData); err == nil {
-			tflog.Debug(ctx, fmt.Sprintf("Importing existing AWS account via POST %s", accountUrl), map[string]interface{}{"postData": string(rb)})
+			tflog.Debug(ctx, fmt.Sprintf("Importing exiting AWS account via POST %s", accountUrl), map[string]interface{}{"postData": string(rb)})
 		}
 		resp, err := client.POST(accountUrl, postAccountData)
 		if err != nil {
@@ -287,14 +287,23 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			return diags
 		}
 
-		diags = append(diags, safeSet(d, "location", accountLocation)...)
+		if err := d.Set("location", accountLocation); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Failed to set location",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 
 		d.SetId(strconv.Itoa(resp.RecordID))
 
 	} else {
 		// Call the createAwsAccount function
-		creationDiags, accountCacheId := createAwsAccount(ctx, client, d)
-		diags = append(diags, creationDiags...)
+		diags, accountCacheId := createAwsAccount(ctx, client, d)
+		if diags.HasError() {
+			return diags
+		}
 
 		switch accountLocation {
 		case ProjectLocation:
@@ -315,11 +324,28 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 				return diags
 			}
 
-			diags = append(diags, safeSet(d, "location", accountLocation)...)
+			if err := d.Set("location", accountLocation); err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Failed to set location",
+					Detail:   err.Error(),
+				})
+				return diags
+			}
+
 			d.SetId(strconv.Itoa(newId))
 
 		case CacheLocation:
-			diags = append(diags, safeSet(d, "location", accountLocation)...)
+			// Track the cached account
+			if err := d.Set("location", accountLocation); err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Failed to set location",
+					Detail:   err.Error(),
+				})
+				return diags
+			}
+
 			d.SetId(strconv.Itoa(accountCacheId))
 		}
 	}

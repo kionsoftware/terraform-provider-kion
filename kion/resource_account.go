@@ -76,7 +76,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 
 	if locationChanged {
 		d.SetId(ID)
-		diags = append(diags, safeSet(d, "location", accountLocation)...)
+		diags = append(diags, SafeSet(d, "location", accountLocation, "Unable to set location for account")...)
 	}
 
 	data := resp.ToMap(resource)
@@ -103,9 +103,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 			})
 			return diags
 		}
-
-		// Set labels
-		diags = append(diags, safeSet(d, "labels", labelData)...)
+		diags = append(diags, SafeSet(d, "labels", labelData, "Unable to set labels for account")...)
 	}
 
 	return diags
@@ -151,7 +149,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 		accountLocation = ProjectLocation
 		ID = strconv.Itoa(newId)
-		diags = append(diags, safeSet(d, "location", accountLocation)...)
+		diags = append(diags, SafeSet(d, "location", accountLocation, "Error setting location")...)
 		d.SetId(ID)
 
 	} else if oldProjectId != 0 && newProjectId == 0 {
@@ -179,8 +177,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 		accountLocation = CacheLocation
 		ID = strconv.Itoa(newId)
-
-		diags = append(diags, safeSet(d, "location", accountLocation)...)
+		diags = append(diags, SafeSet(d, "location", accountLocation, "Error setting location")...)
 		d.SetId(ID)
 
 	} else {
@@ -301,7 +298,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	if hasChanged {
-		diags = append(diags, safeSet(d, "last_updated", time.Now().Format(time.RFC850))...)
+		diags = append(diags, SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Unable to set last_updated")...)
 		tflog.Info(ctx, fmt.Sprintf("Updated account ID: %s", ID))
 	}
 

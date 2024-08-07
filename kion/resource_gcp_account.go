@@ -208,7 +208,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			})
 			return diags
 		}
-		diags = append(diags, safeSet(d, "location", accountLocation)...)
+		diags = append(diags, SafeSet(d, "location", accountLocation, "Unable to set location for account")...)
 		d.SetId(strconv.Itoa(resp.RecordID))
 
 	} else {
@@ -297,11 +297,11 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 				return diags
 			}
 
-			diags = append(diags, safeSet(d, "location", accountLocation)...)
+			diags = append(diags, SafeSet(d, "location", accountLocation, "Unable to set location for account")...)
 			d.SetId(strconv.Itoa(newId))
 
 		case CacheLocation:
-			diags = append(diags, safeSet(d, "location", accountLocation)...)
+			diags = append(diags, SafeSet(d, "location", accountLocation, "Unable to set location for account")...)
 			d.SetId(strconv.Itoa(accountCacheId))
 		}
 	}

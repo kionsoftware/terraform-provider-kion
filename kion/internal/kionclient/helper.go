@@ -2,7 +2,10 @@ package kionclient
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -72,16 +75,6 @@ func FlattenIntPointer(d *schema.ResourceData, key string) *int {
 	return nil
 }
 
-// FlattenIntArray -
-func FlattenIntArray(items []interface{}) []int {
-	arr := make([]int, 0)
-	for _, item := range items {
-		arr = append(arr, item.(int))
-	}
-
-	return arr
-}
-
 // FlattenIntArrayPointer -
 func FlattenIntArrayPointer(items []interface{}) *[]int {
 	arr := make([]int, 0)
@@ -124,14 +117,6 @@ func FlattenGenericIDArray(d *schema.ResourceData, key string) []int {
 	}
 
 	return uids
-}
-
-func ConvertToIntSlice(interfaceSlice []interface{}) []int {
-	intSlice := make([]int, len(interfaceSlice))
-	for i, v := range interfaceSlice {
-		intSlice[i] = v.(int)
-	}
-	return intSlice
 }
 
 // FlattenGenericIDPointer retrieves and converts the value associated with the given key from the schema.ResourceData.
@@ -500,4 +485,96 @@ func TestAccOUGenerateDataSourceDeclarationAll(dataSourceName, localName string)
 func PrintHCLConfig(config string) {
 	fmt.Println("Generated HCL configuration:")
 	fmt.Println(config)
+}
+
+// ConvertInterfaceSliceToIntSlice converts a slice of interfaces to a slice of integers.
+func ConvertInterfaceSliceToIntSlice(input []interface{}) []int {
+	// Pre-allocate the output slice for better performance.
+	output := make([]int, len(input))
+	for i, v := range input {
+		// Type assertion to convert interface{} to int.
+		output[i] = v.(int)
+	}
+	return output
+}
+
+// GetPreviousUserAndGroupIds retrieves the previous state of user and user group IDs
+// from the Terraform resource data.
+func GetPreviousUserAndGroupIds(d *schema.ResourceData) ([]int, []int) {
+	var prevUserIds, prevUserGroupIds []int
+
+	// Check if the "user_ids" field has changed
+	if d.HasChange("user_ids") {
+		// Get the previous value of the "user_ids" field
+		oldValue, _ := d.GetChange("user_ids")
+		// Convert the previous value to a slice of integers
+		prevUserIds = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
+	}
+
+	// Check if the "user_group_ids" field has changed
+	if d.HasChange("user_group_ids") {
+		// Get the previous value of the "user_group_ids" field
+		oldValue, _ := d.GetChange("user_group_ids")
+		// Convert the previous value to a slice of integers
+		prevUserGroupIds = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
+	}
+
+	return prevUserIds, prevUserGroupIds
+}
+
+// FindDifferences finds the differences between two slices, returning the
+// elements that are present in slice1 but not in slice2.
+func FindDifferences[T comparable](slice1, slice2 []T) []T {
+	// Create a set from the second slice for efficient lookups
+	set := make(map[T]bool)
+	for _, v := range slice2 {
+		set[v] = true
+	}
+
+	var diff []T
+	// Iterate over the first slice and find elements not present in the second slice
+	for _, v := range slice1 {
+		if !set[v] {
+			diff = append(diff, v)
+		}
+	}
+	return diff
+}
+
+// SafeSet handles setting Terraform schema values, centralizing error reporting and ensuring non-nil values.
+func SafeSet(d *schema.ResourceData, key string, value interface{}, summary string) diag.Diagnostics {
+	var diags diag.Diagnostics
+	// Check if the value is non-nil before setting it in the schema
+	if value != nil {
+		// Attempt to set the value in the schema
+		if err := d.Set(key, value); err != nil {
+			// Append a diagnostic message if there's an error while setting the value
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  summary,
+				Detail:   fmt.Sprintf("Error setting %s: %s", key, err),
+			})
+		}
+	}
+	return diags
+}
+
+// ParseResourceID parses a resource ID string into its components based on the expected number of parts.
+// It returns the extracted ID components as integers and any error encountered during parsing.
+func ParseResourceID(resourceID string, expectedParts int, idNames ...string) ([]int, error) {
+	parts := strings.Split(resourceID, "-")
+	if len(parts) != expectedParts {
+		return nil, fmt.Errorf("invalid resource ID format, expected %s with %d parts", strings.Join(idNames, "-"), expectedParts)
+	}
+
+	ids := make([]int, len(idNames))
+	for i, name := range idNames {
+		id, err := strconv.Atoi(parts[i])
+		if err != nil {
+			return nil, fmt.Errorf("invalid %s, must be an integer", name)
+		}
+		ids[i] = id
+	}
+
+	return ids, nil
 }

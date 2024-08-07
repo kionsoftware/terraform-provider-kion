@@ -172,7 +172,7 @@ func dataSourceCachedAccountRead(ctx context.Context, d *schema.ResourceData, m 
 		arr = append(arr, data)
 	}
 
-	diags = append(diags, safeSet(d, "list", arr)...)
+	diags = append(diags, SafeSet(d, "list", arr, "Unable to read Account")...)
 
 	// Always run.
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))

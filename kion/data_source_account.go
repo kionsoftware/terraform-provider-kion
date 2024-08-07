@@ -174,8 +174,7 @@ func dataSourceAccountRead(ctx context.Context, d *schema.ResourceData, m interf
 		arr = append(arr, data)
 	}
 
-	// Use safeSet to set the list
-	diags = append(diags, safeSet(d, "list", arr)...)
+	diags = append(diags, SafeSet(d, "list", arr, "Unable to read Account")...)
 
 	// Always run.
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
