@@ -208,11 +208,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			})
 			return diags
 		}
-
-		if err := d.Set("location", accountLocation); err != nil {
-			return diag.Errorf("error setting location: %s", err)
-		}
-
+		diags = append(diags, safeSet(d, "location", accountLocation)...)
 		d.SetId(strconv.Itoa(resp.RecordID))
 
 	} else {
@@ -301,26 +297,11 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 				return diags
 			}
 
-			if err := d.Set("location", accountLocation); err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Failed to set location",
-					Detail:   err.Error(),
-				})
-				return diags
-			}
+			diags = append(diags, safeSet(d, "location", accountLocation)...)
 			d.SetId(strconv.Itoa(newId))
 
 		case CacheLocation:
-			// Track the cached account
-			if err := d.Set("location", accountLocation); err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Failed to set location",
-					Detail:   err.Error(),
-				})
-				return diags
-			}
+			diags = append(diags, safeSet(d, "location", accountLocation)...)
 			d.SetId(strconv.Itoa(accountCacheId))
 		}
 	}

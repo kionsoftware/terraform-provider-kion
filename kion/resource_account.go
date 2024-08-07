@@ -76,14 +76,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 
 	if locationChanged {
 		d.SetId(ID)
-		if err := d.Set("location", accountLocation); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to set location for account",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
-		}
+		diags = append(diags, safeSet(d, "location", accountLocation)...)
 	}
 
 	data := resp.ToMap(resource)
@@ -112,13 +105,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 		}
 
 		// Set labels
-		if err := d.Set("labels", labelData); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to set labels for account",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-		}
+		diags = append(diags, safeSet(d, "labels", labelData)...)
 	}
 
 	return diags
@@ -164,14 +151,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 		accountLocation = ProjectLocation
 		ID = strconv.Itoa(newId)
-		if err := d.Set("location", accountLocation); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error setting location",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), accountLocation),
-			})
-			return diags
-		}
+		diags = append(diags, safeSet(d, "location", accountLocation)...)
 		d.SetId(ID)
 
 	} else if oldProjectId != 0 && newProjectId == 0 {
@@ -200,16 +180,9 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		accountLocation = CacheLocation
 		ID = strconv.Itoa(newId)
 
-		if err := d.Set("location", accountLocation); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to set location",
-				Detail:   fmt.Sprintf("Error: %v", err),
-			})
-			return diags
-		}
-
+		diags = append(diags, safeSet(d, "location", accountLocation)...)
 		d.SetId(ID)
+
 	} else {
 		accountLocation = getKionAccountLocation(d)
 
@@ -328,14 +301,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	if hasChanged {
-		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to set last_updated",
-				Detail:   fmt.Sprintf("Error: %v", err),
-			})
-			return diags
-		}
+		diags = append(diags, safeSet(d, "last_updated", time.Now().Format(time.RFC850))...)
 		tflog.Info(ctx, fmt.Sprintf("Updated account ID: %s", ID))
 	}
 
