@@ -46,17 +46,6 @@ func resourceAwsAccount() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			// Notice there is no 'id' field specified because it will be created.
-			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the AWS account within Kion.",
-			},
-			"email": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The root email address to associate with a new account.  Required when creating a new account unless an account placeholder email has been set.",
-			},
 			"account_number": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -64,85 +53,16 @@ func resourceAwsAccount() *schema.Resource {
 				Description: "The account number of the AWS account.  If account_number is provided, the existing account will be imported into Kion.  If account_number is omitted, a new account will be created.",
 				ForceNew:    true,
 			},
-			"linked_account_number": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "For AWS GovCloud accounts, this is the linked commercial account.  Otherwise this is empty.",
-			},
-			"commercial_account_name": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The name used when creating new commercial account.",
-			},
-			"gov_account_name": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The name used when creating new GovCloud account.",
-			},
-			"create_govcloud": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "True to create an AWS GovCloud account.",
-			},
-			"linked_role": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "OrganizationAccountAccessRole",
-				Description: "The AWS organization service role.",
-			},
-			"payer_id": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				Description: "The ID of the billing source containing billing data for this account.",
-			},
-			"project_id": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Description: "The ID of the Kion project to place this account within.  If empty, the account will be placed within the account cache.",
-			},
-			"created_at": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"account_type_id": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
 				Description: "An ID representing the account type within Kion.",
 			},
-			"start_datecode": {
+			"alias": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Computed:    true,
-				Description: "Date when the AWS account will starting submitting payments against a funding source (YYYY-MM).  Required if placing an account within a project.",
-			},
-			"skip_access_checking": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-				Description: "True to skip periodic access checking on the account.",
-			},
-			"use_org_account_info": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-				Description: "True to keep the account name and email address in Kion in sync with the account name and email address as set in AWS Organization.",
-			},
-			"include_linked_account_spend": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-				Description: "True to associate spend from a linked GovCloud account with this account.",
-			},
-			"car_external_id": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The external ID used when assuming cloud access roles.",
-			},
-			"service_external_id": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The external ID used for automated internal actions using the service role for this account.",
+				Description: "Account alias is an optional short unique name that helps identify the account within Kion.",
 			},
 			"aws_organizational_unit": {
 				Type:        schema.TypeSet,
@@ -163,6 +83,65 @@ func resourceAwsAccount() *schema.Resource {
 						},
 					},
 				},
+			},
+			"car_external_id": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The external ID used when assuming cloud access roles.",
+			},
+			"commercial_account_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The name used when creating new commercial account.",
+			},
+			"create_govcloud": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "True to create an AWS GovCloud account.",
+			},
+			"created_at": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"email": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The root email address to associate with a new account.  Required when creating a new account unless an account placeholder email has been set.",
+			},
+			"gov_account_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The name used when creating new GovCloud account.",
+			},
+			"include_linked_account_spend": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				Description: "True to associate spend from a linked GovCloud account with this account.",
+			},
+			"labels": {
+				Type:         schema.TypeMap,
+				Optional:     true,
+				RequiredWith: []string{"project_id"},
+				Elem:         &schema.Schema{Type: schema.TypeString},
+				Description:  "A map of labels to assign to the account. The labels must already exist in Kion.",
+			},
+			"linked_account_number": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "For AWS GovCloud accounts, this is the linked commercial account.  Otherwise this is empty.",
+			},
+			"linked_role": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "OrganizationAccountAccessRole",
+				Description: "The AWS organization service role.",
+			},
+			"location": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Where the account is attached.  Either \"project\" or \"cache\".",
 			},
 			"move_project_settings": {
 				Type:        schema.TypeSet,
@@ -186,17 +165,43 @@ func resourceAwsAccount() *schema.Resource {
 					},
 				},
 			},
-			"location": {
+			"name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the AWS account within Kion.",
+			},
+			"payer_id": {
+				Type:        schema.TypeInt,
+				Required:    true,
+				Description: "The ID of the billing source containing billing data for this account.",
+			},
+			"project_id": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "The ID of the Kion project to place this account within.  If empty, the account will be placed within the account cache.",
+			},
+			"service_external_id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Where the account is attached.  Either \"project\" or \"cache\".",
+				Description: "The external ID used for automated internal actions using the service role for this account.",
 			},
-			"labels": {
-				Type:         schema.TypeMap,
-				Optional:     true,
-				RequiredWith: []string{"project_id"},
-				Elem:         &schema.Schema{Type: schema.TypeString},
-				Description:  "A map of labels to assign to the account. The labels must already exist in Kion.",
+			"skip_access_checking": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				Description: "True to skip periodic access checking on the account.",
+			},
+			"start_datecode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "Date when the AWS account will starting submitting payments against a funding source (YYYY-MM).  Required if placing an account within a project.",
+			},
+			"use_org_account_info": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				Description: "True to keep the account name and email address in Kion in sync with the account name and email address as set in AWS Organization.",
 			},
 		},
 		CustomizeDiff: customdiff.All(
@@ -230,12 +235,13 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			accountUrl = "/v3/account-cache?account-type=aws"
 			postAccountData = hc.AccountCacheNewAWSImport{
 				AccountEmail:              d.Get("email").(string),
-				Name:                      d.Get("name").(string),
 				AccountNumber:             d.Get("account_number").(string),
 				AccountTypeID:             &accountTypeId,
+				Alias:                     hc.OptionalString(d, "alias"),
 				IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
 				LinkedAccountNumber:       d.Get("linked_account_number").(string),
 				LinkedRole:                d.Get("linked_role").(string),
+				Name:                      d.Get("name").(string),
 				PayerID:                   d.Get("payer_id").(int),
 				SkipAccessChecking:        hc.OptionalBool(d, "skip_access_checking"),
 			}
@@ -246,12 +252,13 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			accountUrl = "/v3/account?account-type=aws"
 			postAccountData = hc.AccountNewAWSImport{
 				AccountEmail:              d.Get("email").(string),
-				Name:                      d.Get("name").(string),
 				AccountNumber:             d.Get("account_number").(string),
 				AccountTypeID:             hc.OptionalInt(d, "account_type_id"),
+				Alias:                     hc.OptionalString(d, "alias"),
 				IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
 				LinkedAccountNumber:       d.Get("linked_account_number").(string),
 				LinkedRole:                d.Get("linked_role").(string),
+				Name:                      d.Get("name").(string),
 				PayerID:                   d.Get("payer_id").(int),
 				ProjectID:                 d.Get("project_id").(int),
 				SkipAccessChecking:        hc.OptionalBool(d, "skip_access_checking"),
@@ -373,12 +380,13 @@ func createAwsAccount(ctx context.Context, client *hc.Client, d *schema.Resource
 
 	postCacheData := hc.AccountCacheNewAWSCreate{
 		AccountEmail:              d.Get("email").(string),
-		Name:                      d.Get("name").(string),
+		Alias:                     hc.OptionalString(d, "alias"),
 		CommercialAccountName:     d.Get("commercial_account_name").(string),
 		CreateGovcloud:            hc.OptionalBool(d, "create_govcloud"),
 		GovAccountName:            d.Get("gov_account_name").(string),
 		IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
 		LinkedRole:                d.Get("linked_role").(string),
+		Name:                      d.Get("name").(string),
 		PayerID:                   d.Get("payer_id").(int),
 	}
 

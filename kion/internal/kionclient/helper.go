@@ -314,6 +314,20 @@ func OptionalInt(d *schema.ResourceData, fieldname string) *int {
 	return &ret
 }
 
+func OptionalString(d *schema.ResourceData, fieldname string) *string {
+	v, ok := d.GetOkExists(fieldname)
+	if !ok {
+		return nil
+	}
+
+	ret, ok := v.(string)
+	if !ok {
+		return nil
+	}
+
+	return &ret
+}
+
 // AssociationChanged returns arrays of which values to change.
 // The fields needs to be at the top level.
 func AssociationChanged(d *schema.ResourceData, fieldname string) ([]int, []int, bool, error) {

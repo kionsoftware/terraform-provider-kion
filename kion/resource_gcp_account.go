@@ -47,16 +47,31 @@ func resourceGcpAccount() *schema.Resource {
 			},
 		},
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"account_type_id": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+				Description: "An ID representing the account type within Kion.",
+			},
+			"alias": {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the Google Cloud account within Kion.",
+				Optional:    true,
+				Description: "Account alias is an optional short unique name that helps identify the account within Kion.",
 			},
 			"create_mode": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"create", "import"}, false),
 				Description:  "One of \"create\" or \"import\".  If \"create\", Kion will attempt to create a new Google Cloud Project.  If \"import\", Kion will import the existing Google Cloud Project as specified by google_cloud_project_id.",
+			},
+			"created_at": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"google_cloud_parent_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The GCP resource identifier of the parent of this GCP Project.",
 			},
 			"google_cloud_project_id": {
 				Type:        schema.TypeString,
@@ -65,42 +80,17 @@ func resourceGcpAccount() *schema.Resource {
 				ForceNew:    true,
 				Description: "The Google Cloud project ID.",
 			},
-			"google_cloud_parent_name": {
+			"labels": {
+				Type:         schema.TypeMap,
+				Optional:     true,
+				RequiredWith: []string{"project_id"},
+				Elem:         &schema.Schema{Type: schema.TypeString},
+				Description:  "A map of labels to assign to the account. The labels must already exist in Kion.",
+			},
+			"location": {
 				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The GCP resource identifier of the parent of this GCP Project.",
-			},
-			"payer_id": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				Description: "The ID of the billing source containing billing data for this account.",
-			},
-			"project_id": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Description: "The ID of the Kion project to place this account within.  If empty, the account will be placed within the account cache.",
-			},
-			"start_datecode": {
-				Type:        schema.TypeString,
-				Optional:    true,
 				Computed:    true,
-				Description: "Date when the Google Cloud account will starting submitting payments against a funding source (YYYY-MM).  Required if placing an account within a project.",
-			},
-			"skip_access_checking": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-				Description: "True to skip periodic access checking on the account.",
-			},
-			"account_type_id": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Computed:    true,
-				Description: "An ID representing the account type within Kion.",
-			},
-			"created_at": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "Where the account is attached.  Either \"project\" or \"cache\".",
 			},
 			"move_project_settings": {
 				Type:        schema.TypeSet,
@@ -124,17 +114,32 @@ func resourceGcpAccount() *schema.Resource {
 					},
 				},
 			},
-			"location": {
+			"name": {
 				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Where the account is attached.  Either \"project\" or \"cache\".",
+				Required:    true,
+				Description: "The name of the Google Cloud account within Kion.",
 			},
-			"labels": {
-				Type:         schema.TypeMap,
-				Optional:     true,
-				RequiredWith: []string{"project_id"},
-				Elem:         &schema.Schema{Type: schema.TypeString},
-				Description:  "A map of labels to assign to the account. The labels must already exist in Kion.",
+			"payer_id": {
+				Type:        schema.TypeInt,
+				Required:    true,
+				Description: "The ID of the billing source containing billing data for this account.",
+			},
+			"project_id": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "The ID of the Kion project to place this account within.  If empty, the account will be placed within the account cache.",
+			},
+			"skip_access_checking": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				Description: "True to skip periodic access checking on the account.",
+			},
+			"start_datecode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "Date when the Google Cloud account will starting submitting payments against a funding source (YYYY-MM).  Required if placing an account within a project.",
 			},
 		},
 		CustomizeDiff: customdiff.All(
@@ -161,6 +166,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			accountUrl = "/v3/account-cache?account-type=google-cloud"
 			postAccountData = hc.AccountCacheNewGCPImport{
 				Name:                 d.Get("name").(string),
+				Alias:                hc.OptionalString(d, "alias"),
 				PayerID:              d.Get("payer_id").(int),
 				AccountTypeID:        hc.OptionalInt(d, "account_type_id"),
 				GoogleCloudProjectID: d.Get("google_cloud_project_id").(string),
@@ -173,6 +179,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			accountUrl = "/v3/account?account-type=google-cloud"
 			postAccountData = hc.AccountNewGCPImport{
 				Name:                 d.Get("name").(string),
+				Alias:                hc.OptionalString(d, "alias"),
 				PayerID:              d.Get("payer_id").(int),
 				AccountTypeID:        hc.OptionalInt(d, "account_type_id"),
 				GoogleCloudProjectID: d.Get("google_cloud_project_id").(string),
@@ -212,10 +219,11 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		// Create a new GCP project
 
 		postCacheData := hc.AccountCacheNewGCPCreate{
+			Alias:                 hc.OptionalString(d, "alias"),
 			DisplayName:           d.Get("name").(string),
-			PayerID:               d.Get("payer_id").(int),
 			GoogleCloudProjectID:  d.Get("google_cloud_project_id").(string),
 			GoogleCloudParentName: d.Get("google_cloud_parent_name").(string),
+			PayerID:               d.Get("payer_id").(int),
 		}
 
 		if rb, err := json.Marshal(postCacheData); err == nil {
