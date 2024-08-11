@@ -44,8 +44,7 @@ def clone_resource(resource_type, resource):
             if s in resource:
                 if 'name' in resource[s]:
                     if not resource[s]['name'].startswith(ARGS.clone_prefix):
-                        resource[s]['name'] = f"{
-                            ARGS.clone_prefix}{resource[s]['name']}"
+                        resource[s]['name'] = f"{ARGS.clone_prefix}{resource[s]['name']}"
                         name = resource[s]['name']
                     else:
                         name = False
