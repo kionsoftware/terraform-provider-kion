@@ -62,6 +62,7 @@ output "kion_project_id" {
 ### Optional
 
 - `account_type_id` (Number) An ID representing the account type within Kion.
+- `alias` (String) Account alias is an optional short unique name that helps identify the account within Kion.
 - `google_cloud_parent_name` (String) The GCP resource identifier of the parent of this GCP Project.
 - `google_cloud_project_id` (String) The Google Cloud project ID.
 - `labels` (Map of String) A map of labels to assign to the account. The labels must already exist in Kion.

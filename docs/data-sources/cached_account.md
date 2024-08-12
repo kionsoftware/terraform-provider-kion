@@ -44,6 +44,7 @@ Read-Only:
 
 - `account_number` (String)
 - `account_type_id` (Number)
+- `alias` (String)
 - `car_external_id` (String)
 - `created_at` (String)
 - `email` (String)

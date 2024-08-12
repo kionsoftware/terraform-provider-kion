@@ -65,6 +65,7 @@ output "kion_account_id" {
 
 - `account_number` (String) The account number of the AWS account.  If account_number is provided, the existing account will be imported into Kion.  If account_number is omitted, a new account will be created.
 - `account_type_id` (Number) An ID representing the account type within Kion.
+- `alias` (String) Account alias is an optional short unique name that helps identify the account within Kion.
 - `aws_organizational_unit` (Block Set, Max: 1) Where to place this account within AWS Organization when creating an account. (see [below for nested schema](#nestedblock--aws_organizational_unit))
 - `commercial_account_name` (String) The name used when creating new commercial account.
 - `create_govcloud` (Boolean) True to create an AWS GovCloud account.

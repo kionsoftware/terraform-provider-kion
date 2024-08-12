@@ -62,6 +62,7 @@ output "kion_azure_account_id" {
 ### Optional
 
 - `account_type_id` (Number) An ID representing the account type within Kion.
+- `alias` (String) Account alias is an optional short unique name that helps identify the account within Kion.
 - `csp` (Block Set, Max: 1) Parameters used when creating a new Azure CSP subscription. (see [below for nested schema](#nestedblock--csp))
 - `ea` (Block Set, Max: 1) Parameters used when creating a new Azure EA subscription. (see [below for nested schema](#nestedblock--ea))
 - `labels` (Map of String) A map of labels to assign to the account. The labels must already exist in Kion.
