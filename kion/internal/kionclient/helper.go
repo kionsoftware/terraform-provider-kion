@@ -48,6 +48,18 @@ func FlattenStringArrayPointer(d *schema.ResourceData, key string) *[]string {
 	return nil
 }
 
+func FilterStringArray(items []string) []string {
+	arr := make([]string, 0)
+	for _, item := range items {
+		// Added this because compliance_check has an array with an empty value in: regions.
+		if item != "" {
+			arr = append(arr, item)
+		}
+	}
+
+	return arr
+}
+
 // FlattenIntPointer -
 func FlattenIntPointer(d *schema.ResourceData, key string) *int {
 	if i, ok := d.GetOk(key); ok {
@@ -265,15 +277,22 @@ func AssociationChanged(d *schema.ResourceData, fieldname string) ([]int, []int,
 	}
 
 	ownerOld := io.([]interface{})
-	oldIDs := ConvertInterfaceSliceToIntSlice(ownerOld)
+	oldIDs, err := ConvertInterfaceSliceToIntSlice(ownerOld)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("failed to convert old IDs in field '%s': %w", fieldname, err)
+	}
 
 	ownerNew := in.([]interface{})
-	newIDs := ConvertInterfaceSliceToIntSlice(ownerNew)
+	newIDs, err := ConvertInterfaceSliceToIntSlice(ownerNew)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("failed to convert new IDs in field '%s': %w", fieldname, err)
+	}
 
 	arrUserAdd, arrUserRemove, changed := determineAssociations(newIDs, oldIDs)
 	if changed {
 		isChanged = true
 	}
+
 	return arrUserAdd, arrUserRemove, isChanged, nil
 }
 
@@ -395,27 +414,42 @@ func PrintHCLConfig(config string) {
 }
 
 // ConvertInterfaceSliceToIntSlice converts a slice of interfaces to a slice of integers.
-func ConvertInterfaceSliceToIntSlice(input []interface{}) []int {
-	// Pre-allocate the output slice for better performance.
+func ConvertInterfaceSliceToIntSlice(input []interface{}) ([]int, error) {
 	output := make([]int, len(input))
 	for i, v := range input {
-		// Type assertion to convert interface{} to int.
-		output[i] = v.(int)
+		// Check if the element is an integer
+		switch val := v.(type) {
+		case int:
+			output[i] = val
+		case map[string]interface{}:
+			// Handle complex type, extract ID or handle accordingly
+			if id, ok := val["id"].(int); ok {
+				output[i] = id
+			} else {
+				return nil, fmt.Errorf("expected 'id' field to be int, got: %v", val)
+			}
+		default:
+			return nil, fmt.Errorf("unsupported type in input slice: %T", v)
+		}
 	}
-	return output
+	return output, nil
 }
 
 // GetPreviousUserAndGroupIds retrieves the previous state of user and user group IDs
 // from the Terraform resource data.
-func GetPreviousUserAndGroupIds(d *schema.ResourceData) ([]int, []int) {
+func GetPreviousUserAndGroupIds(d *schema.ResourceData) ([]int, []int, error) {
 	var prevUserIds, prevUserGroupIds []int
+	var err error
 
 	// Check if the "user_ids" field has changed
 	if d.HasChange("user_ids") {
 		// Get the previous value of the "user_ids" field
 		oldValue, _ := d.GetChange("user_ids")
 		// Convert the previous value to a slice of integers
-		prevUserIds = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
+		prevUserIds, err = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to convert previous user IDs: %w", err)
+		}
 	}
 
 	// Check if the "user_group_ids" field has changed
@@ -423,10 +457,13 @@ func GetPreviousUserAndGroupIds(d *schema.ResourceData) ([]int, []int) {
 		// Get the previous value of the "user_group_ids" field
 		oldValue, _ := d.GetChange("user_group_ids")
 		// Convert the previous value to a slice of integers
-		prevUserGroupIds = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
+		prevUserGroupIds, err = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to convert previous user group IDs: %w", err)
+		}
 	}
 
-	return prevUserIds, prevUserGroupIds
+	return prevUserIds, prevUserGroupIds, nil
 }
 
 // FindDifferences finds the differences between two slices, returning the

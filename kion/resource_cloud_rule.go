@@ -412,7 +412,7 @@ func resourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m interf
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Unable to set labels for cloud rule",
+			Summary:  "Failed to set labels for cloud rule",
 			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 		})
 	}

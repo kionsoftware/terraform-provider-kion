@@ -200,7 +200,7 @@ func resourceOURead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Unable to set labels for OU",
+			Summary:  "Failed to set labels for OU",
 			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 		})
 	}

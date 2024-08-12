@@ -50,15 +50,27 @@ func resourceGlobalPermissionMappingCreate(ctx context.Context, d *schema.Resour
 
 	appRoleID := d.Get("app_role_id").(int) // Retrieve app_role_id from the resource data
 
+	// Convert user_groups_ids from interface{} to int slice
+	userGroupsIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List())
+	if err != nil {
+		return diag.Errorf("failed to convert user_groups_ids: %v", err)
+	}
+
+	// Convert user_ids from interface{} to int slice
+	userIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List())
+	if err != nil {
+		return diag.Errorf("failed to convert user_ids: %v", err)
+	}
+
 	// Create a GlobalPermissionMapping object using the provided data
 	mapping := hc.GlobalPermissionMapping{
 		AppRoleID:     appRoleID,
-		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List()),
-		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List()),
+		UserGroupsIDs: userGroupsIDs,
+		UserIDs:       userIDs,
 	}
 
 	// Make a POST request to the Kion API to create the permission mapping
-	_, err := client.POST("/v3/global/permission-mapping", []hc.GlobalPermissionMapping{mapping})
+	_, err = client.POST("/v3/global/permission-mapping", []hc.GlobalPermissionMapping{mapping})
 	if err != nil {
 		return diag.FromErr(err) // Return an error diagnostic if the request fails
 	}
@@ -97,9 +109,9 @@ func resourceGlobalPermissionMappingRead(ctx context.Context, d *schema.Resource
 			sort.Ints(mapping.UserGroupsIDs)
 			sort.Ints(mapping.UserIDs)
 
-			diags = append(diags, hc.SafeSet(d, "app_role_id", mapping.AppRoleID)...)
-			diags = append(diags, hc.SafeSet(d, "user_groups_ids", mapping.UserGroupsIDs)...)
-			diags = append(diags, hc.SafeSet(d, "user_ids", mapping.UserIDs)...)
+			diags = append(diags, hc.SafeSet(d, "app_role_id", mapping.AppRoleID, "Failed to set app_role_id")...)
+			diags = append(diags, hc.SafeSet(d, "user_groups_ids", mapping.UserGroupsIDs, "Failed to set user_groups_ids")...)
+			diags = append(diags, hc.SafeSet(d, "user_ids", mapping.UserIDs, "Failed to set user_ids")...)
 			found = true
 			break
 		}
@@ -137,16 +149,27 @@ func resourceGlobalPermissionMappingUpdate(ctx context.Context, d *schema.Resour
 		}
 	}
 
+	// Convert user_groups_ids and user_ids from interface{} to int slices
+	userGroupsIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List())
+	if err != nil {
+		return diag.Errorf("failed to convert user_groups_ids: %v", err)
+	}
+
+	userIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List())
+	if err != nil {
+		return diag.Errorf("failed to convert user_ids: %v", err)
+	}
+
 	// Create an updated GlobalPermissionMapping object using the provided data
 	updatedMapping := hc.GlobalPermissionMapping{
 		AppRoleID:     appRoleID,
-		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List()),
-		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List()),
+		UserGroupsIDs: userGroupsIDs,
+		UserIDs:       userIDs,
 	}
 
 	// Fetch existing mappings from the API
 	resp := new(hc.GlobalPermissionMappingListResponse)
-	err := client.GET("/v3/global/permission-mapping", resp)
+	err = client.GET("/v3/global/permission-mapping", resp)
 	if err != nil {
 		return diag.FromErr(err)
 	}

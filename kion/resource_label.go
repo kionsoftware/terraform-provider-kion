@@ -102,7 +102,7 @@ func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{
 	if err := d.Set("key", label.Key); err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Unable to set key for label",
+			Summary:  "Failed to set key for label",
 			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 		})
 		return diags
@@ -111,7 +111,7 @@ func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{
 	if err := d.Set("value", label.Value); err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Unable to set value for label",
+			Summary:  "Failed to set value for label",
 			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 		})
 		return diags
@@ -120,7 +120,7 @@ func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{
 	if err := d.Set("color", label.Color); err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Unable to set color for label",
+			Summary:  "Failed to set color for label",
 			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 		})
 		return diags

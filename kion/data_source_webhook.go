@@ -105,24 +105,24 @@ func dataSourceWebhookRead(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId(webhookID)
 
 	// Use SafeSet to set each field in the schema from the webhook response
-	diags = append(diags, hc.SafeSet(d, "callout_url", webhook.CalloutURL)...)
-	diags = append(diags, hc.SafeSet(d, "description", webhook.Description)...)
-	diags = append(diags, hc.SafeSet(d, "name", webhook.Name)...)
-	diags = append(diags, hc.SafeSet(d, "request_body", webhook.RequestBody)...)
-	diags = append(diags, hc.SafeSet(d, "request_headers", webhook.RequestHeaders)...)
-	diags = append(diags, hc.SafeSet(d, "request_method", webhook.RequestMethod)...)
-	diags = append(diags, hc.SafeSet(d, "should_send_secure_info", webhook.ShouldSendSecureInfo)...)
-	diags = append(diags, hc.SafeSet(d, "skip_ssl", webhook.SkipSSL)...)
-	diags = append(diags, hc.SafeSet(d, "timeout_in_seconds", webhook.TimeoutInSeconds)...)
-	diags = append(diags, hc.SafeSet(d, "use_request_headers", webhook.UseRequestHeaders)...)
+	diags = append(diags, hc.SafeSet(d, "callout_url", webhook.CalloutURL, "Failed to set callout_url")...)
+	diags = append(diags, hc.SafeSet(d, "description", webhook.Description, "Failed to set description")...)
+	diags = append(diags, hc.SafeSet(d, "name", webhook.Name, "Failed to set name")...)
+	diags = append(diags, hc.SafeSet(d, "request_body", webhook.RequestBody, "Failed to set request_body")...)
+	diags = append(diags, hc.SafeSet(d, "request_headers", webhook.RequestHeaders, "Failed to set request_headers")...)
+	diags = append(diags, hc.SafeSet(d, "request_method", webhook.RequestMethod, "Failed to set request_method")...)
+	diags = append(diags, hc.SafeSet(d, "should_send_secure_info", webhook.ShouldSendSecureInfo, "Failed to set should_send_secure_info")...)
+	diags = append(diags, hc.SafeSet(d, "skip_ssl", webhook.SkipSSL, "Failed to set skip_ssl")...)
+	diags = append(diags, hc.SafeSet(d, "timeout_in_seconds", webhook.TimeoutInSeconds, "Failed to set timeout_in_seconds")...)
+	diags = append(diags, hc.SafeSet(d, "use_request_headers", webhook.UseRequestHeaders, "Failed to set use_request_headers")...)
 
 	// Set owner user group IDs
 	ownerUserGroupIDs := extractOwnerGroupIDs(resp.Data.OwnerUserGroups)
-	diags = append(diags, hc.SafeSet(d, "owner_user_group_ids", ownerUserGroupIDs)...)
+	diags = append(diags, hc.SafeSet(d, "owner_user_group_ids", ownerUserGroupIDs, "Failed to set owner_user_group_ids")...)
 
 	// Set owner user IDs
 	ownerUserIDs := extractOwnerUserIDs(resp.Data.OwnerUsers)
-	diags = append(diags, hc.SafeSet(d, "owner_user_ids", ownerUserIDs)...)
+	diags = append(diags, hc.SafeSet(d, "owner_user_ids", ownerUserIDs, "Failed to set owner_user_ids")...)
 
 	return diags
 }

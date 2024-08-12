@@ -141,9 +141,9 @@ func dataSourceAccountRead(ctx context.Context, d *schema.ResourceData, m interf
 	arr := make([]map[string]interface{}, 0)
 	for _, item := range resp.Data {
 		data := make(map[string]interface{})
+		data["account_alias"] = item.AccountAlias
 		data["account_number"] = item.AccountNumber
 		data["account_type_id"] = item.AccountTypeID
-		data["account_alias"] = item.AccountAlias
 		data["car_external_id"] = item.CARExternalID
 		data["created_at"] = item.CreatedAt
 		data["email"] = item.Email

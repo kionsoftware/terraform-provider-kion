@@ -76,7 +76,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 
 	if locationChanged {
 		d.SetId(ID)
-		diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Unable to set location for account")...)
+		diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
 	}
 
 	data := resp.ToMap(resource)
@@ -103,7 +103,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 			})
 			return diags
 		}
-		diags = append(diags, hc.SafeSet(d, "labels", labelData, "Unable to set labels for account")...)
+		diags = append(diags, hc.SafeSet(d, "labels", labelData, "Failed to set labels for account")...)
 	}
 
 	return diags
@@ -313,7 +313,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	if hasChanged {
-		diags = append(diags, hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Unable to set last_updated")...)
+		diags = append(diags, hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Failed to set last_updated")...)
 		tflog.Info(ctx, fmt.Sprintf("Updated account ID: %s", ID))
 	}
 
@@ -408,9 +408,9 @@ func customDiffComputedAccountLocation(ctx context.Context, d *schema.ResourceDi
 	setter := &hc.ResourceDiffSetter{Diff: d}
 
 	if _, exists := d.GetOk("project_id"); exists {
-		diags = append(diags, hc.SafeSet(setter, "location", ProjectLocation, "Unable to set new computed location for project")...)
+		diags = append(diags, hc.SafeSet(setter, "location", ProjectLocation, "Failed to set new computed location for project")...)
 	} else {
-		diags = append(diags, hc.SafeSet(setter, "location", CacheLocation, "Unable to set new computed location for cache")...)
+		diags = append(diags, hc.SafeSet(setter, "location", CacheLocation, "Failed to set new computed location for cache")...)
 	}
 
 	if len(diags) > 0 {

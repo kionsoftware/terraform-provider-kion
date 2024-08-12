@@ -377,7 +377,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Unable to set labels for Project",
+			Summary:  "Failed to set labels for Project",
 			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
 		})
 	}

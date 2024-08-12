@@ -53,15 +53,27 @@ func resourceOUPermissionMappingCreate(ctx context.Context, d *schema.ResourceDa
 	ouID := d.Get("ou_id").(int)
 	appRoleID := d.Get("app_role_id").(int)
 
+	// Convert user_groups_ids from interface{} to int slice
+	userGroupsIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List())
+	if err != nil {
+		return diag.Errorf("failed to convert user_groups_ids: %v", err)
+	}
+
+	// Convert user_ids from interface{} to int slice
+	userIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List())
+	if err != nil {
+		return diag.Errorf("failed to convert user_ids: %v", err)
+	}
+
 	// Create an OUPermissionMapping object using the provided data
 	mapping := hc.OUPermissionMapping{
 		AppRoleID:     appRoleID,
-		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List()),
-		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List()),
+		UserGroupsIDs: userGroupsIDs,
+		UserIDs:       userIDs,
 	}
 
 	// Make a PATCH request to the Kion API to create the permission mapping
-	err := client.PATCH(fmt.Sprintf("/v3/ou/%d/permission-mapping", ouID), []hc.OUPermissionMapping{mapping})
+	err = client.PATCH(fmt.Sprintf("/v3/ou/%d/permission-mapping", ouID), []hc.OUPermissionMapping{mapping})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -96,10 +108,10 @@ func resourceOUPermissionMappingRead(ctx context.Context, d *schema.ResourceData
 	found := false
 	for _, mapping := range resp.Data {
 		if mapping.AppRoleID == appRoleID {
-			diags = append(diags, hc.SafeSet(d, "ou_id", ouID)...)
-			diags = append(diags, hc.SafeSet(d, "app_role_id", appRoleID)...)
-			diags = append(diags, hc.SafeSet(d, "user_groups_ids", mapping.UserGroupsIDs)...)
-			diags = append(diags, hc.SafeSet(d, "user_ids", mapping.UserIDs)...)
+			diags = append(diags, hc.SafeSet(d, "ou_id", ouID, "Failed to set ou_id")...)
+			diags = append(diags, hc.SafeSet(d, "app_role_id", appRoleID, "Failed to set app_role_id")...)
+			diags = append(diags, hc.SafeSet(d, "user_groups_ids", mapping.UserGroupsIDs, "Failed to set user_groups_ids")...)
+			diags = append(diags, hc.SafeSet(d, "user_ids", mapping.UserIDs, "Failed to set user_ids")...)
 			found = true
 			break
 		}
@@ -137,16 +149,27 @@ func resourceOUPermissionMappingUpdate(ctx context.Context, d *schema.ResourceDa
 		}
 	}
 
+	// Convert the user_groups_ids and user_ids to int slices, handling errors
+	userGroupsIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	userIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	// Create an updated OUPermissionMapping object using the provided data
 	updatedMapping := hc.OUPermissionMapping{
 		AppRoleID:     appRoleID,
-		UserGroupsIDs: hc.ConvertInterfaceSliceToIntSlice(d.Get("user_groups_ids").(*schema.Set).List()),
-		UserIDs:       hc.ConvertInterfaceSliceToIntSlice(d.Get("user_ids").(*schema.Set).List()),
+		UserGroupsIDs: userGroupsIDs,
+		UserIDs:       userIDs,
 	}
 
 	// Fetch existing mappings from the API
 	resp := new(hc.OUPermissionMappingListResponse)
-	err := client.GET(fmt.Sprintf("/v3/ou/%d/permission-mapping", ouID), resp)
+	err = client.GET(fmt.Sprintf("/v3/ou/%d/permission-mapping", ouID), resp)
 	if err != nil {
 		return diag.FromErr(err)
 	}

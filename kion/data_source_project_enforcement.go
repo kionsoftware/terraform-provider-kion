@@ -173,7 +173,7 @@ func dataSourceProjectEnforcementRead(ctx context.Context, d *schema.ResourceDat
 	if err := d.Set("enforcements", enforcements); err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Unable to set Project Enforcement data",
+			Summary:  "Failed to set Project Enforcement data",
 			Detail:   fmt.Sprintf("Error: %v", err.Error()),
 		})
 		return diags

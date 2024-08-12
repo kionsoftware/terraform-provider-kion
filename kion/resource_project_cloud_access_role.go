@@ -357,7 +357,7 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Unable to set last_updated",
+				Summary:  "Failed to set last_updated",
 				Detail:   fmt.Sprintf("Error: %v", err),
 			})
 			return diags

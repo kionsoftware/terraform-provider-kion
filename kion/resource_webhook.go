@@ -90,7 +90,7 @@ func resourceWebhook() *schema.Resource {
 }
 
 // populateWebhook creates a Webhook object from the provided schema.ResourceData.
-func populateWebhook(d *schema.ResourceData) hc.Webhook {
+func populateWebhook(d *schema.ResourceData) (hc.Webhook, error) {
 	webhook := hc.Webhook{
 		CalloutURL:           d.Get("callout_url").(string),
 		Description:          d.Get("description").(string),
@@ -101,11 +101,23 @@ func populateWebhook(d *schema.ResourceData) hc.Webhook {
 		SkipSSL:              d.Get("skip_ssl").(bool),
 		TimeoutInSeconds:     d.Get("timeout_in_seconds").(int),
 		UseRequestHeaders:    d.Get("use_request_headers").(bool),
-		OwnerUserIDs:         hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_ids").(*schema.Set).List()),
-		OwnerUserGroupIDs:    hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_group_ids").(*schema.Set).List()),
 	}
 
-	return webhook
+	var err error
+
+	// Convert owner user IDs and handle potential errors
+	webhook.OwnerUserIDs, err = hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_ids").(*schema.Set).List())
+	if err != nil {
+		return hc.Webhook{}, fmt.Errorf("error converting owner_user_ids: %w", err)
+	}
+
+	// Convert owner user group IDs and handle potential errors
+	webhook.OwnerUserGroupIDs, err = hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_group_ids").(*schema.Set).List())
+	if err != nil {
+		return hc.Webhook{}, fmt.Errorf("error converting owner_user_group_ids: %w", err)
+	}
+
+	return webhook, nil
 }
 
 // validateOwnerFields checks if at least one of owner_user_ids or owner_user_group_ids is specified
@@ -126,7 +138,11 @@ func validateOwnerFields(ctx context.Context, diff *schema.ResourceDiff, meta in
 func resourceWebhookCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
-	webhook := populateWebhook(d)
+	// Populate webhook and handle any errors
+	webhook, err := populateWebhook(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	// Validate that at least one of owner_user_ids or owner_user_group_ids is set
 	if len(webhook.OwnerUserIDs) == 0 && len(webhook.OwnerUserGroupIDs) == 0 {
@@ -139,6 +155,7 @@ func resourceWebhookCreate(ctx context.Context, d *schema.ResourceData, m interf
 		return diags
 	}
 
+	// Set the ID of the resource
 	d.SetId(strconv.Itoa(resp.RecordID))
 
 	return resourceWebhookRead(ctx, d, m)
@@ -167,32 +184,33 @@ func resourceWebhookRead(ctx context.Context, d *schema.ResourceData, m interfac
 	webhook := resp.Data.Webhook
 
 	// Set fields based on the API response
-	diags = append(diags, hc.SafeSet(d, "callout_url", webhook.CalloutURL)...)
-	diags = append(diags, hc.SafeSet(d, "description", webhook.Description)...)
-	diags = append(diags, hc.SafeSet(d, "name", webhook.Name)...)
-	diags = append(diags, hc.SafeSet(d, "request_body", webhook.RequestBody)...)
-	diags = append(diags, hc.SafeSet(d, "request_headers", webhook.RequestHeaders)...)
-	diags = append(diags, hc.SafeSet(d, "request_method", webhook.RequestMethod)...)
-	diags = append(diags, hc.SafeSet(d, "should_send_secure_info", webhook.ShouldSendSecureInfo)...)
-	diags = append(diags, hc.SafeSet(d, "skip_ssl", webhook.SkipSSL)...)
-	diags = append(diags, hc.SafeSet(d, "timeout_in_seconds", webhook.TimeoutInSeconds)...)
-	diags = append(diags, hc.SafeSet(d, "use_request_headers", webhook.UseRequestHeaders)...)
+	diags = append(diags, hc.SafeSet(d, "callout_url", webhook.CalloutURL, "Failed to set callout_url")...)
+	diags = append(diags, hc.SafeSet(d, "description", webhook.Description, "Failed to set description")...)
+	diags = append(diags, hc.SafeSet(d, "name", webhook.Name, "Failed to set name")...)
+	diags = append(diags, hc.SafeSet(d, "request_body", webhook.RequestBody, "Failed to set request_body")...)
+	diags = append(diags, hc.SafeSet(d, "request_headers", webhook.RequestHeaders, "Failed to set request_headers")...)
+	diags = append(diags, hc.SafeSet(d, "request_method", webhook.RequestMethod, "Failed to set request_method")...)
+	diags = append(diags, hc.SafeSet(d, "should_send_secure_info", webhook.ShouldSendSecureInfo, "Failed to set should_send_secure_info")...)
+	diags = append(diags, hc.SafeSet(d, "skip_ssl", webhook.SkipSSL, "Failed to set skip_ssl")...)
+	diags = append(diags, hc.SafeSet(d, "timeout_in_seconds", webhook.TimeoutInSeconds, "Failed to set timeout_in_seconds")...)
+	diags = append(diags, hc.SafeSet(d, "use_request_headers", webhook.UseRequestHeaders, "Failed to set use_request_headers")...)
 
 	// Extract owner user group IDs
 	ownerUserGroupIDs := make([]int, len(resp.Data.OwnerUserGroups))
 	for i, group := range resp.Data.OwnerUserGroups {
 		ownerUserGroupIDs[i] = group.ID
 	}
-	diags = append(diags, hc.SafeSet(d, "owner_user_group_ids", ownerUserGroupIDs)...)
+	diags = append(diags, hc.SafeSet(d, "owner_user_group_ids", ownerUserGroupIDs, "Failed to set owner_user_group_ids")...)
 
 	// Extract owner user IDs
 	ownerUserIDs := make([]int, len(resp.Data.OwnerUsers))
 	for i, user := range resp.Data.OwnerUsers {
 		ownerUserIDs[i] = user.ID
 	}
-	diags = append(diags, hc.SafeSet(d, "owner_user_ids", ownerUserIDs)...)
+	diags = append(diags, hc.SafeSet(d, "owner_user_ids", ownerUserIDs, "Failed to set owner_user_ids")...)
 
 	return diags
+
 }
 
 // resourceWebhookUpdate handles updating the webhook resource.
@@ -200,7 +218,12 @@ func resourceWebhookUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*hc.Client)
 
 	webhookID := d.Id()
-	webhook := populateWebhook(d)
+
+	// Populate webhook and handle any errors
+	webhook, err := populateWebhook(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	// Check if fields have changed and update accordingly
 	if d.HasChange("name") || d.HasChange("callout_url") || d.HasChange("description") ||
@@ -215,9 +238,19 @@ func resourceWebhookUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 	if d.HasChange("owner_user_group_ids") || d.HasChange("owner_user_ids") {
 		// Get previous and new owner IDs
-		prevUserIDs, prevGroupIDs := hc.GetPreviousUserAndGroupIds(d)
-		newUserIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_ids").(*schema.Set).List())
-		newGroupIDs := hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_group_ids").(*schema.Set).List())
+		prevUserIDs, prevGroupIDs, err := hc.GetPreviousUserAndGroupIds(d)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		newUserIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_ids").(*schema.Set).List())
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		newGroupIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_group_ids").(*schema.Set).List())
+		if err != nil {
+			return diag.FromErr(err)
+		}
 
 		// Find differences
 		removedUserIDs := hc.FindDifferences(prevUserIDs, newUserIDs)
