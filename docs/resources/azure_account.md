@@ -61,11 +61,12 @@ output "kion_azure_account_id" {
 
 ### Optional
 
+- `account_alias` (String) Account alias is an optional short unique name that helps identify the account within Kion.
 - `account_type_id` (Number) An ID representing the account type within Kion.
-- `alias` (String) Account alias is an optional short unique name that helps identify the account within Kion.
 - `csp` (Block Set, Max: 1) Parameters used when creating a new Azure CSP subscription. (see [below for nested schema](#nestedblock--csp))
 - `ea` (Block Set, Max: 1) Parameters used when creating a new Azure EA subscription. (see [below for nested schema](#nestedblock--ea))
 - `labels` (Map of String) A map of labels to assign to the account. The labels must already exist in Kion.
+- `last_updated` (String)
 - `mca` (Block Set, Max: 1) Parameters used when creating a new Azure MCA subscription. (see [below for nested schema](#nestedblock--mca))
 - `move_project_settings` (Block Set, Max: 1) Parameters used when moving an account between Kion projects.  These settings are ignored unless moving an account. (see [below for nested schema](#nestedblock--move_project_settings))
 - `parent_management_group_id` (String) The parent management group ID when creating an Azure subscription. If provided, the subscription will be created under the provided management group.  If not provided, the subscription will be created at the root level

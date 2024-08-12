@@ -61,11 +61,12 @@ output "kion_project_id" {
 
 ### Optional
 
+- `account_alias` (String) Account alias is an optional short unique name that helps identify the account within Kion.
 - `account_type_id` (Number) An ID representing the account type within Kion.
-- `alias` (String) Account alias is an optional short unique name that helps identify the account within Kion.
 - `google_cloud_parent_name` (String) The GCP resource identifier of the parent of this GCP Project.
 - `google_cloud_project_id` (String) The Google Cloud project ID.
 - `labels` (Map of String) A map of labels to assign to the account. The labels must already exist in Kion.
+- `last_updated` (String)
 - `move_project_settings` (Block Set, Max: 1) Parameters used when moving an account between Kion projects.  These settings are ignored unless moving an account. (see [below for nested schema](#nestedblock--move_project_settings))
 - `project_id` (Number) The ID of the Kion project to place this account within.  If empty, the account will be placed within the account cache.
 - `skip_access_checking` (Boolean) True to skip periodic access checking on the account.
