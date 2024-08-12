@@ -47,16 +47,17 @@ func resourceGcpAccount() *schema.Resource {
 			},
 		},
 		Schema: map[string]*schema.Schema{
+			// Notice there is no 'id' field specified because it will be created.
+			"account_alias": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Account alias is an optional short unique name that helps identify the account within Kion.",
+			},
 			"account_type_id": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
 				Description: "An ID representing the account type within Kion.",
-			},
-			"account_alias": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Account alias is an optional short unique name that helps identify the account within Kion.",
 			},
 			"create_mode": {
 				Type:         schema.TypeString,
@@ -87,7 +88,6 @@ func resourceGcpAccount() *schema.Resource {
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				Description:  "A map of labels to assign to the account. The labels must already exist in Kion.",
 			},
-			// Notice there is no 'id' field specified because it will be created.
 			"last_updated": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -172,7 +172,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			accountUrl = "/v3/account-cache?account-type=google-cloud"
 			postAccountData = hc.AccountCacheNewGCPImport{
 				Name:                 d.Get("name").(string),
-				Alias:                hc.OptionalString(d, "account_alias"),
+				AccountAlias:         hc.OptionalString(d, "account_alias"),
 				PayerID:              d.Get("payer_id").(int),
 				AccountTypeID:        hc.OptionalInt(d, "account_type_id"),
 				GoogleCloudProjectID: d.Get("google_cloud_project_id").(string),
@@ -185,7 +185,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			accountUrl = "/v3/account?account-type=google-cloud"
 			postAccountData = hc.AccountNewGCPImport{
 				Name:                 d.Get("name").(string),
-				Alias:                hc.OptionalString(d, "account_alias"),
+				AccountAlias:         hc.OptionalString(d, "account_alias"),
 				PayerID:              d.Get("payer_id").(int),
 				AccountTypeID:        hc.OptionalInt(d, "account_type_id"),
 				GoogleCloudProjectID: d.Get("google_cloud_project_id").(string),
@@ -221,7 +221,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		// Create a new GCP project
 
 		postCacheData := hc.AccountCacheNewGCPCreate{
-			Alias:                 hc.OptionalString(d, "account_alias"),
+			AccountAlias:          hc.OptionalString(d, "account_alias"),
 			DisplayName:           d.Get("name").(string),
 			GoogleCloudProjectID:  d.Get("google_cloud_project_id").(string),
 			GoogleCloudParentName: d.Get("google_cloud_parent_name").(string),

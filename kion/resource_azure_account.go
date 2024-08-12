@@ -45,16 +45,17 @@ func resourceAzureAccount() *schema.Resource {
 			},
 		},
 		Schema: map[string]*schema.Schema{
+			// Notice there is no 'id' field specified because it will be created.
+			"account_alias": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Account alias is an optional short unique name that helps identify the account within Kion.",
+			},
 			"account_type_id": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
 				Description: "An ID representing the account type within Kion.",
-			},
-			"account_alias": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Account alias is an optional short unique name that helps identify the account within Kion.",
 			},
 			"csp": {
 				Type:        schema.TypeSet,
@@ -108,7 +109,6 @@ func resourceAzureAccount() *schema.Resource {
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				Description:  "A map of labels to assign to the account. The labels must already exist in Kion.",
 			},
-			// Notice there is no 'id' field specified because it will be created.
 			"last_updated": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -238,7 +238,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			accountUrl = "/v3/account-cache?account-type=azure"
 			postAccountData = hc.AccountCacheNewAzureImport{
 				SubscriptionUUID:   d.Get("subscription_uuid").(string),
-				Alias:              hc.OptionalString(d, "account_alias"),
+				AccountAlias:       hc.OptionalString(d, "account_alias"),
 				Name:               d.Get("name").(string),
 				AccountTypeID:      hc.OptionalInt(d, "account_type_id"),
 				PayerID:            d.Get("payer_id").(int),
@@ -251,7 +251,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			accountUrl = "/v3/account?account-type=azure"
 			postAccountData = hc.AccountNewAzureImport{
 				SubscriptionUUID:   d.Get("subscription_uuid").(string),
-				Alias:              hc.OptionalString(d, "account_alias"),
+				AccountAlias:       hc.OptionalString(d, "account_alias"),
 				Name:               d.Get("name").(string),
 				AccountTypeID:      hc.OptionalInt(d, "account_type_id"),
 				PayerID:            d.Get("payer_id").(int),

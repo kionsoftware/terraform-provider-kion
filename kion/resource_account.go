@@ -241,6 +241,10 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			if v, ok := d.GetOk("linked_role"); ok {
 				cacheReq.LinkedRole = v.(string)
 			}
+			if v, ok := d.GetOk("account_alias"); ok {
+				alias := v.(string)
+				cacheReq.AccountAlias = &alias
+			}
 			cacheReq.IncludeLinkedAccountSpend = hc.OptionalBool(d, "include_linked_account_spend")
 			cacheReq.SkipAccessChecking = hc.OptionalBool(d, "skip_access_checking")
 			req = cacheReq
@@ -260,6 +264,10 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			}
 			if v, ok := d.GetOk("start_datecode"); ok {
 				accountReq.StartDatecode = v.(string)
+			}
+			if v, ok := d.GetOk("account_alias"); ok {
+				alias := v.(string)
+				accountReq.AccountAlias = &alias
 			}
 			accountReq.IncludeLinkedAccountSpend = hc.OptionalBool(d, "include_linked_account_spend")
 			accountReq.SkipAccessChecking = hc.OptionalBool(d, "skip_access_checking")
@@ -303,6 +311,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	return diags
+
 }
 
 func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

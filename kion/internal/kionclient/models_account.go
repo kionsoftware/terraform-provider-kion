@@ -3,13 +3,13 @@ package kionclient
 // AccountListResponse for GET /api/v3/account
 type AccountListResponse struct {
 	Data []struct {
-		ID                        uint   `json:"id"`
+		AccountAlias              string `json:"account_alias"`
 		AccountNumber             string `json:"account_number"`
 		AccountTypeID             uint   `json:"account_type_id"`
-		Alias                     string `json:"account_alias"`
 		CARExternalID             string `json:"car_external_id"`
 		CreatedAt                 string `json:"created_at"`
 		Email                     string `json:"account_email"`
+		ID                        uint   `json:"id"`
 		IncludeLinkedAccountSpend bool   `json:"include_linked_account_spend"`
 		LinkedAccountNumber       string `json:"linked_account_number"`
 		LinkedRole                string `json:"linked_role"`
@@ -27,13 +27,13 @@ type AccountListResponse struct {
 // AccountResponse for: GET /api/v3/account/{id}
 type AccountResponse struct {
 	Data struct {
-		ID                        uint   `json:"id"`
+		AccountAlias              string `json:"account_alias"`
 		AccountNumber             string `json:"account_number"`
 		AccountTypeID             uint   `json:"account_type_id"`
-		Alias                     string `json:"account_alias"`
 		CARExternalID             string `json:"car_external_id"`
 		CreatedAt                 string `json:"created_at"`
 		Email                     string `json:"account_email"`
+		ID                        uint   `json:"id"`
 		IncludeLinkedAccountSpend bool   `json:"include_linked_account_spend"`
 		LinkedAccountNumber       string `json:"linked_account_number"`
 		LinkedRole                string `json:"linked_role"`
@@ -53,7 +53,7 @@ func (r AccountResponse) ToMap(resource string) map[string]interface{} {
 	data := map[string]interface{}{
 		"account_type_id":      r.Data.AccountTypeID,
 		accountNumberAttr:      r.Data.AccountNumber,
-		"account_alias":        r.Data.Alias,
+		"account_alias":        r.Data.AccountAlias,
 		"created_at":           r.Data.CreatedAt,
 		"name":                 r.Data.Name,
 		"payer_id":             r.Data.PayerID,
@@ -76,9 +76,9 @@ func (r AccountResponse) ToMap(resource string) map[string]interface{} {
 // AccountCacheListResponse for GET /api/v3/account-cache
 type AccountCacheListResponse struct {
 	Data []struct {
+		AccountAlias              *string `json:"account_alias"`
 		AccountNumber             string  `json:"account_number"`
 		AccountTypeID             uint    `json:"account_type_id"`
-		Alias                     *string `json:"account_alias"`
 		CARExternalID             string  `json:"car_external_id"`
 		CreatedAt                 string  `json:"created_at"`
 		Email                     string  `json:"account_email"`
@@ -98,9 +98,9 @@ type AccountCacheListResponse struct {
 // AccountResponse for: GET /api/v3/account/cache/{id}
 type AccountCacheResponse struct {
 	Data struct {
+		AccountAlias              *string `json:"account_alias"`
 		AccountNumber             string  `json:"account_number"`
 		AccountTypeID             uint    `json:"account_type_id"`
-		Alias                     *string `json:"account_alias"`
 		CARExternalID             string  `json:"car_external_id"`
 		CreatedAt                 string  `json:"created_at"`
 		Email                     string  `json:"account_email"`
@@ -119,9 +119,9 @@ type AccountCacheResponse struct {
 func (r AccountCacheResponse) ToMap(resource string) map[string]interface{} {
 	accountNumberAttr := accountNumberAttr(resource)
 	data := map[string]interface{}{
+		"account_alias":        r.Data.AccountAlias,
 		accountNumberAttr:      r.Data.AccountNumber,
 		"account_type_id":      r.Data.AccountTypeID,
-		"account_alias":        r.Data.Alias,
 		"created_at":           r.Data.CreatedAt,
 		"name":                 r.Data.Name,
 		"payer_id":             r.Data.PayerID,
@@ -154,8 +154,8 @@ func accountNumberAttr(resource string) string {
 
 // AccountCacheNewAWSCreate for: POST /api/v3/account-cache/create?account-type=aws
 type AccountCacheNewAWSCreate struct {
+	AccountAlias              *string                  `json:"account_alias,omitempty"`
 	AccountEmail              string                   `json:"account_email,omitempty"`
-	Alias                     *string                  `json:"account_alias,omitempty"`
 	CommercialAccountName     string                   `json:"commercial_account_name,omitempty"`
 	CreateGovcloud            *bool                    `json:"create_govcloud,omitempty"`
 	GovAccountName            string                   `json:"gov_account_name,omitempty"`
@@ -168,10 +168,10 @@ type AccountCacheNewAWSCreate struct {
 
 // AccountNewAWSImport for: POST /api/v3/account?account-type=aws
 type AccountNewAWSImport struct {
+	AccountAlias              *string `json:"account_alias,omitempty"`
 	AccountEmail              string  `json:"account_email,omitempty"`
 	AccountNumber             string  `json:"account_number"`
 	AccountTypeID             *int    `json:"account_type_id,omitempty"`
-	Alias                     *string `json:"account_alias,omitempty"`
 	IncludeLinkedAccountSpend *bool   `json:"include_linked_account_spend,omitempty"`
 	LinkedAccountNumber       string  `json:"linked_aws_account_number,omitempty"`
 	LinkedRole                string  `json:"linked_role,omitempty"`
@@ -185,10 +185,10 @@ type AccountNewAWSImport struct {
 
 // AccountCacheNewAWSImport for: POST /api/v3/account-cache?account-type=aws
 type AccountCacheNewAWSImport struct {
+	AccountAlias              *string `json:"account_alias,omitempty"`
 	AccountEmail              string  `json:"account_email,omitempty"`
 	AccountNumber             string  `json:"account_number"`
 	AccountTypeID             *int    `json:"account_type_id,omitempty"`
-	Alias                     *string `json:"account_alias,omitempty"`
 	IncludeLinkedAccountSpend *bool   `json:"include_linked_account_spend,omitempty"`
 	LinkedAccountNumber       string  `json:"linked_aws_account_number,omitempty"`
 	LinkedRole                string  `json:"linked_role,omitempty"`
@@ -205,7 +205,7 @@ type PayerOrganizationalUnit struct {
 
 // AccountCacheNewGCPCreate for: POST /api/v3/account-cache/create?account-type=google-cloud
 type AccountCacheNewGCPCreate struct {
-	Alias                 *string `json:"account_alias,omitempty"`
+	AccountAlias          *string `json:"account_alias,omitempty"`
 	DisplayName           string  `json:"display_name"`
 	GoogleCloudParentName string  `json:"google_cloud_parent_name,omitempty"`
 	GoogleCloudProjectID  string  `json:"google_cloud_project_id,omitempty"`
@@ -214,8 +214,8 @@ type AccountCacheNewGCPCreate struct {
 
 // AccountNewGCPImport for: POST /api/v3/account?account-type=google-cloud
 type AccountNewGCPImport struct {
+	AccountAlias         *string `json:"account_alias,omitempty"`
 	AccountTypeID        *int    `json:"account_type_id,omitempty"`
-	Alias                *string `json:"account_alias,omitempty"`
 	GoogleCloudProjectID string  `json:"google_cloud_project_id"`
 	Name                 string  `json:"account_name"`
 	PayerID              int     `json:"payer_id"`
@@ -226,8 +226,8 @@ type AccountNewGCPImport struct {
 
 // AccountCacheNewGCPImport for: POST /api/v3/account-cache?account-type=google-cloud
 type AccountCacheNewGCPImport struct {
+	AccountAlias         *string `json:"account_alias,omitempty"`
 	AccountTypeID        *int    `json:"account_type_id,omitempty"`
-	Alias                *string `json:"account_alias,omitempty"`
 	GoogleCloudProjectID string  `json:"google_cloud_project_id"`
 	Name                 string  `json:"account_name"`
 	PayerID              int     `json:"payer_id"`
@@ -236,7 +236,7 @@ type AccountCacheNewGCPImport struct {
 
 // AccountCacheNewAzureCreate for: POST /api/v3/account-cache/create?account-type=azure
 type AccountCacheNewAzureCreate struct {
-	Alias                      *string                     `json:"account_alias,omitempty"`
+	AccountAlias               *string                     `json:"account_alias,omitempty"`
 	Name                       string                      `json:"account_name"`
 	ParentManagementGroupID    string                      `json:"parent_management_group_id,omitempty"`
 	PayerID                    int                         `json:"payer_id"`
@@ -248,8 +248,8 @@ type AccountCacheNewAzureCreate struct {
 
 // AccountNewAzureImport for: POST /api/v3/account?account-type=azure
 type AccountNewAzureImport struct {
+	AccountAlias       *string `json:"account_alias,omitempty"`
 	AccountTypeID      *int    `json:"account_type_id,omitempty"`
-	Alias              *string `json:"account_alias,omitempty"`
 	Name               string  `json:"account_name"`
 	PayerID            int     `json:"payer_id"`
 	ProjectID          int     `json:"project_id"`
@@ -260,8 +260,8 @@ type AccountNewAzureImport struct {
 
 // AccountCacheNewAzureImport for: POST /api/v3/account-cache?account-type=azure
 type AccountCacheNewAzureImport struct {
+	AccountAlias       *string `json:"account_alias,omitempty"`
 	AccountTypeID      *int    `json:"account_type_id,omitempty"`
-	Alias              *string `json:"account_alias,omitempty"`
 	Email              string  `json:"account_email,omitempty"`
 	Name               string  `json:"account_name"`
 	PayerID            int     `json:"payer_id"`
@@ -294,8 +294,8 @@ type AccountRevertResponse struct {
 
 // AccountUpdatable for: PATCH /api/v3/account/{id}
 type AccountUpdatable struct {
+	AccountAlias              *string `json:"account_alias,omitempty"`
 	AccountEmail              string  `json:"account_email,omitempty"`
-	Alias                     *string `json:"account_alias,omitempty"`
 	IncludeLinkedAccountSpend *bool   `json:"include_linked_account_spend,omitempty"`
 	LinkedRole                string  `json:"linked_role,omitempty"`
 	Name                      string  `json:"account_name,omitempty"`
@@ -307,8 +307,8 @@ type AccountUpdatable struct {
 
 // AccountCacheUpdatable for: PATCH /api/v3/account-account/{id}
 type AccountCacheUpdatable struct {
+	AccountAlias              *string `json:"account_alias,omitempty"`
 	AccountEmail              string  `json:"account_email,omitempty"`
-	Alias                     *string `json:"account_alias,omitempty"`
 	IncludeLinkedAccountSpend *bool   `json:"include_linked_account_spend,omitempty"`
 	LinkedRole                string  `json:"linked_role,omitempty"`
 	Name                      string  `json:"account_name,omitempty"`
