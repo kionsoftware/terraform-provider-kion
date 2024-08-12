@@ -292,7 +292,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			return diags
 		}
 
-		diags = append(diags, SafeSet(d, "location", accountLocation, "Failed to set location")...)
+		diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location")...)
 		if diags.HasError() {
 			return diags
 		}
@@ -325,7 +325,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 				return diags
 			}
 
-			diags = append(diags, SafeSet(d, "location", accountLocation, "Failed to set location")...)
+			diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location")...)
 			if diags.HasError() {
 				return diags
 			}
@@ -334,7 +334,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 		case CacheLocation:
 			// Track the cached account
-			diags = append(diags, SafeSet(d, "location", accountLocation, "Failed to set location")...)
+			diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location")...)
 			if diags.HasError() {
 				return diags
 			}

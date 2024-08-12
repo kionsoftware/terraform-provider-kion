@@ -217,16 +217,16 @@ func resourceProjectEnforcementRead(ctx context.Context, d *schema.ResourceData,
 	var found bool
 	for _, item := range resp.Data {
 		if int(item.ID) == enforcementIDInt {
-			diags = append(diags, SafeSet(d, "description", item.Description, "Unable to set description")...)
-			diags = append(diags, SafeSet(d, "timeframe", item.Timeframe, "Unable to set timeframe")...)
-			diags = append(diags, SafeSet(d, "spend_option", item.SpendOption, "Unable to set spend option")...)
-			diags = append(diags, SafeSet(d, "amount_type", item.AmountType, "Unable to set amount type")...)
-			diags = append(diags, SafeSet(d, "threshold_type", item.ThresholdType, "Unable to set threshold type")...)
-			diags = append(diags, SafeSet(d, "threshold", item.Threshold, "Unable to set threshold")...)
-			diags = append(diags, SafeSet(d, "enabled", item.Enabled, "Unable to set enabled status")...)
-			diags = append(diags, SafeSet(d, "overburn", item.Overburn, "Unable to set overburn")...)
-			diags = append(diags, SafeSet(d, "user_group_ids", item.UserGroupIds, "Unable to set user group IDs")...)
-			diags = append(diags, SafeSet(d, "user_ids", item.UserIds, "Unable to set user IDs")...)
+			diags = append(diags, hc.SafeSet(d, "description", item.Description, "Unable to set description")...)
+			diags = append(diags, hc.SafeSet(d, "timeframe", item.Timeframe, "Unable to set timeframe")...)
+			diags = append(diags, hc.SafeSet(d, "spend_option", item.SpendOption, "Unable to set spend option")...)
+			diags = append(diags, hc.SafeSet(d, "amount_type", item.AmountType, "Unable to set amount type")...)
+			diags = append(diags, hc.SafeSet(d, "threshold_type", item.ThresholdType, "Unable to set threshold type")...)
+			diags = append(diags, hc.SafeSet(d, "threshold", item.Threshold, "Unable to set threshold")...)
+			diags = append(diags, hc.SafeSet(d, "enabled", item.Enabled, "Unable to set enabled status")...)
+			diags = append(diags, hc.SafeSet(d, "overburn", item.Overburn, "Unable to set overburn")...)
+			diags = append(diags, hc.SafeSet(d, "user_group_ids", item.UserGroupIds, "Unable to set user group IDs")...)
+			diags = append(diags, hc.SafeSet(d, "user_ids", item.UserIds, "Unable to set user IDs")...)
 			found = true
 			break
 		}
@@ -412,24 +412,6 @@ func resourceProjectEnforcementDelete(ctx context.Context, d *schema.ResourceDat
 	// Clear the ID from the Terraform state as the resource no longer exists
 	d.SetId("")
 
-	return diags
-}
-
-// SafeSet handles setting Terraform schema values, centralizing error reporting and ensuring non-nil values.
-func SafeSet(d *schema.ResourceData, key string, value interface{}, summary string) diag.Diagnostics {
-	var diags diag.Diagnostics
-	// Check if the value is non-nil before setting it in the schema
-	if value != nil {
-		// Attempt to set the value in the schema
-		if err := d.Set(key, value); err != nil {
-			// Append a diagnostic message if there's an error while setting the value
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  summary,
-				Detail:   fmt.Sprintf("Error setting %s: %s", key, err),
-			})
-		}
-	}
 	return diags
 }
 

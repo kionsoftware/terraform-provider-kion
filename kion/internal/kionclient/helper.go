@@ -541,18 +541,34 @@ func FindDifferences[T comparable](slice1, slice2 []T) []T {
 	return diff
 }
 
+// ResourceDiffSetter is a wrapper around *schema.ResourceDiff to implement the SafeSetter interface.
+type ResourceDiffSetter struct {
+	Diff *schema.ResourceDiff
+}
+
+// Set wraps the SetNew method of *schema.ResourceDiff to implement the SafeSetter interface.
+func (r *ResourceDiffSetter) Set(key string, value interface{}) error {
+	return r.Diff.SetNew(key, value)
+}
+
+// SafeSetter is an interface that abstracts the behavior of setting a key-value pair
+// in Terraform's schema. It is implemented by both *schema.ResourceData and a custom wrapper
+// around *schema.ResourceDiff, allowing for a unified handling of schema mutations across
+// different Terraform lifecycle phases.
+type SafeSetter interface {
+	Set(key string, value interface{}) error
+}
+
 // SafeSet handles setting Terraform schema values, centralizing error reporting and ensuring non-nil values.
-func SafeSet(d *schema.ResourceData, key string, value interface{}, summary string) diag.Diagnostics {
+func SafeSet(d SafeSetter, key string, value interface{}, summary string) diag.Diagnostics {
 	var diags diag.Diagnostics
-	// Check if the value is non-nil before setting it in the schema
+
 	if value != nil {
-		// Attempt to set the value in the schema
 		if err := d.Set(key, value); err != nil {
-			// Append a diagnostic message if there's an error while setting the value
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  summary,
-				Detail:   fmt.Sprintf("Error setting %s: %s", key, err),
+				Detail:   fmt.Sprintf("Error setting %s: %v", key, err),
 			})
 		}
 	}

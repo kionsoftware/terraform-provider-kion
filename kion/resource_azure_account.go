@@ -281,7 +281,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			return diags
 		}
 
-		diags = append(diags, SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
+		diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
 		d.SetId(strconv.Itoa(resp.RecordID))
 
 	} else {
@@ -410,11 +410,11 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 				return diags
 			}
 
-			diags = append(diags, SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
+			diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
 			d.SetId(strconv.Itoa(newId))
 
 		case CacheLocation:
-			diags = append(diags, SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
+			diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
 			d.SetId(strconv.Itoa(accountCacheId))
 		}
 	}

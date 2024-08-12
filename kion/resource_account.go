@@ -76,7 +76,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 
 	if locationChanged {
 		d.SetId(ID)
-		diags = append(diags, SafeSet(d, "location", accountLocation, "Unable to set location for account")...)
+		diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Unable to set location for account")...)
 	}
 
 	data := resp.ToMap(resource)
@@ -103,7 +103,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 			})
 			return diags
 		}
-		diags = append(diags, SafeSet(d, "labels", labelData, "Unable to set labels for account")...)
+		diags = append(diags, hc.SafeSet(d, "labels", labelData, "Unable to set labels for account")...)
 	}
 
 	return diags
@@ -149,7 +149,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 		accountLocation = ProjectLocation
 		ID = strconv.Itoa(newId)
-		diags = append(diags, SafeSet(d, "location", accountLocation, "Error setting location")...)
+		diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Error setting location")...)
 		d.SetId(ID)
 
 	} else if oldProjectId != 0 && newProjectId == 0 {
@@ -177,7 +177,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 		accountLocation = CacheLocation
 		ID = strconv.Itoa(newId)
-		diags = append(diags, SafeSet(d, "location", accountLocation, "Error setting location")...)
+		diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Error setting location")...)
 		d.SetId(ID)
 
 	} else {
@@ -232,8 +232,12 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		case CacheLocation:
 			accountUrl = fmt.Sprintf("/v3/account-cache/%s", ID)
 			cacheReq := hc.AccountCacheUpdatable{}
-			if v, ok := d.GetOk("name"); ok {
-				cacheReq.Name = v.(string)
+			if v, ok := d.GetOk("account_alias"); ok {
+				AccountAlias := v.(string)
+				cacheReq.AccountAlias = &AccountAlias
+			} else if d.HasChange("account_alias") {
+				emptyAlias := ""
+				cacheReq.AccountAlias = &emptyAlias
 			}
 			if v, ok := d.GetOk("email"); ok {
 				cacheReq.AccountEmail = v.(string)
@@ -241,9 +245,8 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			if v, ok := d.GetOk("linked_role"); ok {
 				cacheReq.LinkedRole = v.(string)
 			}
-			if v, ok := d.GetOk("account_alias"); ok {
-				alias := v.(string)
-				cacheReq.AccountAlias = &alias
+			if v, ok := d.GetOk("name"); ok {
+				cacheReq.Name = v.(string)
 			}
 			cacheReq.IncludeLinkedAccountSpend = hc.OptionalBool(d, "include_linked_account_spend")
 			cacheReq.SkipAccessChecking = hc.OptionalBool(d, "skip_access_checking")
@@ -253,8 +256,12 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		default:
 			accountUrl = fmt.Sprintf("/v3/account/%s", ID)
 			accountReq := hc.AccountUpdatable{}
-			if v, ok := d.GetOk("name"); ok {
-				accountReq.Name = v.(string)
+			if v, ok := d.GetOk("account_alias"); ok {
+				AccountAlias := v.(string)
+				accountReq.AccountAlias = &AccountAlias
+			} else if d.HasChange("account_alias") {
+				emptyAlias := ""
+				accountReq.AccountAlias = &emptyAlias
 			}
 			if v, ok := d.GetOk("email"); ok {
 				accountReq.AccountEmail = v.(string)
@@ -262,13 +269,13 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			if v, ok := d.GetOk("linked_role"); ok {
 				accountReq.LinkedRole = v.(string)
 			}
+			if v, ok := d.GetOk("name"); ok {
+				accountReq.Name = v.(string)
+			}
 			if v, ok := d.GetOk("start_datecode"); ok {
 				accountReq.StartDatecode = v.(string)
 			}
-			if v, ok := d.GetOk("account_alias"); ok {
-				alias := v.(string)
-				accountReq.AccountAlias = &alias
-			}
+
 			accountReq.IncludeLinkedAccountSpend = hc.OptionalBool(d, "include_linked_account_spend")
 			accountReq.SkipAccessChecking = hc.OptionalBool(d, "skip_access_checking")
 			accountReq.UseOrgAccountInfo = hc.OptionalBool(d, "use_org_account_info")
@@ -306,12 +313,11 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	if hasChanged {
-		diags = append(diags, SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Unable to set last_updated")...)
+		diags = append(diags, hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Unable to set last_updated")...)
 		tflog.Info(ctx, fmt.Sprintf("Updated account ID: %s", ID))
 	}
 
 	return diags
-
 }
 
 func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -396,25 +402,15 @@ func getKionAccountLocation(d *schema.ResourceData) string {
 }
 
 // Show the account location computed attribute in the diff
+// customDiffComputedAccountLocation shows the account location computed attribute in the diff
 func customDiffComputedAccountLocation(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	var diags diag.Diagnostics
+	setter := &hc.ResourceDiffSetter{Diff: d}
 
 	if _, exists := d.GetOk("project_id"); exists {
-		if err := d.SetNew("location", ProjectLocation); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to set new computed location for project",
-				Detail:   fmt.Sprintf("Error setting new computed location to ProjectLocation: %v", err),
-			})
-		}
+		diags = append(diags, hc.SafeSet(setter, "location", ProjectLocation, "Unable to set new computed location for project")...)
 	} else {
-		if err := d.SetNew("location", CacheLocation); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to set new computed location for cache",
-				Detail:   fmt.Sprintf("Error setting new computed location to CacheLocation: %v", err),
-			})
-		}
+		diags = append(diags, hc.SafeSet(setter, "location", CacheLocation, "Unable to set new computed location for cache")...)
 	}
 
 	if len(diags) > 0 {
