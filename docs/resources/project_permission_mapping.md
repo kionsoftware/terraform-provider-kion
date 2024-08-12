@@ -19,8 +19,8 @@ description: |-
 
 - `app_role_id` (Number) Application role ID for the permission mapping.
 - `project_id` (Number) ID of the project to manage permission mappings for.
-- `user_groups_ids` (Set of Number) Set of user group IDs for the permission mapping.
-- `user_ids` (Set of Number) Set of user IDs for the permission mapping.
+- `user_groups_ids` (Set of Number) Set of user group IDs for the permission mapping (must be provided in numerical order).
+- `user_ids` (Set of Number) Set of user IDs for the permission mapping (must be provided in numerical order).
 
 ### Read-Only
 
