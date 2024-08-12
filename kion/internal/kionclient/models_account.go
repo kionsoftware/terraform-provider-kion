@@ -53,6 +53,7 @@ func (r AccountResponse) ToMap(resource string) map[string]interface{} {
 	data := map[string]interface{}{
 		"account_type_id":      r.Data.AccountTypeID,
 		accountNumberAttr:      r.Data.AccountNumber,
+		"account_alias":        r.Data.Alias,
 		"created_at":           r.Data.CreatedAt,
 		"name":                 r.Data.Name,
 		"payer_id":             r.Data.PayerID,
@@ -119,12 +120,13 @@ func (r AccountCacheResponse) ToMap(resource string) map[string]interface{} {
 	accountNumberAttr := accountNumberAttr(resource)
 	data := map[string]interface{}{
 		accountNumberAttr:      r.Data.AccountNumber,
+		"account_type_id":      r.Data.AccountTypeID,
+		"account_alias":        r.Data.Alias,
+		"created_at":           r.Data.CreatedAt,
 		"name":                 r.Data.Name,
 		"payer_id":             r.Data.PayerID,
-		"account_type_id":      r.Data.AccountTypeID,
-		"skip_access_checking": r.Data.SkipAccessChecking,
-		"created_at":           r.Data.CreatedAt,
 		"project_id":           0,
+		"skip_access_checking": r.Data.SkipAccessChecking,
 	}
 	if resource == "kion_aws_account" {
 		data["email"] = r.Data.Email

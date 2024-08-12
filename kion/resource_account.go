@@ -223,7 +223,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	// Determine if the attributes that are updatable are changed.
-	if d.HasChanges("alias", "email", "include_linked_account_spend", "linked_role", "name", "skip_access_checking", "start_datecode", "use_org_account_info") {
+	if d.HasChanges("account_alias", "email", "include_linked_account_spend", "linked_role", "name", "skip_access_checking", "start_datecode", "use_org_account_info") {
 		hasChanged = true
 
 		var req interface{}

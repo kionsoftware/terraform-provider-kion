@@ -54,7 +54,7 @@ func dataSourceCachedAccount() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
-						"alias": {
+						"account_alias": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -143,7 +143,7 @@ func dataSourceCachedAccountRead(ctx context.Context, d *schema.ResourceData, m 
 		data := make(map[string]interface{})
 		data["account_number"] = item.AccountNumber
 		data["account_type_id"] = item.AccountTypeID
-		data["alias"] = item.Alias
+		data["account_alias"] = item.Alias
 		data["car_external_id"] = item.CARExternalID
 		data["created_at"] = item.CreatedAt
 		data["email"] = item.Email
