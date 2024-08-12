@@ -239,6 +239,20 @@ func OptionalInt(d *schema.ResourceData, fieldname string) *int {
 	return &ret
 }
 
+func OptionalString(d *schema.ResourceData, fieldname string) *string {
+	v, ok := d.GetOkExists(fieldname)
+	if !ok {
+		return nil
+	}
+
+	ret, ok := v.(string)
+	if !ok {
+		return nil
+	}
+
+	return &ret
+}
+
 // AssociationChanged returns arrays of which values to change.
 func AssociationChanged(d *schema.ResourceData, fieldname string) ([]int, []int, bool, error) {
 	isChanged := false
@@ -380,40 +394,52 @@ func PrintHCLConfig(config string) {
 	fmt.Println(config)
 }
 
-// ConvertInterfaceSliceToIntSlice -
+// ConvertInterfaceSliceToIntSlice converts a slice of interfaces to a slice of integers.
 func ConvertInterfaceSliceToIntSlice(input []interface{}) []int {
+	// Pre-allocate the output slice for better performance.
 	output := make([]int, len(input))
 	for i, v := range input {
+		// Type assertion to convert interface{} to int.
 		output[i] = v.(int)
 	}
 	return output
 }
 
-// GetPreviousUserAndGroupIds -
+// GetPreviousUserAndGroupIds retrieves the previous state of user and user group IDs
+// from the Terraform resource data.
 func GetPreviousUserAndGroupIds(d *schema.ResourceData) ([]int, []int) {
 	var prevUserIds, prevUserGroupIds []int
 
+	// Check if the "user_ids" field has changed
 	if d.HasChange("user_ids") {
+		// Get the previous value of the "user_ids" field
 		oldValue, _ := d.GetChange("user_ids")
+		// Convert the previous value to a slice of integers
 		prevUserIds = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
 	}
 
+	// Check if the "user_group_ids" field has changed
 	if d.HasChange("user_group_ids") {
+		// Get the previous value of the "user_group_ids" field
 		oldValue, _ := d.GetChange("user_group_ids")
+		// Convert the previous value to a slice of integers
 		prevUserGroupIds = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
 	}
 
 	return prevUserIds, prevUserGroupIds
 }
 
-// FindDifferences -
+// FindDifferences finds the differences between two slices, returning the
+// elements that are present in slice1 but not in slice2.
 func FindDifferences[T comparable](slice1, slice2 []T) []T {
+	// Create a set from the second slice for efficient lookups
 	set := make(map[T]bool)
 	for _, v := range slice2 {
 		set[v] = true
 	}
 
 	var diff []T
+	// Iterate over the first slice and find elements not present in the second slice
 	for _, v := range slice1 {
 		if !set[v] {
 			diff = append(diff, v)
@@ -422,22 +448,42 @@ func FindDifferences[T comparable](slice1, slice2 []T) []T {
 	return diff
 }
 
-// SafeSet -
-func SafeSet(d *schema.ResourceData, key string, value interface{}) diag.Diagnostics {
+// ResourceDiffSetter is a wrapper around *schema.ResourceDiff to implement the SafeSetter interface.
+type ResourceDiffSetter struct {
+	Diff *schema.ResourceDiff
+}
+
+// Set wraps the SetNew method of *schema.ResourceDiff to implement the SafeSetter interface.
+func (r *ResourceDiffSetter) Set(key string, value interface{}) error {
+	return r.Diff.SetNew(key, value)
+}
+
+// SafeSetter is an interface that abstracts the behavior of setting a key-value pair
+// in Terraform's schema. It is implemented by both *schema.ResourceData and a custom wrapper
+// around *schema.ResourceDiff, allowing for a unified handling of schema mutations across
+// different Terraform lifecycle phases.
+type SafeSetter interface {
+	Set(key string, value interface{}) error
+}
+
+// SafeSet handles setting Terraform schema values, centralizing error reporting and ensuring non-nil values.
+func SafeSet(d SafeSetter, key string, value interface{}, summary string) diag.Diagnostics {
 	var diags diag.Diagnostics
+
 	if value != nil {
 		if err := d.Set(key, value); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error setting field",
-				Detail:   fmt.Sprintf("Error setting %s: %s", key, err),
+				Summary:  summary,
+				Detail:   fmt.Sprintf("Error setting %s: %v", key, err),
 			})
 		}
 	}
 	return diags
 }
 
-// ParseResourceID -
+// ParseResourceID parses a resource ID string into its components based on the expected number of parts.
+// It returns the extracted ID components as integers and any error encountered during parsing.
 func ParseResourceID(resourceID string, expectedParts int, idNames ...string) ([]int, error) {
 	parts := strings.Split(resourceID, "-")
 	if len(parts) != expectedParts {

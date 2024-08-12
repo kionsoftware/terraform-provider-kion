@@ -217,6 +217,7 @@ func resourceProjectEnforcementRead(ctx context.Context, d *schema.ResourceData,
 	var found bool
 	for _, item := range resp.Data {
 		if int(item.ID) == enforcementIDInt {
+<<<<<<< HEAD
 			diags = append(diags, hc.SafeSet(d, "description", item.Description)...)
 			diags = append(diags, hc.SafeSet(d, "timeframe", item.Timeframe)...)
 			diags = append(diags, hc.SafeSet(d, "spend_option", item.SpendOption)...)
@@ -227,6 +228,18 @@ func resourceProjectEnforcementRead(ctx context.Context, d *schema.ResourceData,
 			diags = append(diags, hc.SafeSet(d, "overburn", item.Overburn)...)
 			diags = append(diags, hc.SafeSet(d, "user_group_ids", item.UserGroupIds)...)
 			diags = append(diags, hc.SafeSet(d, "user_ids", item.UserIds)...)
+=======
+			diags = append(diags, hc.SafeSet(d, "description", item.Description, "Unable to set description")...)
+			diags = append(diags, hc.SafeSet(d, "timeframe", item.Timeframe, "Unable to set timeframe")...)
+			diags = append(diags, hc.SafeSet(d, "spend_option", item.SpendOption, "Unable to set spend option")...)
+			diags = append(diags, hc.SafeSet(d, "amount_type", item.AmountType, "Unable to set amount type")...)
+			diags = append(diags, hc.SafeSet(d, "threshold_type", item.ThresholdType, "Unable to set threshold type")...)
+			diags = append(diags, hc.SafeSet(d, "threshold", item.Threshold, "Unable to set threshold")...)
+			diags = append(diags, hc.SafeSet(d, "enabled", item.Enabled, "Unable to set enabled status")...)
+			diags = append(diags, hc.SafeSet(d, "overburn", item.Overburn, "Unable to set overburn")...)
+			diags = append(diags, hc.SafeSet(d, "user_group_ids", item.UserGroupIds, "Unable to set user group IDs")...)
+			diags = append(diags, hc.SafeSet(d, "user_ids", item.UserIds, "Unable to set user IDs")...)
+>>>>>>> feature-account-alias
 			found = true
 			break
 		}
@@ -414,3 +427,61 @@ func resourceProjectEnforcementDelete(ctx context.Context, d *schema.ResourceDat
 
 	return diags
 }
+<<<<<<< HEAD
+=======
+
+// getPreviousEnforcementUserAndGroupIds retrieves the previous state of user and user group IDs
+// from the Terraform resource data.
+func getPreviousEnforcementUserAndGroupIds(d *schema.ResourceData) ([]int, []int) {
+	var prevUserIds, prevUserGroupIds []int
+
+	// Check if the "user_ids" field has changed
+	if d.HasChange("user_ids") {
+		// Get the previous value of the "user_ids" field
+		oldValue, _ := d.GetChange("user_ids")
+		// Convert the previous value to a slice of integers
+		prevUserIds = convertInterfaceSliceToIntSliceEnforcement(oldValue.([]interface{}))
+	}
+
+	// Check if the "user_group_ids" field has changed
+	if d.HasChange("user_group_ids") {
+		// Get the previous value of the "user_group_ids" field
+		oldValue, _ := d.GetChange("user_group_ids")
+		// Convert the previous value to a slice of integers
+		prevUserGroupIds = convertInterfaceSliceToIntSliceEnforcement(oldValue.([]interface{}))
+	}
+
+	return prevUserIds, prevUserGroupIds
+}
+
+// convertInterfaceSliceToIntSliceEnforcement converts a slice of interfaces to a slice of integers
+// for enforcement purposes.
+func convertInterfaceSliceToIntSliceEnforcement(interfaceSlice []interface{}) []int {
+	// Create a slice of integers with the same length as the input slice
+	intSlice := make([]int, len(interfaceSlice))
+	// Iterate over the input slice, casting each element to an integer
+	for i, v := range interfaceSlice {
+		intSlice[i] = v.(int)
+	}
+	return intSlice
+}
+
+// findEnforcementIdDifferences finds the differences between two slices of integers,
+// returning the elements that are present in slice1 but not in slice2.
+func findEnforcementIdDifferences(slice1, slice2 []int) []int {
+	// Create a set from the second slice for efficient lookups
+	set := make(map[int]bool)
+	for _, v := range slice2 {
+		set[v] = true
+	}
+
+	var diff []int
+	// Iterate over the first slice and find elements not present in the second slice
+	for _, v := range slice1 {
+		if !set[v] {
+			diff = append(diff, v)
+		}
+	}
+	return diff
+}
+>>>>>>> feature-account-alias
