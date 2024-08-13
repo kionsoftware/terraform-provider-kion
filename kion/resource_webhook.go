@@ -1,7 +1,9 @@
 package kion
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -95,8 +97,6 @@ func populateWebhook(d *schema.ResourceData) (hc.Webhook, error) {
 		CalloutURL:           d.Get("callout_url").(string),
 		Description:          d.Get("description").(string),
 		Name:                 d.Get("name").(string),
-		RequestBody:          d.Get("request_body").(string),
-		RequestHeaders:       d.Get("request_headers").(string),
 		ShouldSendSecureInfo: d.Get("should_send_secure_info").(bool),
 		SkipSSL:              d.Get("skip_ssl").(bool),
 		TimeoutInSeconds:     d.Get("timeout_in_seconds").(int),
@@ -104,6 +104,22 @@ func populateWebhook(d *schema.ResourceData) (hc.Webhook, error) {
 	}
 
 	var err error
+
+	// Normalize request_body
+	if requestBody, ok := d.Get("request_body").(string); ok && requestBody != "" {
+		webhook.RequestBody, err = normalizeJSONString(requestBody)
+		if err != nil {
+			return hc.Webhook{}, fmt.Errorf("error normalizing request_body: %w", err)
+		}
+	}
+
+	// Normalize request_headers
+	if requestHeaders, ok := d.Get("request_headers").(string); ok && requestHeaders != "" {
+		webhook.RequestHeaders, err = normalizeJSONString(requestHeaders)
+		if err != nil {
+			return hc.Webhook{}, fmt.Errorf("error normalizing request_headers: %w", err)
+		}
+	}
 
 	// Convert owner user IDs and handle potential errors
 	webhook.OwnerUserIDs, err = hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_ids").(*schema.Set).List())
@@ -183,12 +199,23 @@ func resourceWebhookRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	webhook := resp.Data.Webhook
 
+	// Normalize JSON fields before setting them in state
+	normalizedRequestBody, err := normalizeJSONString(webhook.RequestBody)
+	if err != nil {
+		return diag.Errorf("failed to normalize request_body: %v", err)
+	}
+
+	normalizedRequestHeaders, err := normalizeJSONString(webhook.RequestHeaders)
+	if err != nil {
+		return diag.Errorf("failed to normalize request_headers: %v", err)
+	}
+
 	// Set fields based on the API response
 	diags = append(diags, hc.SafeSet(d, "callout_url", webhook.CalloutURL, "Failed to set callout_url")...)
 	diags = append(diags, hc.SafeSet(d, "description", webhook.Description, "Failed to set description")...)
 	diags = append(diags, hc.SafeSet(d, "name", webhook.Name, "Failed to set name")...)
-	diags = append(diags, hc.SafeSet(d, "request_body", webhook.RequestBody, "Failed to set request_body")...)
-	diags = append(diags, hc.SafeSet(d, "request_headers", webhook.RequestHeaders, "Failed to set request_headers")...)
+	diags = append(diags, hc.SafeSet(d, "request_body", normalizedRequestBody, "Failed to set request_body")...)
+	diags = append(diags, hc.SafeSet(d, "request_headers", normalizedRequestHeaders, "Failed to set request_headers")...)
 	diags = append(diags, hc.SafeSet(d, "request_method", webhook.RequestMethod, "Failed to set request_method")...)
 	diags = append(diags, hc.SafeSet(d, "should_send_secure_info", webhook.ShouldSendSecureInfo, "Failed to set should_send_secure_info")...)
 	diags = append(diags, hc.SafeSet(d, "skip_ssl", webhook.SkipSSL, "Failed to set skip_ssl")...)
@@ -210,7 +237,6 @@ func resourceWebhookRead(ctx context.Context, d *schema.ResourceData, m interfac
 	diags = append(diags, hc.SafeSet(d, "owner_user_ids", ownerUserIDs, "Failed to set owner_user_ids")...)
 
 	return diags
-
 }
 
 // resourceWebhookUpdate handles updating the webhook resource.
@@ -230,6 +256,19 @@ func resourceWebhookUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		d.HasChange("request_body") || d.HasChange("request_headers") || d.HasChange("request_method") ||
 		d.HasChange("should_send_secure_info") || d.HasChange("skip_ssl") || d.HasChange("timeout_in_seconds") ||
 		d.HasChange("use_request_headers") {
+
+		// Normalize JSON fields before sending the update
+		webhook.RequestBody, err = normalizeJSONString(webhook.RequestBody)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		webhook.RequestHeaders, err = normalizeJSONString(webhook.RequestHeaders)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Send PATCH request to update the webhook
 		err := client.PATCH(fmt.Sprintf("/v3/webhook/%s", webhookID), webhook)
 		if diags := hc.HandleError(err); diags != nil {
 			return diags
@@ -311,4 +350,14 @@ func resourceWebhookImport(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	return []*schema.ResourceData{d}, nil
+}
+
+// normalizeJSONString minifies JSON string by removing whitespace and preventing terraform changes due to whitespace changes.
+func normalizeJSONString(input string) (string, error) {
+	var compacted bytes.Buffer
+	err := json.Compact(&compacted, []byte(input))
+	if err != nil {
+		return "", err
+	}
+	return compacted.String(), nil
 }
