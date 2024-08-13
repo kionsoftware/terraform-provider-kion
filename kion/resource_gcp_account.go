@@ -172,11 +172,11 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			accountUrl = "/v3/account-cache?account-type=google-cloud"
 			postAccountData = hc.AccountCacheNewGCPImport{
 				Name:                 d.Get("name").(string),
-				AccountAlias:         hc.OptionalString(d, "account_alias"),
+				AccountAlias:         hc.OptionalValue[string](d, "account_alias"),
 				PayerID:              d.Get("payer_id").(int),
-				AccountTypeID:        hc.OptionalInt(d, "account_type_id"),
+				AccountTypeID:        hc.OptionalValue[int](d, "account_type_id"),
 				GoogleCloudProjectID: d.Get("google_cloud_project_id").(string),
-				SkipAccessChecking:   hc.OptionalBool(d, "skip_access_checking"),
+				SkipAccessChecking:   hc.OptionalValue[bool](d, "skip_access_checking"),
 			}
 
 		case ProjectLocation:
@@ -185,11 +185,11 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			accountUrl = "/v3/account?account-type=google-cloud"
 			postAccountData = hc.AccountNewGCPImport{
 				Name:                 d.Get("name").(string),
-				AccountAlias:         hc.OptionalString(d, "account_alias"),
+				AccountAlias:         hc.OptionalValue[string](d, "account_alias"),
 				PayerID:              d.Get("payer_id").(int),
-				AccountTypeID:        hc.OptionalInt(d, "account_type_id"),
+				AccountTypeID:        hc.OptionalValue[int](d, "account_type_id"),
 				GoogleCloudProjectID: d.Get("google_cloud_project_id").(string),
-				SkipAccessChecking:   hc.OptionalBool(d, "skip_access_checking"),
+				SkipAccessChecking:   hc.OptionalValue[bool](d, "skip_access_checking"),
 				ProjectID:            d.Get("project_id").(int),
 				StartDatecode:        d.Get("start_datecode").(string),
 			}
@@ -221,7 +221,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		// Create a new GCP project
 
 		postCacheData := hc.AccountCacheNewGCPCreate{
-			AccountAlias:          hc.OptionalString(d, "account_alias"),
+			AccountAlias:          hc.OptionalValue[string](d, "account_alias"),
 			DisplayName:           d.Get("name").(string),
 			GoogleCloudProjectID:  d.Get("google_cloud_project_id").(string),
 			GoogleCloudParentName: d.Get("google_cloud_parent_name").(string),

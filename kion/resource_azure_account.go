@@ -238,11 +238,11 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			accountUrl = "/v3/account-cache?account-type=azure"
 			postAccountData = hc.AccountCacheNewAzureImport{
 				SubscriptionUUID:   d.Get("subscription_uuid").(string),
-				AccountAlias:       hc.OptionalString(d, "account_alias"),
+				AccountAlias:       hc.OptionalValue[string](d, "account_alias"),
 				Name:               d.Get("name").(string),
-				AccountTypeID:      hc.OptionalInt(d, "account_type_id"),
+				AccountTypeID:      hc.OptionalValue[int](d, "account_type_id"),
 				PayerID:            d.Get("payer_id").(int),
-				SkipAccessChecking: hc.OptionalBool(d, "skip_access_checking"),
+				SkipAccessChecking: hc.OptionalValue[bool](d, "skip_access_checking"),
 			}
 
 		case ProjectLocation:
@@ -251,12 +251,12 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			accountUrl = "/v3/account?account-type=azure"
 			postAccountData = hc.AccountNewAzureImport{
 				SubscriptionUUID:   d.Get("subscription_uuid").(string),
-				AccountAlias:       hc.OptionalString(d, "account_alias"),
+				AccountAlias:       hc.OptionalValue[string](d, "account_alias"),
 				Name:               d.Get("name").(string),
-				AccountTypeID:      hc.OptionalInt(d, "account_type_id"),
+				AccountTypeID:      hc.OptionalValue[int](d, "account_type_id"),
 				PayerID:            d.Get("payer_id").(int),
 				ProjectID:          d.Get("project_id").(int),
-				SkipAccessChecking: hc.OptionalBool(d, "skip_access_checking"),
+				SkipAccessChecking: hc.OptionalValue[bool](d, "skip_access_checking"),
 				StartDatecode:      d.Get("start_datecode").(string),
 			}
 		}

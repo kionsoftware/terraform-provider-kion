@@ -239,16 +239,16 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		case CacheLocation:
 			accountUrl = "/v3/account-cache?account-type=aws"
 			postAccountData = hc.AccountCacheNewAWSImport{
-				AccountAlias:              hc.OptionalString(d, "account_alias"),
+				AccountAlias:              hc.OptionalValue[string](d, "account_alias"),
 				AccountEmail:              d.Get("email").(string),
 				AccountNumber:             d.Get("account_number").(string),
 				AccountTypeID:             &accountTypeId,
-				IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
+				IncludeLinkedAccountSpend: hc.OptionalValue[bool](d, "include_linked_account_spend"),
 				LinkedAccountNumber:       d.Get("linked_account_number").(string),
 				LinkedRole:                d.Get("linked_role").(string),
 				Name:                      d.Get("name").(string),
 				PayerID:                   d.Get("payer_id").(int),
-				SkipAccessChecking:        hc.OptionalBool(d, "skip_access_checking"),
+				SkipAccessChecking:        hc.OptionalValue[bool](d, "skip_access_checking"),
 			}
 
 		case ProjectLocation:
@@ -256,19 +256,19 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		default:
 			accountUrl = "/v3/account?account-type=aws"
 			postAccountData = hc.AccountNewAWSImport{
-				AccountAlias:              hc.OptionalString(d, "account_alias"),
+				AccountAlias:              hc.OptionalValue[string](d, "account_alias"),
 				AccountEmail:              d.Get("email").(string),
 				AccountNumber:             d.Get("account_number").(string),
-				AccountTypeID:             hc.OptionalInt(d, "account_type_id"),
-				IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
+				AccountTypeID:             &accountTypeId,
+				IncludeLinkedAccountSpend: hc.OptionalValue[bool](d, "include_linked_account_spend"),
 				LinkedAccountNumber:       d.Get("linked_account_number").(string),
 				LinkedRole:                d.Get("linked_role").(string),
 				Name:                      d.Get("name").(string),
 				PayerID:                   d.Get("payer_id").(int),
 				ProjectID:                 d.Get("project_id").(int),
-				SkipAccessChecking:        hc.OptionalBool(d, "skip_access_checking"),
+				SkipAccessChecking:        hc.OptionalValue[bool](d, "skip_access_checking"),
 				StartDatecode:             d.Get("start_datecode").(string),
-				UseOrgAccountInfo:         hc.OptionalBool(d, "use_org_account_info"),
+				UseOrgAccountInfo:         hc.OptionalValue[bool](d, "use_org_account_info"),
 			}
 		}
 
@@ -373,11 +373,11 @@ func createAwsAccount(ctx context.Context, client *hc.Client, d *schema.Resource
 
 	postCacheData := hc.AccountCacheNewAWSCreate{
 		AccountEmail:              d.Get("email").(string),
-		AccountAlias:              hc.OptionalString(d, "account_alias"),
+		AccountAlias:              hc.OptionalValue[string](d, "account_alias"),
 		CommercialAccountName:     d.Get("commercial_account_name").(string),
-		CreateGovcloud:            hc.OptionalBool(d, "create_govcloud"),
+		CreateGovcloud:            hc.OptionalValue[bool](d, "create_govcloud"),
 		GovAccountName:            d.Get("gov_account_name").(string),
-		IncludeLinkedAccountSpend: hc.OptionalBool(d, "include_linked_account_spend"),
+		IncludeLinkedAccountSpend: hc.OptionalValue[bool](d, "include_linked_account_spend"),
 		LinkedRole:                d.Get("linked_role").(string),
 		Name:                      d.Get("name").(string),
 		PayerID:                   d.Get("payer_id").(int),

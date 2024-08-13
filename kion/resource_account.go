@@ -248,8 +248,8 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			if v, ok := d.GetOk("name"); ok {
 				cacheReq.Name = v.(string)
 			}
-			cacheReq.IncludeLinkedAccountSpend = hc.OptionalBool(d, "include_linked_account_spend")
-			cacheReq.SkipAccessChecking = hc.OptionalBool(d, "skip_access_checking")
+			cacheReq.IncludeLinkedAccountSpend = hc.OptionalValue[bool](d, "include_linked_account_spend")
+			cacheReq.SkipAccessChecking = hc.OptionalValue[bool](d, "skip_access_checking")
 			req = cacheReq
 		case ProjectLocation:
 			fallthrough
@@ -276,9 +276,10 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 				accountReq.StartDatecode = v.(string)
 			}
 
-			accountReq.IncludeLinkedAccountSpend = hc.OptionalBool(d, "include_linked_account_spend")
-			accountReq.SkipAccessChecking = hc.OptionalBool(d, "skip_access_checking")
-			accountReq.UseOrgAccountInfo = hc.OptionalBool(d, "use_org_account_info")
+			accountReq.IncludeLinkedAccountSpend = hc.OptionalValue[bool](d, "include_linked_account_spend")
+			accountReq.SkipAccessChecking = hc.OptionalValue[bool](d, "skip_access_checking")
+			accountReq.UseOrgAccountInfo = hc.OptionalValue[bool](d, "use_org_account_info")
+
 			req = accountReq
 		}
 
