@@ -271,22 +271,6 @@ func OptionalInt(d *schema.ResourceData, fieldname string) *int {
 	return &ret
 }
 
-// OptionalString retrieves a string value from schema.ResourceData by its field name and
-// returns a pointer to that value. If the field is not set or is not a string, it returns nil.
-func OptionalString(d *schema.ResourceData, fieldname string) *string {
-	v, ok := d.GetOkExists(fieldname)
-	if !ok {
-		return nil
-	}
-
-	ret, ok := v.(string)
-	if !ok {
-		return nil
-	}
-
-	return &ret
-}
-
 // OptionalValue retrieves a value from schema.ResourceData by its field name and returns a pointer to that value.
 // The function uses type assertion to handle different types like int, bool, and string.
 func OptionalValue[T any](d *schema.ResourceData, fieldname string) *T {
