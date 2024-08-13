@@ -1,6 +1,7 @@
 package kionclient
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -570,4 +571,13 @@ func AtLeastOneFieldPresent(fields map[string]interface{}) error {
 	}
 
 	return fmt.Errorf("at least one of the following fields must be specified: %v", fieldNames)
+}
+
+// ValidateAppRoleID is a helper function to be used in CustomizeDiff
+func ValidateAppRoleID(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	// Check if app_role_id is set to 1
+	if appRoleID := d.Get("app_role_id").(int); appRoleID == 1 {
+		return fmt.Errorf("changing the App Role 1 via this resource is not permitted")
+	}
+	return nil
 }

@@ -43,6 +43,7 @@ func resourceOUPermissionsMapping() *schema.Resource {
 				Description: "Set of user IDs for the permission mapping (must be provided in numerical order).",
 			},
 		},
+		CustomizeDiff: hc.ValidateAppRoleID,
 	}
 }
 

@@ -41,6 +41,7 @@ func resourceGlobalPermissionsMapping() *schema.Resource {
 				Description: "Set of user IDs for the permission mapping.",
 			},
 		},
+		CustomizeDiff: hc.ValidateAppRoleID,
 	}
 }
 
