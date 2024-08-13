@@ -9,12 +9,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// Filterable -
+// Filterable holds an array of filters that can be applied to data.
 type Filterable struct {
 	arr []Filter
 }
 
-// NewFilterable -
+// NewFilterable initializes a Filterable instance based on filters provided in the Terraform configuration.
+// This function dynamically creates filters based on the key-value pairs defined in the HCL.
 func NewFilterable(d *schema.ResourceData) *Filterable {
 	arr := make([]Filter, 0)
 
@@ -28,18 +29,18 @@ func NewFilterable(d *schema.ResourceData) *Filterable {
 	for _, v := range filterList {
 		fi := v.(map[string]interface{})
 
-		filterName := fi["name"].(string)
-		filterValues := fi["values"].([]interface{})
-		filterRegex := fi["regex"].(bool)
-
-		f := Filter{
-			key:    filterName,
-			keys:   strings.Split(filterName, "."),
-			values: filterValues,
-			regex:  filterRegex,
+		// Directly use the keys in the map as filter criteria.
+		for key, value := range fi {
+			if value != nil {
+				f := Filter{
+					key:    key,
+					keys:   strings.Split(key, "."),
+					values: []interface{}{value},
+					regex:  false, // Assume non-regex matching by default.
+				}
+				arr = append(arr, f)
+			}
 		}
-
-		arr = append(arr, f)
 	}
 
 	return &Filterable{
@@ -47,26 +48,26 @@ func NewFilterable(d *schema.ResourceData) *Filterable {
 	}
 }
 
-// Match -
+// Match applies the filters to the provided map of data. It returns true if the data matches all filters, otherwise false.
+// If no filters are present, it matches everything by default.
 func (f *Filterable) Match(m map[string]interface{}) (bool, error) {
-	// Match if filterable is because there is no filter.
-	if f == nil {
+	if f == nil || len(f.arr) == 0 {
 		return true, nil
 	}
 
-	// Loop through each filter.
 	for _, filter := range f.arr {
-		found := false
+		match := false
 		for _, filterValue := range filter.values {
-			match, err := filter.DeepMatch(filter.keys, m, filterValue)
+			matched, err := filter.DeepMatch(filter.keys, m, filterValue)
 			if err != nil {
 				return false, err
-			} else if match {
-				found = true
+			}
+			if matched {
+				match = true
 				break
 			}
 		}
-		if !found {
+		if !match {
 			return false, nil
 		}
 	}
@@ -74,30 +75,26 @@ func (f *Filterable) Match(m map[string]interface{}) (bool, error) {
 	return true, nil
 }
 
-// Filter -
+// Filter represents a single filter criterion that can be applied to data.
 type Filter struct {
-	key  string
-	keys []string
-	// These will always be an array of strings so when doing a comparison,
-	// you have to convert to a string using: fmt.Sprint().
+	key    string
+	keys   []string
 	values []interface{}
 	regex  bool
 }
 
-// DeepMatch -
+// DeepMatch is a recursive function used to match deeply nested fields within a map.
+// It supports both exact matching and regex-based matching.
 func (f *Filter) DeepMatch(keys []string, m map[string]interface{}, filterValue interface{}) (bool, error) {
 	val, ok := m[keys[0]]
 	if !ok {
-		return false, errors.New("filter is not found: " + keys[0] + fmt.Sprintf(" | %#v", m))
+		return false, errors.New("filter not found: " + keys[0] + fmt.Sprintf(" | %#v", m))
 	}
 
 	if len(keys) == 1 {
-		// Catch a user error if the filter is comparing against an array
-		// ex. Using a filter of 'owner_users' instead of 'owner_users.id'
 		if _, ok := val.([]interface{}); ok {
 			return false, fmt.Errorf("filter key (%v) references an array instead of a field: %v", f.key, fmt.Sprint(val))
 		}
-		// If set as a regex, then compare against it.
 		if f.regex {
 			re, err := regexp.Compile(fmt.Sprint(filterValue))
 			if err != nil {
@@ -105,14 +102,15 @@ func (f *Filter) DeepMatch(keys []string, m map[string]interface{}, filterValue 
 			}
 			return re.MatchString(fmt.Sprint(val)), nil
 		}
-		// filterValue will always be a string so compare accordingly.
-		return fmt.Sprint(val) == filterValue, nil
+		return fmt.Sprint(val) == fmt.Sprint(filterValue), nil
 	}
 
 	if x, ok := val.([]interface{}); ok {
-		// If the field is an array, then determine if one of the values matches.
 		for _, i := range x {
-			vmap := i.(map[string]interface{})
+			vmap, ok := i.(map[string]interface{})
+			if !ok {
+				continue
+			}
 
 			match, err := f.DeepMatch(keys[1:], vmap, filterValue)
 			if err != nil {

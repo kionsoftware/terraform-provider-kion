@@ -4,7 +4,6 @@ The Terraform provider for Kion allows you interact with the Kion API using the 
 
 - [Getting Started](#getting-started)
   - [Importing Resource State](#importing-resource-state)
-- [Migrating from the cloudtamerio Provider](#migrating-from-the-cloudtamerio-provider)
 - [Sample Commands](#sample-commands)
   - [Resources](#resources)
   - [Data Sources](#data-sources)
@@ -98,11 +97,6 @@ terraform import module.aws-cloudformation-template.kion_aws_cloudformation_temp
 # Verify the state is correct - there shouldn't be any changes listed.
 terraform plan
 ```
-
-## Migrating from the cloudtamerio Provider
-
-See the instructions [here](docs/provider-migration.md) to migrate existing managed resources from the cloudtamerio provider
-to the new Kion provider.
 
 ## Sample Commands
 

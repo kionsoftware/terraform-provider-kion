@@ -139,11 +139,11 @@ func resourceProjectEnforcementCreate(ctx context.Context, d *schema.ResourceDat
 		Timeframe:     d.Get("timeframe").(string),
 		SpendOption:   d.Get("spend_option").(string),
 		AmountType:    d.Get("amount_type").(string),
-		ServiceID:     hc.OptionalInt(d, "service_id"),
+		ServiceID:     hc.OptionalValue[int](d, "service_id"),
 		ThresholdType: d.Get("threshold_type").(string),
 		Threshold:     d.Get("threshold").(int),
-		CloudRuleID:   hc.OptionalInt(d, "cloud_rule_id"),
-		Overburn:      hc.OptionalBool(d, "overburn"),
+		CloudRuleID:   hc.OptionalValue[int](d, "cloud_rule_id"),
+		Overburn:      hc.OptionalValue[bool](d, "overburn"),
 		UserGroupIds:  userGroupIds,
 		UserIds:       userIds,
 	}
@@ -217,16 +217,16 @@ func resourceProjectEnforcementRead(ctx context.Context, d *schema.ResourceData,
 	var found bool
 	for _, item := range resp.Data {
 		if int(item.ID) == enforcementIDInt {
-			diags = append(diags, safeSet(d, "description", item.Description)...)
-			diags = append(diags, safeSet(d, "timeframe", item.Timeframe)...)
-			diags = append(diags, safeSet(d, "spend_option", item.SpendOption)...)
-			diags = append(diags, safeSet(d, "amount_type", item.AmountType)...)
-			diags = append(diags, safeSet(d, "threshold_type", item.ThresholdType)...)
-			diags = append(diags, safeSet(d, "threshold", item.Threshold)...)
-			diags = append(diags, safeSet(d, "enabled", item.Enabled)...)
-			diags = append(diags, safeSet(d, "overburn", item.Overburn)...)
-			diags = append(diags, safeSet(d, "user_group_ids", item.UserGroupIds)...)
-			diags = append(diags, safeSet(d, "user_ids", item.UserIds)...)
+			diags = append(diags, hc.SafeSet(d, "description", item.Description, "Failed to set description")...)
+			diags = append(diags, hc.SafeSet(d, "timeframe", item.Timeframe, "Failed to set timeframe")...)
+			diags = append(diags, hc.SafeSet(d, "spend_option", item.SpendOption, "Failed to set spend option")...)
+			diags = append(diags, hc.SafeSet(d, "amount_type", item.AmountType, "Failed to set amount type")...)
+			diags = append(diags, hc.SafeSet(d, "threshold_type", item.ThresholdType, "Failed to set threshold type")...)
+			diags = append(diags, hc.SafeSet(d, "threshold", item.Threshold, "Failed to set threshold")...)
+			diags = append(diags, hc.SafeSet(d, "enabled", item.Enabled, "Failed to set enabled status")...)
+			diags = append(diags, hc.SafeSet(d, "overburn", item.Overburn, "Failed to set overburn")...)
+			diags = append(diags, hc.SafeSet(d, "user_group_ids", item.UserGroupIds, "Failed to set user group IDs")...)
+			diags = append(diags, hc.SafeSet(d, "user_ids", item.UserIds, "Failed to set user IDs")...)
 			found = true
 			break
 		}
@@ -295,11 +295,14 @@ func RemoveProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, 
 	currentUserGroupIds := hc.FlattenGenericIDPointer(d, "user_group_ids")
 
 	// Get the previous state to identify what needs to be removed
-	prevUserIds, prevUserGroupIds := getPreviousEnforcementUserAndGroupIds(d)
+	prevUserIds, prevUserGroupIds, err := hc.GetPreviousUserAndGroupIds(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	// Determine which user IDs and user group IDs need to be removed
-	toRemoveUserIds := findEnforcementIdDifferences(prevUserIds, *currentUserIds)
-	toRemoveUserGroupIds := findEnforcementIdDifferences(prevUserGroupIds, *currentUserGroupIds)
+	toRemoveUserIds := hc.FindDifferences(prevUserIds, *currentUserIds)
+	toRemoveUserGroupIds := hc.FindDifferences(prevUserGroupIds, *currentUserGroupIds)
 
 	// If there's nothing to remove, return early
 	if len(toRemoveUserIds) == 0 && len(toRemoveUserGroupIds) == 0 {
@@ -312,7 +315,7 @@ func RemoveProjectEnforcementUsers(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	endpoint := fmt.Sprintf("/v3/project/%d/enforcement/%s/user", projectIDInt, enforcementID)
-	err := client.DELETE(endpoint, req)
+	err = client.DELETE(endpoint, req)
 	if err != nil {
 		return diag.Errorf("Error removing users/user groups in Project Enforcement: %v", err)
 	}
@@ -343,12 +346,12 @@ func resourceProjectEnforcementUpdate(ctx context.Context, d *schema.ResourceDat
 			Timeframe:     d.Get("timeframe").(string),
 			SpendOption:   d.Get("spend_option").(string),
 			AmountType:    d.Get("amount_type").(string),
-			ServiceID:     hc.OptionalInt(d, "service_id"),
+			ServiceID:     hc.OptionalValue[int](d, "service_id"),
 			ThresholdType: d.Get("threshold_type").(string),
 			Threshold:     d.Get("threshold").(int),
-			CloudRuleID:   hc.OptionalInt(d, "cloud_rule_id"),
-			Overburn:      hc.OptionalBool(d, "overburn"),
-			Enabled:       hc.OptionalBool(d, "enabled"),
+			CloudRuleID:   hc.OptionalValue[int](d, "cloud_rule_id"),
+			Overburn:      hc.OptionalValue[bool](d, "overburn"),
+			Enabled:       hc.OptionalValue[bool](d, "enabled"),
 		}
 
 		// Send the update request
@@ -413,77 +416,4 @@ func resourceProjectEnforcementDelete(ctx context.Context, d *schema.ResourceDat
 	d.SetId("")
 
 	return diags
-}
-
-// safeSet handles setting Terraform schema values, centralizing error reporting and ensuring non-nil values.
-func safeSet(d *schema.ResourceData, key string, value interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
-	// Check if the value is non-nil before setting it in the schema
-	if value != nil {
-		// Attempt to set the value in the schema
-		if err := d.Set(key, value); err != nil {
-			// Append a diagnostic message if there's an error while setting the value
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error setting field",
-				Detail:   fmt.Sprintf("Error setting %s: %s", key, err),
-			})
-		}
-	}
-	return diags
-}
-
-// getPreviousEnforcementUserAndGroupIds retrieves the previous state of user and user group IDs
-// from the Terraform resource data.
-func getPreviousEnforcementUserAndGroupIds(d *schema.ResourceData) ([]int, []int) {
-	var prevUserIds, prevUserGroupIds []int
-
-	// Check if the "user_ids" field has changed
-	if d.HasChange("user_ids") {
-		// Get the previous value of the "user_ids" field
-		oldValue, _ := d.GetChange("user_ids")
-		// Convert the previous value to a slice of integers
-		prevUserIds = convertInterfaceSliceToIntSliceEnforcement(oldValue.([]interface{}))
-	}
-
-	// Check if the "user_group_ids" field has changed
-	if d.HasChange("user_group_ids") {
-		// Get the previous value of the "user_group_ids" field
-		oldValue, _ := d.GetChange("user_group_ids")
-		// Convert the previous value to a slice of integers
-		prevUserGroupIds = convertInterfaceSliceToIntSliceEnforcement(oldValue.([]interface{}))
-	}
-
-	return prevUserIds, prevUserGroupIds
-}
-
-// convertInterfaceSliceToIntSliceEnforcement converts a slice of interfaces to a slice of integers
-// for enforcement purposes.
-func convertInterfaceSliceToIntSliceEnforcement(interfaceSlice []interface{}) []int {
-	// Create a slice of integers with the same length as the input slice
-	intSlice := make([]int, len(interfaceSlice))
-	// Iterate over the input slice, casting each element to an integer
-	for i, v := range interfaceSlice {
-		intSlice[i] = v.(int)
-	}
-	return intSlice
-}
-
-// findEnforcementIdDifferences finds the differences between two slices of integers,
-// returning the elements that are present in slice1 but not in slice2.
-func findEnforcementIdDifferences(slice1, slice2 []int) []int {
-	// Create a set from the second slice for efficient lookups
-	set := make(map[int]bool)
-	for _, v := range slice2 {
-		set[v] = true
-	}
-
-	var diff []int
-	// Iterate over the first slice and find elements not present in the second slice
-	for _, v := range slice1 {
-		if !set[v] {
-			diff = append(diff, v)
-		}
-	}
-	return diff
 }

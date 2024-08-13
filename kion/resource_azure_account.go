@@ -45,30 +45,17 @@ func resourceAzureAccount() *schema.Resource {
 			},
 		},
 		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the Azure account within Kion.",
-			},
-			"subscription_uuid": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.IsUUID,
-				AtLeastOneOf: []string{"ea", "csp", "mca"},
-				Description:  "The UUID of the Azure subscription.  If subscription_uuid is provided, the existing subscription will be imported into Kion.  If subscription_uuid is omitted, a new subscription will be created.",
-			},
-			"subscription_name": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				AtLeastOneOf: []string{"subscription_uuid"},
-				Description:  "Name of the subscription as it appears in Azure.",
-			},
-			"parent_management_group_id": {
+			// Notice there is no 'id' field specified because it will be created.
+			"account_alias": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The parent management group ID when creating an Azure subscription. If provided, the subscription will be created under the provided management group.  If not provided, the subscription will be created at the root level",
+				Description: "Account alias is an optional short unique name that helps identify the account within Kion.",
+			},
+			"account_type_id": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+				Description: "An ID representing the account type within Kion.",
 			},
 			"csp": {
 				Type:        schema.TypeSet,
@@ -77,19 +64,23 @@ func resourceAzureAccount() *schema.Resource {
 				Description: "Parameters used when creating a new Azure CSP subscription.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"offer_id": {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "Azure CSP offer id",
-						},
 						"billing_cycle": {
 							Type:         schema.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"unknown", "monthly", "annual", "none", "one_time"}, false),
 							Description:  "Azure CSP billing cycle",
 						},
+						"offer_id": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "Azure CSP offer id",
+						},
 					},
 				},
+			},
+			"created_at": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"ea": {
 				Type:        schema.TypeSet,
@@ -110,6 +101,23 @@ func resourceAzureAccount() *schema.Resource {
 						},
 					},
 				},
+			},
+			"labels": {
+				Type:         schema.TypeMap,
+				Optional:     true,
+				RequiredWith: []string{"project_id"},
+				Elem:         &schema.Schema{Type: schema.TypeString},
+				Description:  "A map of labels to assign to the account. The labels must already exist in Kion.",
+			},
+			"last_updated": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"location": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Where the account is attached.  Either \"project\" or \"cache\".",
 			},
 			"mca": {
 				Type:        schema.TypeSet,
@@ -136,38 +144,6 @@ func resourceAzureAccount() *schema.Resource {
 					},
 				},
 			},
-			"payer_id": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				Description: "The ID of the billing source containing billing data for this account.",
-			},
-			"project_id": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Description: "The ID of the Kion project to place this account within.  If empty, the account will be placed within the account cache.",
-			},
-			"start_datecode": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "Date when the Azure account will starting submitting payments against a funding source (YYYY-MM).  Required if placing an account within a project.",
-			},
-			"skip_access_checking": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-				Description: "True to skip periodic access checking on the account.",
-			},
-			"account_type_id": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Computed:    true,
-				Description: "An ID representing the account type within Kion.",
-			},
-			"created_at": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"move_project_settings": {
 				Type:        schema.TypeSet,
 				Optional:    true,
@@ -190,17 +166,52 @@ func resourceAzureAccount() *schema.Resource {
 					},
 				},
 			},
-			"location": {
+			"name": {
 				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Where the account is attached.  Either \"project\" or \"cache\".",
+				Required:    true,
+				Description: "The name of the Azure account within Kion.",
 			},
-			"labels": {
-				Type:         schema.TypeMap,
+			"parent_management_group_id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The parent management group ID when creating an Azure subscription. If provided, the subscription will be created under the provided management group.  If not provided, the subscription will be created at the root level",
+			},
+			"payer_id": {
+				Type:        schema.TypeInt,
+				Required:    true,
+				Description: "The ID of the billing source containing billing data for this account.",
+			},
+			"project_id": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "The ID of the Kion project to place this account within.  If empty, the account will be placed within the account cache.",
+			},
+			"skip_access_checking": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				Description: "True to skip periodic access checking on the account.",
+			},
+			"start_datecode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "Date when the Azure account will starting submitting payments against a funding source (YYYY-MM).  Required if placing an account within a project.",
+			},
+			"subscription_name": {
+				Type:         schema.TypeString,
 				Optional:     true,
-				RequiredWith: []string{"project_id"},
-				Elem:         &schema.Schema{Type: schema.TypeString},
-				Description:  "A map of labels to assign to the account. The labels must already exist in Kion.",
+				AtLeastOneOf: []string{"subscription_uuid"},
+				Description:  "Name of the subscription as it appears in Azure.",
+			},
+			"subscription_uuid": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IsUUID,
+				AtLeastOneOf: []string{"ea", "csp", "mca"},
+				Description:  "The UUID of the Azure subscription.  If subscription_uuid is provided, the existing subscription will be imported into Kion.  If subscription_uuid is omitted, a new subscription will be created.",
 			},
 		},
 		CustomizeDiff: customdiff.All(
@@ -227,10 +238,11 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			accountUrl = "/v3/account-cache?account-type=azure"
 			postAccountData = hc.AccountCacheNewAzureImport{
 				SubscriptionUUID:   d.Get("subscription_uuid").(string),
+				AccountAlias:       hc.OptionalValue[string](d, "account_alias"),
 				Name:               d.Get("name").(string),
-				AccountTypeID:      hc.OptionalInt(d, "account_type_id"),
+				AccountTypeID:      hc.OptionalValue[int](d, "account_type_id"),
 				PayerID:            d.Get("payer_id").(int),
-				SkipAccessChecking: hc.OptionalBool(d, "skip_access_checking"),
+				SkipAccessChecking: hc.OptionalValue[bool](d, "skip_access_checking"),
 			}
 
 		case ProjectLocation:
@@ -239,11 +251,12 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			accountUrl = "/v3/account?account-type=azure"
 			postAccountData = hc.AccountNewAzureImport{
 				SubscriptionUUID:   d.Get("subscription_uuid").(string),
+				AccountAlias:       hc.OptionalValue[string](d, "account_alias"),
 				Name:               d.Get("name").(string),
-				AccountTypeID:      hc.OptionalInt(d, "account_type_id"),
+				AccountTypeID:      hc.OptionalValue[int](d, "account_type_id"),
 				PayerID:            d.Get("payer_id").(int),
 				ProjectID:          d.Get("project_id").(int),
-				SkipAccessChecking: hc.OptionalBool(d, "skip_access_checking"),
+				SkipAccessChecking: hc.OptionalValue[bool](d, "skip_access_checking"),
 				StartDatecode:      d.Get("start_datecode").(string),
 			}
 		}
@@ -268,14 +281,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			return diags
 		}
 
-		if err := d.Set("location", accountLocation); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Failed to set location",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
+		diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
 		d.SetId(strconv.Itoa(resp.RecordID))
 
 	} else {
@@ -404,26 +410,11 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 				return diags
 			}
 
-			if err := d.Set("location", accountLocation); err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Failed to set location",
-					Detail:   err.Error(),
-				})
-				return diags
-			}
+			diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
 			d.SetId(strconv.Itoa(newId))
 
 		case CacheLocation:
-			// Track the cached account
-			if err := d.Set("location", accountLocation); err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Failed to set location",
-					Detail:   err.Error(),
-				})
-				return diags
-			}
+			diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
 			d.SetId(strconv.Itoa(accountCacheId))
 		}
 	}
