@@ -139,11 +139,11 @@ func resourceProjectEnforcementCreate(ctx context.Context, d *schema.ResourceDat
 		Timeframe:     d.Get("timeframe").(string),
 		SpendOption:   d.Get("spend_option").(string),
 		AmountType:    d.Get("amount_type").(string),
-		ServiceID:     hc.OptionalInt(d, "service_id"),
+		ServiceID:     hc.OptionalValue[int](d, "service_id"),
 		ThresholdType: d.Get("threshold_type").(string),
 		Threshold:     d.Get("threshold").(int),
-		CloudRuleID:   hc.OptionalInt(d, "cloud_rule_id"),
-		Overburn:      hc.OptionalBool(d, "overburn"),
+		CloudRuleID:   hc.OptionalValue[int](d, "cloud_rule_id"),
+		Overburn:      hc.OptionalValue[bool](d, "overburn"),
 		UserGroupIds:  userGroupIds,
 		UserIds:       userIds,
 	}
@@ -346,12 +346,12 @@ func resourceProjectEnforcementUpdate(ctx context.Context, d *schema.ResourceDat
 			Timeframe:     d.Get("timeframe").(string),
 			SpendOption:   d.Get("spend_option").(string),
 			AmountType:    d.Get("amount_type").(string),
-			ServiceID:     hc.OptionalInt(d, "service_id"),
+			ServiceID:     hc.OptionalValue[int](d, "service_id"),
 			ThresholdType: d.Get("threshold_type").(string),
 			Threshold:     d.Get("threshold").(int),
-			CloudRuleID:   hc.OptionalInt(d, "cloud_rule_id"),
-			Overburn:      hc.OptionalBool(d, "overburn"),
-			Enabled:       hc.OptionalBool(d, "enabled"),
+			CloudRuleID:   hc.OptionalValue[int](d, "cloud_rule_id"),
+			Overburn:      hc.OptionalValue[bool](d, "overburn"),
+			Enabled:       hc.OptionalValue[bool](d, "enabled"),
 		}
 
 		// Send the update request
