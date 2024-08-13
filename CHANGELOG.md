@@ -13,6 +13,31 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.17] - 2024-08-13
+
+## What's Changed
+
+### Added
+
+* Introduced permission mapping management for funding sources, OUs, projects, and global permissions.
+* Added support for managing webhooks and retrieving user data with new resources and data sources.
+* Account alias field added to all account-related resources for better identification.
+
+### Changed
+
+* Refactored helper functions for improved efficiency and code quality.
+* Enhanced error handling across account-related resources and project enforcement.
+
+### Removed
+
+* Deprecated `OptionalString` function in favor of the more versatile `OptionalValue`.
+
+### Fixed
+
+* Standardized the handling of optional fields across various resources.
+* Resolved issues with redundant error handling by centralizing logic.
+* Normalized JSON fields in webhook resources to prevent unnecessary changes.
+
 ## [0.3.16] - 2024-06-07
 
 ## What's Changed
