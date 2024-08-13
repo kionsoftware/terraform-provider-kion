@@ -42,6 +42,7 @@ Optional:
 
 Read-Only:
 
+- `account_alias` (String)
 - `account_number` (String)
 - `account_type_id` (Number)
 - `car_external_id` (String)
