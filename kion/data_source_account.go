@@ -25,17 +25,17 @@ func dataSourceAccount() *schema.Resource {
 							Type:        schema.TypeString,
 							Required:    true,
 						},
-						"values": {
-							Description: "The values of the field name you specified.",
-							Type:        schema.TypeList,
-							Required:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-						},
 						"regex": {
 							Description: "Dictates if the values provided should be treated as regular expressions.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
+						},
+						"values": {
+							Description: "The values of the field name you specified.",
+							Type:        schema.TypeList,
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 					},
 				},
@@ -46,15 +46,7 @@ func dataSourceAccount() *schema.Resource {
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"created_at": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"id": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
-						"name": {
+						"account_alias": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -62,35 +54,27 @@ func dataSourceAccount() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"email": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"linked_role": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"project_id": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
 						"account_type_id": {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
-						"payer_id": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
-						"start_datecode": {
+						"car_external_id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"skip_access_checking": {
-							Type:     schema.TypeBool,
+						"created_at": {
+							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"use_org_account_info": {
+						"email": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"id": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"include_linked_account_spend": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -98,16 +82,36 @@ func dataSourceAccount() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"include_linked_account_spend": {
-							Type:     schema.TypeBool,
+						"linked_role": {
+							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"car_external_id": {
+						"name": {
 							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"payer_id": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"project_id": {
+							Type:     schema.TypeInt,
 							Computed: true,
 						},
 						"service_external_id": {
 							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"skip_access_checking": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"start_datecode": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"use_org_account_info": {
+							Type:     schema.TypeBool,
 							Computed: true,
 						},
 					},
@@ -137,22 +141,23 @@ func dataSourceAccountRead(ctx context.Context, d *schema.ResourceData, m interf
 	arr := make([]map[string]interface{}, 0)
 	for _, item := range resp.Data {
 		data := make(map[string]interface{})
-		data["created_at"] = item.CreatedAt
-		data["id"] = item.ID
-		data["name"] = item.Name
+		data["account_alias"] = item.AccountAlias
 		data["account_number"] = item.AccountNumber
-		data["email"] = item.Email
-		data["linked_role"] = item.LinkedRole
-		data["project_id"] = item.ProjectID
 		data["account_type_id"] = item.AccountTypeID
-		data["payer_id"] = item.PayerID
-		data["start_datecode"] = item.StartDatecode
-		data["skip_access_checking"] = item.SkipAccessChecking
-		data["use_org_account_info"] = item.UseOrgAccountInfo
-		data["linked_account_number"] = item.LinkedAccountNumber
-		data["include_linked_account_spend"] = item.IncludeLinkedAccountSpend
 		data["car_external_id"] = item.CARExternalID
+		data["created_at"] = item.CreatedAt
+		data["email"] = item.Email
+		data["id"] = item.ID
+		data["include_linked_account_spend"] = item.IncludeLinkedAccountSpend
+		data["linked_account_number"] = item.LinkedAccountNumber
+		data["linked_role"] = item.LinkedRole
+		data["name"] = item.Name
+		data["payer_id"] = item.PayerID
+		data["project_id"] = item.ProjectID
 		data["service_external_id"] = item.ServiceExternalID
+		data["skip_access_checking"] = item.SkipAccessChecking
+		data["start_datecode"] = item.StartDatecode
+		data["use_org_account_info"] = item.UseOrgAccountInfo
 
 		match, err := f.Match(data)
 		if err != nil {
@@ -169,14 +174,7 @@ func dataSourceAccountRead(ctx context.Context, d *schema.ResourceData, m interf
 		arr = append(arr, data)
 	}
 
-	if err := d.Set("list", arr); err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read Account",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
-		})
-		return diags
-	}
+	diags = append(diags, hc.SafeSet(d, "list", arr, "Unable to read Account")...)
 
 	// Always run.
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
