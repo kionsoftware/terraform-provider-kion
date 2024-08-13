@@ -1,8 +1,12 @@
 package kionclient
 
 import (
+	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -13,7 +17,6 @@ func FlattenStringPointer(d *schema.ResourceData, key string) *string {
 		v := i.(string)
 		return &v
 	}
-
 	return nil
 }
 
@@ -22,12 +25,11 @@ func FlattenStringArray(items []interface{}) []string {
 	arr := make([]string, 0)
 	for _, item := range items {
 		v := item.(string)
-		// Add this because compliance_check has an array with an empty value in: regions.
+		// Filter out empty values
 		if v != "" {
 			arr = append(arr, v)
 		}
 	}
-
 	return arr
 }
 
@@ -37,19 +39,16 @@ func FlattenStringArrayPointer(d *schema.ResourceData, key string) *[]string {
 		v := i.([]string)
 		arr := make([]string, 0)
 		for _, item := range v {
-			v := item
-			// Add this because compliance_check has an array with an empty value in: regions.
-			if v != "" {
-				arr = append(arr, v)
+			// Filter out empty values
+			if item != "" {
+				arr = append(arr, item)
 			}
 		}
 		return &arr
 	}
-
 	return nil
 }
 
-// FilterStringArray -
 func FilterStringArray(items []string) []string {
 	arr := make([]string, 0)
 	for _, item := range items {
@@ -68,18 +67,7 @@ func FlattenIntPointer(d *schema.ResourceData, key string) *int {
 		v := i.(int)
 		return &v
 	}
-
 	return nil
-}
-
-// FlattenIntArray -
-func FlattenIntArray(items []interface{}) []int {
-	arr := make([]int, 0)
-	for _, item := range items {
-		arr = append(arr, item.(int))
-	}
-
-	return arr
 }
 
 // FlattenIntArrayPointer -
@@ -88,7 +76,6 @@ func FlattenIntArrayPointer(items []interface{}) *[]int {
 	for _, item := range items {
 		arr = append(arr, item.(int))
 	}
-
 	return &arr
 }
 
@@ -98,7 +85,6 @@ func FlattenBoolArray(items []interface{}) []bool {
 	for _, item := range items {
 		arr = append(arr, item.(bool))
 	}
-
 	return arr
 }
 
@@ -108,7 +94,6 @@ func FlattenBoolPointer(d *schema.ResourceData, key string) *bool {
 		v := i.(bool)
 		return &v
 	}
-
 	return nil
 }
 
@@ -122,59 +107,36 @@ func FlattenGenericIDArray(d *schema.ResourceData, key string) []int {
 			uids = append(uids, v["id"].(int))
 		}
 	}
-
 	return uids
 }
 
-func ConvertToIntSlice(interfaceSlice []interface{}) []int {
-	intSlice := make([]int, len(interfaceSlice))
-	for i, v := range interfaceSlice {
-		intSlice[i] = v.(int)
-	}
-	return intSlice
-}
-
 // FlattenGenericIDPointer retrieves and converts the value associated with the given key from the schema.ResourceData.
-// It handles different types of input ([]interface{} and *schema.Set) and returns a pointer to a slice of integers.
 func FlattenGenericIDPointer(d *schema.ResourceData, key string) *[]int {
-	// Retrieve the value from the resource data using the provided key
 	uid := d.Get(key)
 
-	// Determine the type of the retrieved value
 	switch v := uid.(type) {
-	// Handle the case where the value is a slice of interfaces
 	case []interface{}:
-		// Create a slice of integers with the same length as the input slice
 		uids := make([]int, len(v))
-		// Iterate over the input slice, casting each element to an integer
 		for i, item := range v {
 			uids[i] = item.(int)
 		}
-		// Return a pointer to the resulting slice of integers
 		return &uids
-	// Handle the case where the value is a schema.Set
 	case *schema.Set:
-		// Convert the set to a list of interfaces
 		setList := v.List()
-		// Create a slice of integers with the same length as the set list
 		uids := make([]int, len(setList))
-		// Iterate over the set list, extracting the "id" field from each map and casting it to an integer
 		for i, item := range setList {
 			m := item.(map[string]interface{})
 			uids[i] = m["id"].(int)
 		}
-		// Return a pointer to the resulting slice of integers
 		return &uids
-	// Handle the default case where the type is not recognized
 	default:
-		// Return nil if the type is not handled
 		return nil
 	}
 }
 
+// FlattenTags -
 func FlattenTags(d *schema.ResourceData, key string) *[]Tag {
 	tagMap := d.Get(key).(map[string]interface{})
-
 	tags := make([]Tag, 0)
 	for k, v := range tagMap {
 		tags = append(tags, Tag{
@@ -182,13 +144,12 @@ func FlattenTags(d *schema.ResourceData, key string) *[]Tag {
 			Value: v.(string),
 		})
 	}
-
 	return &tags
 }
 
+// FlattenAssociateLabels -
 func FlattenAssociateLabels(d *schema.ResourceData, key string) *[]AssociateLabel {
 	labelMap := d.Get(key).(map[string]interface{})
-
 	labels := make([]AssociateLabel, len(labelMap))
 	var idx int
 	for k, v := range labelMap {
@@ -196,84 +157,62 @@ func FlattenAssociateLabels(d *schema.ResourceData, key string) *[]AssociateLabe
 		labels[idx].Value = v.(string)
 		idx++
 	}
-
 	return &labels
 }
 
-// InflateObjectWithID takes a slice of ObjectWithID and converts it into a slice of maps,
-// where each map contains the ID of an ObjectWithID. If the input slice is nil, it returns an empty slice.
+// InflateObjectWithID -
 func InflateObjectWithID(arr []ObjectWithID) []interface{} {
-	if arr != nil {
-		// Create an empty slice to hold the converted items
-		final := make([]interface{}, 0)
-
-		// Iterate over each item in the input slice
-		for _, item := range arr {
-			// Create a map to hold the item data
-			it := make(map[string]interface{})
-
-			// Add the ID to the map
-			it["id"] = item.ID
-
-			// Append the map to the final slice
-			final = append(final, it)
-		}
-
-		// Return the final slice of maps
-		return final
+	if arr == nil {
+		return make([]interface{}, 0)
 	}
 
-	// Return an empty slice if the input is nil
-	return make([]interface{}, 0)
+	final := make([]interface{}, 0)
+	for _, item := range arr {
+		it := make(map[string]interface{})
+		it["id"] = item.ID
+		final = append(final, it)
+	}
+	return final
 }
 
-// InflateSingleObjectWithID takes a pointer to an ObjectWithID and returns its ID.
-// If the input is nil, it returns nil.
+// InflateSingleObjectWithID -
 func InflateSingleObjectWithID(single *ObjectWithID) interface{} {
 	if single != nil {
-		// Return the ID of the non-nil ObjectWithID
 		return single.ID
 	}
-
-	// Return nil if the input is nil
 	return nil
 }
 
-// InflateArrayOfIDs - Transforms an array of IDs into a map with an "id" key
+// InflateArrayOfIDs -
 func InflateArrayOfIDs(arr []int) []interface{} {
-	if arr != nil {
-		final := make([]interface{}, 0)
-
-		for _, item := range arr {
-			it := make(map[string]interface{})
-
-			it["id"] = item
-
-			final = append(final, it)
-		}
-
-		return final
+	if arr == nil {
+		return make([]interface{}, 0)
 	}
 
-	return make([]interface{}, 0)
+	final := make([]interface{}, 0)
+	for _, item := range arr {
+		it := make(map[string]interface{})
+		it["id"] = item
+		final = append(final, it)
+	}
+	return final
 }
 
+// InflateTags -
 func InflateTags(arr []Tag) map[string]string {
-	if arr != nil {
-		final := make(map[string]string, 0)
-
-		for _, item := range arr {
-			final[item.Key] = item.Value
-		}
-
-		return final
+	if arr == nil {
+		return nil
 	}
 
-	return nil
+	final := make(map[string]string)
+	for _, item := range arr {
+		final[item.Key] = item.Value
+	}
+	return final
 }
 
 // FieldsChanged -
-func FieldsChanged(iOld interface{}, iNew interface{}, fields []string) (map[string]interface{}, string, bool) {
+func FieldsChanged(iOld, iNew interface{}, fields []string) (map[string]interface{}, string, bool) {
 	mOld := iOld.(map[string]interface{})
 	mNew := iNew.(map[string]interface{})
 
@@ -282,10 +221,10 @@ func FieldsChanged(iOld interface{}, iNew interface{}, fields []string) (map[str
 			return mNew, v, true
 		}
 	}
-
 	return mNew, "", false
 }
 
+// OptionalBool -
 func OptionalBool(d *schema.ResourceData, fieldname string) *bool {
 	b, ok := d.GetOkExists(fieldname)
 	if !ok {
@@ -296,10 +235,10 @@ func OptionalBool(d *schema.ResourceData, fieldname string) *bool {
 	if !ok {
 		return nil
 	}
-
 	return &ret
 }
 
+// OptionalInt -
 func OptionalInt(d *schema.ResourceData, fieldname string) *int {
 	v, ok := d.GetOkExists(fieldname)
 	if !ok {
@@ -310,19 +249,28 @@ func OptionalInt(d *schema.ResourceData, fieldname string) *int {
 	if !ok {
 		return nil
 	}
+	return &ret
+}
+
+func OptionalString(d *schema.ResourceData, fieldname string) *string {
+	v, ok := d.GetOkExists(fieldname)
+	if !ok {
+		return nil
+	}
+
+	ret, ok := v.(string)
+	if !ok {
+		return nil
+	}
 
 	return &ret
 }
 
 // AssociationChanged returns arrays of which values to change.
-// The fields needs to be at the top level.
 func AssociationChanged(d *schema.ResourceData, fieldname string) ([]int, []int, bool, error) {
 	isChanged := false
-
-	// Get the owner users
 	io, in := d.GetChange(fieldname)
 
-	// test for set
 	_, isTypeSet := io.(*schema.Set)
 	if isTypeSet {
 		io = io.(*schema.Set).List()
@@ -330,20 +278,15 @@ func AssociationChanged(d *schema.ResourceData, fieldname string) ([]int, []int,
 	}
 
 	ownerOld := io.([]interface{})
-	oldIDs := make([]int, 0)
-	for _, item := range ownerOld {
-		v, ok := item.(map[string]interface{})
-		if ok {
-			oldIDs = append(oldIDs, v["id"].(int))
-		}
+	oldIDs, err := ConvertInterfaceSliceToIntSlice(ownerOld)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("failed to convert old IDs in field '%s': %w", fieldname, err)
 	}
+
 	ownerNew := in.([]interface{})
-	newIDs := make([]int, 0)
-	for _, item := range ownerNew {
-		v, ok := item.(map[string]interface{})
-		if ok {
-			newIDs = append(newIDs, v["id"].(int))
-		}
+	newIDs, err := ConvertInterfaceSliceToIntSlice(ownerNew)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("failed to convert new IDs in field '%s': %w", fieldname, err)
 	}
 
 	arrUserAdd, arrUserRemove, changed := determineAssociations(newIDs, oldIDs)
@@ -355,32 +298,23 @@ func AssociationChanged(d *schema.ResourceData, fieldname string) ([]int, []int,
 }
 
 // AssociationChangedInt returns an int of a value to change.
-// The fields needs to be at the top level.
 func AssociationChangedInt(d *schema.ResourceData, fieldname string) (*int, *int, bool, error) {
 	isChanged := false
 	io, in := d.GetChange(fieldname)
 
-	// If the values are not the same, then they changed.
 	if in != io {
 		isChanged = true
-
 		if in == nil || in == 0 {
-			// Either the in value is null which means remove the existing value.
 			old := io.(int)
 			return nil, &old, isChanged, nil
 		}
-		// Or the in value is not null which means it should change the
-		// existing value.
 		newvalue := in.(int)
 		return &newvalue, nil, isChanged, nil
 	}
-
 	return nil, nil, isChanged, nil
 }
 
-// DetermineAssociations will take in a src array (source of truth/repo) and a
-// destination array (Kion application) and then return an array of
-// associations to add (arrAdd) and then remove (arrRemove).
+// DetermineAssociations -
 func determineAssociations(src []int, dest []int) (arrAdd []int, arrRemove []int, isChanged bool) {
 	mSrc := makeMapFromArray(src)
 	mDest := makeMapFromArray(dest)
@@ -389,7 +323,6 @@ func determineAssociations(src []int, dest []int) (arrAdd []int, arrRemove []int
 	arrRemove = make([]int, 0)
 	isChanged = false
 
-	// Determine which items to add.
 	for v := range mSrc {
 		if _, found := mDest[v]; !found {
 			arrAdd = append(arrAdd, v)
@@ -397,14 +330,12 @@ func determineAssociations(src []int, dest []int) (arrAdd []int, arrRemove []int
 		}
 	}
 
-	// Determine which items to remove.
 	for v := range mDest {
 		if _, found := mSrc[v]; !found {
 			arrRemove = append(arrRemove, v)
 			isChanged = true
 		}
 	}
-
 	return arrAdd, arrRemove, isChanged
 }
 
@@ -416,12 +347,10 @@ func makeMapFromArray(arr []int) map[int]bool {
 	return m
 }
 
-// GenerateAccTestChecksForResourceOwners returns a list of acceptance test checks for the Owner User & User Group ID
-// slices of a given resource.
-func GenerateAccTestChecksForResourceOwners(
-	resourceType, resourceName string,
-	ownerUserIds, ownerUserGroupIds *[]int,
-) (funcs []resource.TestCheckFunc) {
+// GenerateAccTestChecksForResourceOwners -
+func GenerateAccTestChecksForResourceOwners(resourceType, resourceName string, ownerUserIds, ownerUserGroupIds *[]int) []resource.TestCheckFunc {
+	var funcs []resource.TestCheckFunc
+
 	if ownerUserIds != nil {
 		for idx, id := range *ownerUserIds {
 			funcs = append(funcs, resource.TestCheckResourceAttr(
@@ -442,11 +371,10 @@ func GenerateAccTestChecksForResourceOwners(
 		}
 	}
 
-	return
+	return funcs
 }
 
-// GenerateOwnerClausesForResourceTest generates a string of owner_users & owner_user_groups clauses to be used in a
-// resource declaration for acceptance tests.
+// GenerateOwnerClausesForResourceTest -
 func GenerateOwnerClausesForResourceTest(ownerUserIds, ownerUserGroupIds *[]int) (ownerClauses string) {
 	if ownerUserIds != nil {
 		for _, id := range *ownerUserIds {
@@ -463,7 +391,7 @@ func GenerateOwnerClausesForResourceTest(ownerUserIds, ownerUserGroupIds *[]int)
 	return
 }
 
-// TestAccOUGenerateDataSourceDeclarationFilter declares a data source to get an object that matches the name filter
+// TestAccOUGenerateDataSourceDeclarationFilter -
 func TestAccOUGenerateDataSourceDeclarationFilter(dataSourceName, localName, name string) string {
 	return fmt.Sprintf(`
 		data "%v" "%v" {
@@ -471,19 +399,185 @@ func TestAccOUGenerateDataSourceDeclarationFilter(dataSourceName, localName, nam
 				name = "name"
 				values = ["%v"]
 			}
-		}`, dataSourceName, localName, name,
-	)
+		}`, dataSourceName, localName, name)
 }
 
-// TestAccOUGenerateDataSourceDeclarationAll declares a data source to get all items
+// TestAccOUGenerateDataSourceDeclarationAll -
 func TestAccOUGenerateDataSourceDeclarationAll(dataSourceName, localName string) string {
 	return fmt.Sprintf(`
-		data "%v" "%v" {}`, dataSourceName, localName,
-	)
+		data "%v" "%v" {}`, dataSourceName, localName)
 }
 
-// PrintHCLConfig prints the generated HCL configuration for unit tests.
+// PrintHCLConfig -
 func PrintHCLConfig(config string) {
 	fmt.Println("Generated HCL configuration:")
 	fmt.Println(config)
+}
+
+// ConvertInterfaceSliceToIntSlice converts a slice of interfaces to a slice of integers.
+func ConvertInterfaceSliceToIntSlice(input []interface{}) ([]int, error) {
+	output := make([]int, len(input))
+	for i, v := range input {
+		// Check if the element is an integer
+		switch val := v.(type) {
+		case int:
+			output[i] = val
+		case map[string]interface{}:
+			// Handle complex type, extract ID or handle accordingly
+			if id, ok := val["id"].(int); ok {
+				output[i] = id
+			} else {
+				return nil, fmt.Errorf("expected 'id' field to be int, got: %v", val)
+			}
+		default:
+			return nil, fmt.Errorf("unsupported type in input slice: %T", v)
+		}
+	}
+	return output, nil
+}
+
+// GetPreviousUserAndGroupIds retrieves the previous state of user and user group IDs
+// from the Terraform resource data.
+func GetPreviousUserAndGroupIds(d *schema.ResourceData) ([]int, []int, error) {
+	var prevUserIds, prevUserGroupIds []int
+	var err error
+
+	// Check if the "user_ids" field has changed
+	if d.HasChange("user_ids") {
+		// Get the previous value of the "user_ids" field
+		oldValue, _ := d.GetChange("user_ids")
+		// Convert the previous value to a slice of integers
+		prevUserIds, err = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to convert previous user IDs: %w", err)
+		}
+	}
+
+	// Check if the "user_group_ids" field has changed
+	if d.HasChange("user_group_ids") {
+		// Get the previous value of the "user_group_ids" field
+		oldValue, _ := d.GetChange("user_group_ids")
+		// Convert the previous value to a slice of integers
+		prevUserGroupIds, err = ConvertInterfaceSliceToIntSlice(oldValue.([]interface{}))
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to convert previous user group IDs: %w", err)
+		}
+	}
+
+	return prevUserIds, prevUserGroupIds, nil
+}
+
+// FindDifferences finds the differences between two slices, returning the
+// elements that are present in slice1 but not in slice2.
+func FindDifferences[T comparable](slice1, slice2 []T) []T {
+	// Create a set from the second slice for efficient lookups
+	set := make(map[T]bool)
+	for _, v := range slice2 {
+		set[v] = true
+	}
+
+	var diff []T
+	// Iterate over the first slice and find elements not present in the second slice
+	for _, v := range slice1 {
+		if !set[v] {
+			diff = append(diff, v)
+		}
+	}
+	return diff
+}
+
+// ResourceDiffSetter is a wrapper around *schema.ResourceDiff to implement the SafeSetter interface.
+type ResourceDiffSetter struct {
+	Diff *schema.ResourceDiff
+}
+
+// Set wraps the SetNew method of *schema.ResourceDiff to implement the SafeSetter interface.
+func (r *ResourceDiffSetter) Set(key string, value interface{}) error {
+	return r.Diff.SetNew(key, value)
+}
+
+// SafeSetter is an interface that abstracts the behavior of setting a key-value pair
+// in Terraform's schema. It is implemented by both *schema.ResourceData and a custom wrapper
+// around *schema.ResourceDiff, allowing for a unified handling of schema mutations across
+// different Terraform lifecycle phases.
+type SafeSetter interface {
+	Set(key string, value interface{}) error
+}
+
+// SafeSet handles setting Terraform schema values, centralizing error reporting and ensuring non-nil values.
+func SafeSet(d SafeSetter, key string, value interface{}, summary string) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	if value != nil {
+		if err := d.Set(key, value); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  summary,
+				Detail:   fmt.Sprintf("Error setting %s: %v", key, err),
+			})
+		}
+	}
+	return diags
+}
+
+// ParseResourceID parses a resource ID string into its components based on the expected number of parts.
+// It returns the extracted ID components as integers and any error encountered during parsing.
+func ParseResourceID(resourceID string, expectedParts int, idNames ...string) ([]int, error) {
+	parts := strings.Split(resourceID, "-")
+	if len(parts) != expectedParts {
+		return nil, fmt.Errorf("invalid resource ID format, expected %s with %d parts", strings.Join(idNames, "-"), expectedParts)
+	}
+
+	ids := make([]int, len(idNames))
+	for i, name := range idNames {
+		id, err := strconv.Atoi(parts[i])
+		if err != nil {
+			return nil, fmt.Errorf("invalid %s, must be an integer", name)
+		}
+		ids[i] = id
+	}
+
+	return ids, nil
+}
+
+// HandleError -
+func HandleError(err error) diag.Diagnostics {
+	if err != nil {
+		return diag.Errorf("error occurred: %v", err)
+	}
+	return nil
+}
+
+// AtLeastOneFieldPresent -
+func AtLeastOneFieldPresent(fields map[string]interface{}) error {
+	for _, field := range fields {
+		switch v := field.(type) {
+		case []uint:
+			if len(v) > 0 {
+				return nil
+			}
+		case *schema.Set:
+			if v.Len() > 0 {
+				return nil
+			}
+		default:
+			// Add other cases as needed for different field types
+		}
+	}
+
+	var fieldNames []string
+	for name := range fields {
+		fieldNames = append(fieldNames, name)
+	}
+
+	return fmt.Errorf("at least one of the following fields must be specified: %v", fieldNames)
+}
+
+// ValidateAppRoleID is a helper function to be used in CustomizeDiff
+func ValidateAppRoleID(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	// Check if app_role_id is set to 1
+	if appRoleID := d.Get("app_role_id").(int); appRoleID == 1 {
+		return fmt.Errorf("changing the App Role 1 via this resource is not permitted")
+	}
+	return nil
 }
