@@ -64,6 +64,7 @@ func Provider() *schema.Provider {
 			"kion_project_enforcement":         resourceProjectEnforcement(),
 			"kion_saml_group_association":      resourceSamlGroupAssociation(),
 			"kion_service_control_policy":      resourceServiceControlPolicy(),
+			"kion_user":                        resourceUser(),
 			"kion_user_group":                  resourceUserGroup(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
@@ -85,6 +86,7 @@ func Provider() *schema.Provider {
 			"kion_project_enforcement":         dataSourceProjectEnforcement(),
 			"kion_saml_group_association":      dataSourceSamlGroupAssociation(),
 			"kion_service_control_policy":      dataServiceControlPolicy(),
+			"kion_user":                        dataSourceUser(),
 			"kion_user_group":                  dataSourceUserGroup(),
 		},
 		ConfigureContextFunc: providerConfigure,
