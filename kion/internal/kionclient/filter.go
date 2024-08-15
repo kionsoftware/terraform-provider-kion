@@ -14,32 +14,27 @@ type Filterable struct {
 	arr []Filter
 }
 
-// NewFilterable initializes a Filterable instance based on filters provided in the Terraform configuration.
-// This function dynamically creates filters based on the key-value pairs defined in the HCL.
 func NewFilterable(d *schema.ResourceData) *Filterable {
 	arr := make([]Filter, 0)
 
-	v, ok := d.GetOk("filter")
-	if !ok {
-		return nil
-	}
-
-	filterList := v.([]interface{})
-
+	filterList := d.Get("filter").([]interface{})
 	for _, v := range filterList {
 		fi := v.(map[string]interface{})
 
-		// Directly use the keys in the map as filter criteria.
-		for key, value := range fi {
-			if value != nil {
-				f := Filter{
-					key:    key,
-					keys:   strings.Split(key, "."),
-					values: []interface{}{value},
-					regex:  false, // Assume non-regex matching by default.
-				}
-				arr = append(arr, f)
+		filterName, nameOk := fi["name"].(string)
+		filterValues, valuesOk := fi["values"].([]interface{})
+		filterRegex, regexOk := fi["regex"].(bool)
+
+		if nameOk && valuesOk {
+			f := Filter{
+				key:    filterName,
+				keys:   strings.Split(filterName, "."),
+				values: filterValues,
+				regex:  regexOk && filterRegex,
 			}
+			arr = append(arr, f)
+		} else {
+			return nil
 		}
 	}
 
