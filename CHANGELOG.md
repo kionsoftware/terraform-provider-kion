@@ -13,6 +13,15 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.18] - 2024-08-15
+
+## What's Changed
+
+### Fixed
+
+* Corrected a regression in the `NewFilterable` function that caused issues with filter list processing and key-value handling for HCL-defined filters.
+* Fixed formatting issues in the `clone_resource` function to prevent unnecessary line breaks in resource names.
+
 ## [0.3.17] - 2024-08-13
 
 ## What's Changed
