@@ -111,7 +111,6 @@ func resourceAzureAccount() *schema.Resource {
 			},
 			"last_updated": {
 				Type:     schema.TypeString,
-				Optional: true,
 				Computed: true,
 			},
 			"location": {

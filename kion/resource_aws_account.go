@@ -127,11 +127,6 @@ func resourceAwsAccount() *schema.Resource {
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				Description:  "A map of labels to assign to the account. The labels must already exist in Kion.",
 			},
-			"last_updated": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 			"linked_account_number": {
 				Type:        schema.TypeString,
 				Computed:    true,
