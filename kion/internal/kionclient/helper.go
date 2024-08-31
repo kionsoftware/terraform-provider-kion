@@ -6,6 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	"database/sql"
+	"encoding/json"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -620,6 +624,60 @@ func ValidateAppRoleID(ctx context.Context, d *schema.ResourceDiff, meta interfa
 	// Check if app_role_id is set to 1
 	if appRoleID := d.Get("app_role_id").(int); appRoleID == 1 {
 		return fmt.Errorf("changing the App Role 1 via this resource is not permitted")
+	}
+	return nil
+}
+
+// NullTime represents a time.Time that may be null.
+// NullTime embeds sql.NullTime and adds JSON marshalling capabilities.
+type NullTime struct {
+	sql.NullTime
+}
+
+// MarshalJSON for NullTime to handle both time and valid fields.
+func (nt NullTime) MarshalJSON() ([]byte, error) {
+	if !nt.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(struct {
+		Time  string `json:"Time"`
+		Valid bool   `json:"Valid"`
+	}{
+		Time:  nt.Time.Format(time.RFC3339),
+		Valid: nt.Valid,
+	})
+}
+
+type NullString struct {
+	sql.NullString
+}
+
+// MarshalJSON for NullString to handle both the string and valid fields.
+func (ns NullString) MarshalJSON() ([]byte, error) {
+	if !ns.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(struct {
+		String string `json:"String"`
+		Valid  bool   `json:"Valid"`
+	}{
+		String: ns.String,
+		Valid:  ns.Valid,
+	})
+}
+
+// UnmarshalJSON to properly decode JSON into NullString.
+func (ns *NullString) UnmarshalJSON(data []byte) error {
+	var v *string
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	if v != nil {
+		ns.Valid = true
+		ns.String = *v
+	} else {
+		ns.Valid = false
+		ns.String = ""
 	}
 	return nil
 }

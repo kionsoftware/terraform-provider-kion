@@ -14,29 +14,21 @@ description: |-
 
 ```terraform
 resource "kion_aws_ami" "example" {
-  account_id         = 123456789
-  aws_ami_id         = "ami-0abcdef1234567890"
-  name               = "My Example AMI"
-  region             = "us-west-2"
-  description        = "This is an example AMI"
-  expires_at         = "2024-12-31T23:59:59Z" # Optional: set an expiration date
-  sync_deprecation   = true                   # Optional: synchronize deprecation status
-  sync_tags          = true                   # Optional: synchronize tags
-  unavailable_in_aws = false                  # Optional: indicate if AMI is unavailable in AWS
-
-  # Optional: Define owner user groups
-  owner_user_groups = [
-    {
-      id = 1234
-    }
-  ]
-
-  # Optional: Define owner users
-  owner_users = [
-    {
-      id = 5678
-    }
-  ]
+  account_id                = 1                          # Required: AWS account application ID where the AMI is stored
+  aws_ami_id                = "ami-123456"               # Required: Image ID of the AMI from AWS
+  description               = "Gold image for RHEL 7.5." # Optional: Description for the AMI in the application
+  expiration_alert_number   = 1                          # Optional: The amount of time before the expiration alert is shown
+  expiration_alert_unit     = "days"                     # Optional: The unit of time for the expiration alert (e.g., 'days', 'hours')
+  expiration_notify         = true                       # Optional: Will notify the owners that the shared AMI has expired
+  expiration_warning_number = 1                          # Optional: The amount of time before the expiration warning is sent
+  expiration_warning_unit   = "days"                     # Optional: The unit of time for the expiration warning (e.g., 'days', 'hours')
+  expires_at                = "2024-12-31T22:10:41.406Z" # Optional: Set an expiration date
+  name                      = "rhel-7-5-20180213"        # Required: The name of the AMI
+  owner_user_group_ids      = [1, 2]                     # Optional: List of group IDs who will own the AMI
+  owner_user_ids            = [1, 2]                     # Optional: List of user IDs who will own the AMI
+  region                    = "us-east-1"                # Required: AWS region where the AMI exists
+  sync_deprecation          = true                       # Optional: Will sync the expiration date from the system into the AMI in AWS
+  sync_tags                 = true                       # Optional: Will sync the AWS tags from the source AMI into all the accounts where the AMI is shared
 }
 
 output "ami_id" {
@@ -53,37 +45,27 @@ output "ami_name" {
 
 ### Required
 
-- `account_id` (Number)
-- `aws_ami_id` (String)
-- `name` (String)
-- `region` (String)
+- `account_id` (Number) AWS account application ID where the AMI is stored.
+- `aws_ami_id` (String) Image ID of the AMI from AWS.
+- `name` (String) The name of the AMI.
+- `region` (String) AWS region where the AMI exists.
 
 ### Optional
 
-- `description` (String)
-- `expires_at` (String)
-- `last_updated` (String)
-- `owner_user_groups` (Block Set) (see [below for nested schema](#nestedblock--owner_user_groups))
-- `owner_users` (Block Set) (see [below for nested schema](#nestedblock--owner_users))
-- `sync_deprecation` (Boolean)
-- `sync_tags` (Boolean)
-- `unavailable_in_aws` (Boolean)
+- `description` (String) Description for the AMI in the application.
+- `expiration_alert_number` (Number) The amount of time before the expiration alert is shown.
+- `expiration_alert_unit` (String) The unit of time for the expiration alert (e.g., 'days', 'hours'). This may be null.
+- `expiration_notify` (Boolean) Will notify the owners that the shared AMI has expired.
+- `expiration_warning_number` (Number) The amount of time before the expiration warning is sent.
+- `expiration_warning_unit` (String) The unit of time for the expiration warning (e.g., 'days', 'hours'). This may be null.
+- `expires_at` (String) The expiration date and time of the AMI. This may be null.
+- `owner_user_group_ids` (List of Number) List of group IDs who will own the AMI. Required if no owner user IDs are listed.
+- `owner_user_ids` (List of Number) List of user IDs who will own the AMI. Required if no owner group IDs are listed.
+- `sync_deprecation` (Boolean) Will sync the expiration date from the system into the AMI in AWS.
+- `sync_tags` (Boolean) Will sync the AWS tags from the source AMI into all the accounts where the AMI is shared.
+- `unavailable_in_aws` (Boolean) Indicates if the AMI is unavailable in AWS.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-<a id="nestedblock--owner_user_groups"></a>
-### Nested Schema for `owner_user_groups`
-
-Read-Only:
-
-- `id` (Number) The ID of this resource.
-
-
-<a id="nestedblock--owner_users"></a>
-### Nested Schema for `owner_users`
-
-Read-Only:
-
-- `id` (Number) The ID of this resource.
+- `last_updated` (String)

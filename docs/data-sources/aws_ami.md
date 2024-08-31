@@ -48,8 +48,18 @@ output "first_ami_name" {
 
 ### Read-Only
 
+- `account_id` (Number) AWS account application ID where the AMI is stored.
+- `aws_ami_id` (String) Image ID of the AMI from AWS.
+- `description` (String) Description for the AMI in the application.
+- `expires_at` (String) The expiration date and time of the AMI. This may be null.
 - `id` (String) The ID of this resource.
-- `list` (List of Object) This is where Kion makes the discovered AMI data available as a list of resources. (see [below for nested schema](#nestedatt--list))
+- `name` (String) The name of the AMI.
+- `owner_user_group_ids` (List of Number) List of group IDs who own the AMI.
+- `owner_user_ids` (List of Number) List of user IDs who own the AMI.
+- `region` (String) AWS region where the AMI exists.
+- `sync_deprecation` (Boolean) Will sync the expiration date from the system into the AMI in AWS.
+- `sync_tags` (Boolean) Will sync the AWS tags from the source AMI into all the accounts where the AMI is shared.
+- `unavailable_in_aws` (Boolean) Indicates if the AMI is unavailable in AWS.
 
 <a id="nestedblock--filter"></a>
 ### Nested Schema for `filter`
@@ -62,21 +72,3 @@ Required:
 Optional:
 
 - `regex` (Boolean) Dictates if the values provided should be treated as regular expressions.
-
-
-<a id="nestedatt--list"></a>
-### Nested Schema for `list`
-
-Read-Only:
-
-- `account_id` (Number)
-- `aws_ami_id` (String)
-- `description` (String)
-- `expires_at` (String)
-- `name` (String)
-- `owner_user_groups` (List of String)
-- `owner_users` (List of String)
-- `region` (String)
-- `sync_deprecation` (Boolean)
-- `sync_tags` (Boolean)
-- `unavailable_in_aws` (Boolean)

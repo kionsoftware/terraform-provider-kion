@@ -40,60 +40,62 @@ func dataSourceAwsAmi() *schema.Resource {
 					},
 				},
 			},
-			"list": {
-				Description: "This is where Kion makes the discovered AMI data available as a list of resources.",
+			"account_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "AWS account application ID where the AMI is stored.",
+			},
+			"aws_ami_id": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Image ID of the AMI from AWS.",
+			},
+			"description": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Description for the AMI in the application.",
+			},
+			"expires_at": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The expiration date and time of the AMI. This may be null.",
+			},
+			"name": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The name of the AMI.",
+			},
+			"region": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "AWS region where the AMI exists.",
+			},
+			"sync_deprecation": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Will sync the expiration date from the system into the AMI in AWS.",
+			},
+			"sync_tags": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Will sync the AWS tags from the source AMI into all the accounts where the AMI is shared.",
+			},
+			"unavailable_in_aws": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Indicates if the AMI is unavailable in AWS.",
+			},
+			"owner_user_group_ids": {
 				Type:        schema.TypeList,
 				Computed:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"account_id": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
-						"aws_ami_id": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"description": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"expires_at": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"name": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"region": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"sync_deprecation": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"sync_tags": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"unavailable_in_aws": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"owner_user_groups": {
-							Type:     schema.TypeList,
-							Computed: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
-						},
-						"owner_users": {
-							Type:     schema.TypeList,
-							Computed: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
-						},
-					},
-				},
+				Description: "List of group IDs who own the AMI.",
+				Elem:        &schema.Schema{Type: schema.TypeInt},
+			},
+			"owner_user_ids": {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: "List of user IDs who own the AMI.",
+				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
 		},
 	}
@@ -113,13 +115,20 @@ func dataSourceAwsAmiRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	arr := make([]map[string]interface{}, 0)
 	for _, item := range resp.Data {
-		ami := item.Ami // Access the nested Ami struct
+		ami := item.Ami
 
 		data := make(map[string]interface{})
 		data["account_id"] = ami.AccountID
 		data["aws_ami_id"] = ami.AwsAmiID
 		data["description"] = ami.Description
-		data["expires_at"] = ami.ExpiresAt.Format(time.RFC3339)
+
+		if ami.ExpiresAt.Valid {
+			data["expires_at"] = ami.ExpiresAt.Time.Format(time.RFC3339)
+		} else {
+			data["expires_at"] = nil
+		}
+
+		data["id"] = ami.ID
 		data["name"] = ami.Name
 		data["region"] = ami.Region
 		data["sync_deprecation"] = ami.SyncDeprecation
