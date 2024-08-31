@@ -629,7 +629,7 @@ func ValidateAppRoleID(ctx context.Context, d *schema.ResourceDiff, meta interfa
 }
 
 // NullTime represents a time.Time that may be null.
-// NullTime embeds sql.NullTime and adds JSON marshalling capabilities.
+// NullTime embeds sql.NullTime and adds JSON marshaling capabilities.
 type NullTime struct {
 	sql.NullTime
 }
