@@ -3,9 +3,7 @@ package kion
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -112,13 +110,19 @@ func resourceAwsAmi() *schema.Resource {
 				Description: "Indicates if the AMI is unavailable in AWS.",
 			},
 		},
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			fields := map[string]interface{}{
+				"owner_user_group_ids": d.Get("owner_user_group_ids"),
+				"owner_user_ids":       d.Get("owner_user_ids"),
+			}
+			return hc.AtLeastOneFieldPresent(fields)
+		},
 	}
 }
 
 func resourceAwsAmiCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
-	// Handle expires_at field
 	expiresAtStr := d.Get("expires_at").(string)
 	var expiresAt hc.NullTime
 	if expiresAtStr != "" {
@@ -140,7 +144,6 @@ func resourceAwsAmiCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		}
 	}
 
-	// Handle optional expiration alert and warning units
 	expirationAlertUnit := d.Get("expiration_alert_unit").(string)
 	var alertUnit hc.NullString
 	if expirationAlertUnit != "" {
@@ -175,7 +178,6 @@ func resourceAwsAmiCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		}
 	}
 
-	// Convert slices of interface{} to slices of int
 	ownerUserGroupIds := d.Get("owner_user_group_ids").([]interface{})
 	ownerUserIds := d.Get("owner_user_ids").([]interface{})
 
@@ -189,35 +191,24 @@ func resourceAwsAmiCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return hc.HandleError(fmt.Errorf("error processing owner_user_ids: %v", err))
 	}
 
-	// Create the AMI using the provided fields
 	post := hc.AmiCreate{
 		AccountID:               d.Get("account_id").(int),
 		AwsAmiID:                d.Get("aws_ami_id").(string),
 		Description:             d.Get("description").(string),
 		Name:                    d.Get("name").(string),
 		Region:                  d.Get("region").(string),
-		ExpiresAt:               expiresAt,
-		SyncDeprecation:         d.Get("sync_deprecation").(bool),
-		SyncTags:                d.Get("sync_tags").(bool),
-		OwnerUserGroupIds:       &ownerUserGroupIdsInt,
-		OwnerUserIds:            &ownerUserIdsInt,
 		ExpirationAlertNumber:   d.Get("expiration_alert_number").(int),
 		ExpirationAlertUnit:     alertUnit,
 		ExpirationNotify:        d.Get("expiration_notify").(bool),
 		ExpirationWarningNumber: d.Get("expiration_warning_number").(int),
 		ExpirationWarningUnit:   warningUnit,
+		ExpiresAt:               expiresAt,
+		OwnerUserGroupIds:       &ownerUserGroupIdsInt,
+		OwnerUserIds:            &ownerUserIdsInt,
+		SyncDeprecation:         d.Get("sync_deprecation").(bool),
+		SyncTags:                d.Get("sync_tags").(bool),
 	}
 
-	// Convert the post object to JSON for logging
-	postJSON, err := json.MarshalIndent(post, "", "  ")
-	if err != nil {
-		return hc.HandleError(fmt.Errorf("unable to marshal AWS AMI creation request: %v", err))
-	}
-
-	// Log the JSON body
-	log.Printf("AWS AMI Creation Request JSON: %s", string(postJSON))
-
-	// Make the API call to create the AMI
 	resp, err := client.POST("/v3/ami", post)
 	if err != nil {
 		return hc.HandleError(fmt.Errorf("unable to create AWS AMI: %v", err))
@@ -225,10 +216,8 @@ func resourceAwsAmiCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return hc.HandleError(fmt.Errorf("unable to create AWS AMI: received item ID of 0"))
 	}
 
-	// Set the resource ID in Terraform
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	// Read the resource data after creation
 	return resourceAwsAmiRead(ctx, d, m)
 }
 
@@ -277,7 +266,7 @@ func resourceAwsAmiUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 
 	hasChanged := false
 
-	if d.HasChanges("description", "name", "region", "sync_deprecation", "sync_tags", "expires_at") {
+	if d.HasChanges("description", "name", "region", "sync_deprecation", "sync_tags", "expires_at", "expiration_alert_number", "expiration_alert_unit", "expiration_notify", "expiration_warning_number", "expiration_warning_unit") {
 		hasChanged = true
 
 		// Parse the expires_at field into NullTime
@@ -293,13 +282,52 @@ func resourceAwsAmiUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 			expiresAt = hc.NullTime{NullTime: sql.NullTime{Valid: false}}
 		}
 
+		expirationAlertUnit := d.Get("expiration_alert_unit").(string)
+		var alertUnit hc.NullString
+		if expirationAlertUnit != "" {
+			alertUnit = hc.NullString{
+				NullString: sql.NullString{
+					String: expirationAlertUnit,
+					Valid:  true,
+				},
+			}
+		} else {
+			alertUnit = hc.NullString{
+				NullString: sql.NullString{
+					Valid: false,
+				},
+			}
+		}
+
+		expirationWarningUnit := d.Get("expiration_warning_unit").(string)
+		var warningUnit hc.NullString
+		if expirationWarningUnit != "" {
+			warningUnit = hc.NullString{
+				NullString: sql.NullString{
+					String: expirationWarningUnit,
+					Valid:  true,
+				},
+			}
+		} else {
+			warningUnit = hc.NullString{
+				NullString: sql.NullString{
+					Valid: false,
+				},
+			}
+		}
+
 		req := hc.AmiUpdate{
-			Description:     d.Get("description").(string),
-			Name:            d.Get("name").(string),
-			Region:          d.Get("region").(string),
-			SyncDeprecation: d.Get("sync_deprecation").(bool),
-			SyncTags:        d.Get("sync_tags").(bool),
-			ExpiresAt:       expiresAt,
+			Description:             d.Get("description").(string),
+			Name:                    d.Get("name").(string),
+			Region:                  d.Get("region").(string),
+			SyncDeprecation:         d.Get("sync_deprecation").(bool),
+			SyncTags:                d.Get("sync_tags").(bool),
+			ExpiresAt:               expiresAt,
+			ExpirationAlertNumber:   d.Get("expiration_alert_number").(int),
+			ExpirationAlertUnit:     alertUnit,
+			ExpirationNotify:        d.Get("expiration_notify").(bool),
+			ExpirationWarningNumber: d.Get("expiration_warning_number").(int),
+			ExpirationWarningUnit:   warningUnit,
 		}
 
 		err := client.PATCH(fmt.Sprintf("/v3/ami/%s", ID), req)
@@ -345,21 +373,13 @@ func resourceAwsAmiUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 }
 
 func resourceAwsAmiDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := client.DELETE(fmt.Sprintf("/v3/ami/%s", ID), nil)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to delete AWS AMI",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
+	if diags := hc.HandleError(err); diags != nil {
 		return diags
 	}
 
-	d.SetId("")
-
-	return diags
+	return hc.SafeSet(d, "id", "", "Failed to reset resource ID after deletion")
 }
