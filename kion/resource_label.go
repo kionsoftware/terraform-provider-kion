@@ -52,10 +52,31 @@ func resourceLabelCreate(ctx context.Context, d *schema.ResourceData, m interfac
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
+	key := d.Get("key").(string)
+	value := d.Get("value").(string)
+
+	// Check if the label already exists
+	exists, existingLabelID, err := hc.LabelExists(client, key, value)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to check if Label exists",
+			Detail:   fmt.Sprintf("Error: %v\nKey: %v Value: %v", err.Error(), key, value),
+		})
+		return diags
+	}
+
+	if exists {
+		// Label already exists, set the ID
+		d.SetId(strconv.Itoa(existingLabelID))
+		// Optionally, you can update the color if it differs
+		return resourceLabelRead(ctx, d, m)
+	}
+
 	post := hc.LabelCreate{
 		Color: d.Get("color").(string),
-		Key:   d.Get("key").(string),
-		Value: d.Get("value").(string),
+		Key:   key,
+		Value: value,
 	}
 
 	resp, err := client.POST("/v3/label", post)
@@ -77,9 +98,7 @@ func resourceLabelCreate(ctx context.Context, d *schema.ResourceData, m interfac
 
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	resourceLabelRead(ctx, d, m)
-
-	return diags
+	return resourceLabelRead(ctx, d, m)
 }
 
 func resourceLabelRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

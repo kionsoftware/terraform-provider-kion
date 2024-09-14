@@ -190,7 +190,7 @@ func resourceProject() *schema.Resource {
 				Type:        schema.TypeMap,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "A map of labels to assign to the project. The labels must already exist in Kion.",
+				Description: "A map of labels to assign to the project. The labels will be created if they don't already exist in Kion.",
 			},
 		},
 	}
