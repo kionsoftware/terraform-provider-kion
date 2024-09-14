@@ -641,18 +641,30 @@ func resourceCloudRuleDelete(ctx context.Context, d *schema.ResourceData, m inte
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := client.DELETE(fmt.Sprintf("/v3/cloud-rule/%s", ID), nil)
+	// Step 1: Fetch the CloudRule details
+	cloudRule, err := getCloudRuleDetails(client, ID)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to delete CloudRule",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+		return diag.FromErr(fmt.Errorf("failed to fetch CloudRule details: %w", err))
 	}
 
-	// d.SetId("") is automatically called assuming delete returns no errors, but
-	// it is added here for explicitness.
+	// Step 2: Collect IDs to remove associations
+	associationsToRemove := collectAssociationsToRemove(cloudRule)
+
+	// Step 3: Remove associations if any exist
+	if hasAssociationsToRemove(associationsToRemove) {
+		err := removeCloudRuleAssociations(client, ID, associationsToRemove)
+		if err != nil {
+			return diag.FromErr(fmt.Errorf("unable to remove associations for CloudRule: %w", err))
+		}
+	}
+
+	// Step 4: Delete the CloudRule itself
+	err = client.DELETE(fmt.Sprintf("/v3/cloud-rule/%s", ID), nil)
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("unable to delete CloudRule: %w", err))
+	}
+
+	// Step 5: Mark resource as deleted in Terraform
 	d.SetId("")
 
 	return diags
@@ -685,4 +697,157 @@ func updateCFTandARMTemplateAssociations(client *hc.Client, ID string, ids []int
 		})
 	}
 	return diags
+}
+
+// Helper function to fetch CloudRule details
+func getCloudRuleDetails(client *hc.Client, id string) (*hc.CloudRuleResponse, error) {
+	var cloudRule hc.CloudRuleResponse
+	err := client.GET(fmt.Sprintf("/v3/cloud-rule/%s", id), &cloudRule)
+	if err != nil {
+		return nil, err
+	}
+	return &cloudRule, nil
+}
+
+// Helper function to collect all associations to be removed
+func collectAssociationsToRemove(cloudRule *hc.CloudRuleResponse) hc.CloudRuleAssociationsRemove {
+	associations := hc.CloudRuleAssociationsRemove{}
+
+	// Collect IDs for Organizational Units (OUs)
+	if len(cloudRule.Data.OUs) > 0 {
+		var ouIds []int
+		for _, ou := range cloudRule.Data.OUs {
+			ouIds = append(ouIds, ou.ID)
+		}
+		associations.OUIds = &ouIds
+	}
+
+	// Collect IDs for Projects
+	if len(cloudRule.Data.Projects) > 0 {
+		var projectIds []int
+		for _, project := range cloudRule.Data.Projects {
+			projectIds = append(projectIds, project.ID)
+		}
+		associations.ProjectIds = &projectIds
+	}
+
+	// Collect IDs for AWS CloudFormation Templates
+	if len(cloudRule.Data.AwsCloudformationTemplates) > 0 {
+		var cftIds []int
+		for _, template := range cloudRule.Data.AwsCloudformationTemplates {
+			cftIds = append(cftIds, template.ID)
+		}
+		associations.CftIds = &cftIds
+	}
+
+	// Collect IDs for AWS IAM Policies
+	if len(cloudRule.Data.AwsIamPolicies) > 0 {
+		var iamPolicyIds []int
+		for _, policy := range cloudRule.Data.AwsIamPolicies {
+			iamPolicyIds = append(iamPolicyIds, policy.ID)
+		}
+		associations.IamPolicyIds = &iamPolicyIds
+	}
+
+	// Collect IDs for Azure ARM Template Definitions
+	if len(cloudRule.Data.AzureArmTemplateDefinitions) > 0 {
+		var armTemplateDefIds []int
+		for _, armDef := range cloudRule.Data.AzureArmTemplateDefinitions {
+			armTemplateDefIds = append(armTemplateDefIds, armDef.ID)
+		}
+		associations.AzureArmTemplateDefinitionIds = &armTemplateDefIds
+	}
+
+	// Collect IDs for Azure Policy Definitions
+	if len(cloudRule.Data.AzurePolicyDefinitions) > 0 {
+		var azurePolicyDefIds []int
+		for _, policyDef := range cloudRule.Data.AzurePolicyDefinitions {
+			azurePolicyDefIds = append(azurePolicyDefIds, policyDef.ID)
+		}
+		associations.AzurePolicyDefinitionIds = &azurePolicyDefIds
+	}
+
+	// Collect IDs for Azure Role Definitions
+	if len(cloudRule.Data.AzureRoleDefinitions) > 0 {
+		var azureRoleDefIds []int
+		for _, roleDef := range cloudRule.Data.AzureRoleDefinitions {
+			azureRoleDefIds = append(azureRoleDefIds, roleDef.ID)
+		}
+		associations.AzureRoleDefinitionIds = &azureRoleDefIds
+	}
+
+	// Collect IDs for Compliance Standards
+	if len(cloudRule.Data.ComplianceStandards) > 0 {
+		var complianceStandardIds []int
+		for _, standard := range cloudRule.Data.ComplianceStandards {
+			complianceStandardIds = append(complianceStandardIds, standard.ID)
+		}
+		associations.ComplianceStandardIds = &complianceStandardIds
+	}
+
+	// Collect IDs for GCP IAM Roles
+	if len(cloudRule.Data.GCPIAMRoles) > 0 {
+		var gcpIamRoleIds []int
+		for _, role := range cloudRule.Data.GCPIAMRoles {
+			gcpIamRoleIds = append(gcpIamRoleIds, role.ID)
+		}
+		associations.GcpIamRoleIds = &gcpIamRoleIds
+	}
+
+	// Collect IDs for Internal AWS AMIs
+	if len(cloudRule.Data.InternalAwsAmis) > 0 {
+		var awsAmiIds []int
+		for _, ami := range cloudRule.Data.InternalAwsAmis {
+			awsAmiIds = append(awsAmiIds, ami.ID)
+		}
+		associations.InternalAmiIds = &awsAmiIds
+	}
+
+	// Collect IDs for Internal AWS Service Catalog Portfolios
+	if len(cloudRule.Data.InternalAwsServiceCatalogPortfolios) > 0 {
+		var serviceCatalogPortfolioIds []int
+		for _, portfolio := range cloudRule.Data.InternalAwsServiceCatalogPortfolios {
+			serviceCatalogPortfolioIds = append(serviceCatalogPortfolioIds, portfolio.ID)
+		}
+		associations.InternalPortfolioIds = &serviceCatalogPortfolioIds
+	}
+
+	// Collect IDs for Owner User Groups
+	if len(cloudRule.Data.OwnerUserGroups) > 0 {
+		var userGroupIds []int
+		for _, group := range cloudRule.Data.OwnerUserGroups {
+			userGroupIds = append(userGroupIds, group.ID)
+		}
+		associations.ServiceControlPolicyIds = &userGroupIds
+	}
+
+	// Collect IDs for Service Control Policies
+	if len(cloudRule.Data.ServiceControlPolicies) > 0 {
+		var serviceControlPolicyIds []int
+		for _, scp := range cloudRule.Data.ServiceControlPolicies {
+			serviceControlPolicyIds = append(serviceControlPolicyIds, scp.ID)
+		}
+		associations.ServiceControlPolicyIds = &serviceControlPolicyIds
+	}
+
+	return associations
+}
+
+// Helper function to check if there are any associations to remove
+func hasAssociationsToRemove(associations hc.CloudRuleAssociationsRemove) bool {
+	return associations.OUIds != nil || associations.ProjectIds != nil || associations.CftIds != nil ||
+		associations.IamPolicyIds != nil || associations.AzureArmTemplateDefinitionIds != nil ||
+		associations.AzurePolicyDefinitionIds != nil || associations.AzureRoleDefinitionIds != nil ||
+		associations.ComplianceStandardIds != nil || associations.GcpIamRoleIds != nil ||
+		associations.InternalAmiIds != nil || associations.InternalPortfolioIds != nil ||
+		associations.ServiceControlPolicyIds != nil
+}
+
+// Helper function to remove associations
+func removeCloudRuleAssociations(client *hc.Client, id string, associations hc.CloudRuleAssociationsRemove) error {
+	err := client.DELETE(fmt.Sprintf("/v3/cloud-rule/%s/association", id), associations)
+	if err != nil {
+		return err
+	}
+	return nil
 }
