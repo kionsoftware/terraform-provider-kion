@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -103,28 +104,39 @@ func resourceOUCreate(ctx context.Context, d *schema.ResourceData, m interface{}
 		PermissionSchemeID: d.Get("permission_scheme_id").(int),
 	}
 
-	resp, err := client.POST("/v3/ou", post)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create OU",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), post),
-		})
-		return diags
-	} else if resp.RecordID == 0 {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create OU",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), post),
-		})
-		return diags
-	}
+	// Add retry logic
+	maxRetries := 5
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		resp, err := client.POST("/v3/ou", post)
+		if err != nil {
+			if strings.Contains(err.Error(), "Duplicate entry") && attempt < maxRetries-1 {
+				// If it's a duplicate entry error and not the last attempt, wait and retry
+				time.Sleep(time.Duration(attempt+1) * time.Second)
+				continue
+			}
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to create OU",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), post),
+			})
+			return diags
+		} else if resp.RecordID == 0 {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to create OU",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), post),
+			})
+			return diags
+		}
 
-	d.SetId(strconv.Itoa(resp.RecordID))
+		// If successful, set the ID and break the loop
+		d.SetId(strconv.Itoa(resp.RecordID))
+		break
+	}
 
 	if labels, ok := d.GetOk("labels"); ok && labels != nil {
 		ID := d.Id()
-		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "ou", ID)
+		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "ou", ID)
 
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
