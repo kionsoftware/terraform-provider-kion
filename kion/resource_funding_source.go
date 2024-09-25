@@ -32,7 +32,7 @@ func resourceFundingSource() *schema.Resource {
 				Computed: true,
 			},
 			"amount": {
-				Type:     schema.TypeInt,
+				Type:     schema.TypeFloat,
 				Required: true,
 			},
 			"description": {
@@ -102,7 +102,7 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 	client := m.(*hc.Client)
 
 	post := hc.FundingSourceCreate{
-		Amount:             d.Get("amount").(int),
+		Amount:             d.Get("amount").(float64),
 		Description:        d.Get("description").(string),
 		Name:               d.Get("name").(string),
 		StartDatecode:      d.Get("start_datecode").(string),
@@ -242,7 +242,7 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 	// Determine if the attributes that are updatable are changed.
 	if d.HasChanges("amount", "description", "end_datecode", "name", "ou_id", "start_datecode") {
 		req := hc.FundingSourceUpdate{
-			Amount:        d.Get("amount").(int),
+			Amount:        d.Get("amount").(float64),
 			Description:   d.Get("description").(string),
 			Name:          d.Get("name").(string),
 			EndDatecode:   d.Get("end_datecode").(string),
