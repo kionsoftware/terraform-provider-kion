@@ -13,6 +13,20 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.19] - 2024-09-26
+
+## What's Changed
+
+### Fixed
+
+* Ensured consistent handling of funding source `amount` fields across API models and Terraform schema definitions to prevent type mismatches.
+
+### Changed
+
+* Updated the `amount` field in the `FundingSource` schema from `TypeInt` to `TypeFloat` for more accurate representation of funding values.
+* Modified the `models_funding_source.go` to reflect the new `float64` type for the `amount` field in all funding source-related structures.
+* Adjusted the `resourceFundingSource` and `resourceFundingSourceUpdate` methods to use `float64` for the `amount` attribute during creation and updates.
+
 ## [0.3.18] - 2024-08-15
 
 ## What's Changed
