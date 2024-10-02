@@ -28,7 +28,6 @@ func resourceCloudRule() *schema.Resource {
 			// Notice there is no 'id' field specified because it will be created.
 			"last_updated": {
 				Type:     schema.TypeString,
-				Optional: true,
 				Computed: true,
 			},
 			"aws_cloudformation_templates": {
@@ -623,12 +622,8 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 	}
 
 	if hasChanged > 0 {
-		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Failed to set last_updated",
-				Detail:   err.Error(),
-			})
+		diags = append(diags, hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Failed to set last_updated")...)
+		if len(diags) > 0 {
 			return diags
 		}
 	}

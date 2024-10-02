@@ -28,7 +28,6 @@ func resourceOUCloudAccessRole() *schema.Resource {
 			// Notice there is no 'id' field specified because it will be created.
 			"last_updated": {
 				Type:     schema.TypeString,
-				Optional: true,
 				Computed: true,
 			},
 			"aws_iam_path": {
