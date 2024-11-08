@@ -2,6 +2,7 @@ package kionclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -622,4 +623,30 @@ func ValidateAppRoleID(ctx context.Context, d *schema.ResourceDiff, meta interfa
 		return fmt.Errorf("changing the App Role 1 via this resource is not permitted")
 	}
 	return nil
+}
+
+// UnpackCvValueJsonStr unpacks the CV terraform value string schema to get the CV value
+func UnpackCvValueJsonStr(cvValueJsonStr string) (interface{}, error) {
+	var valueJsonMap map[string]interface{}
+	err := json.Unmarshal([]byte(cvValueJsonStr), &valueJsonMap)
+	if err != nil {
+		return nil, fmt.Errorf(`failed to unmarshal CV value JSON "%s", should be in format {"value": <string, list of strings, or map of string to string>}: %v`, cvValueJsonStr, err)
+	}
+	var defaultValue interface{}
+	if valueJsonMap != nil {
+		if _, ok := valueJsonMap["value"]; ok {
+			defaultValue = valueJsonMap["value"]
+		}
+	}
+	return defaultValue, nil
+}
+
+// PackCvValueIntoJsonStr packs the CV interface value into a JSON string to be stored in the terraform schema
+func PackCvValueIntoJsonStr(value interface{}) (string, error) {
+	valueJsonMap := map[string]interface{}{"value": value}
+	valueJsonStr, err := json.Marshal(valueJsonMap)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal returned CV value '%v' into JSON: %v", value, err)
+	}
+	return string(valueJsonStr), nil
 }
