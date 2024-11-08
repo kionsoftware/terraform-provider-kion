@@ -26,11 +26,10 @@ func resourceCustomVariable() *schema.Resource {
 			},
 		},
 		Schema: map[string]*schema.Schema{
-			// Notice there is no 'id' field specified because it will be created.
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true, // Not allowed to be changed, forces new item if changed.
+				ForceNew: true,
 			},
 			"description": {
 				Type:     schema.TypeString,
@@ -39,9 +38,9 @@ func resourceCustomVariable() *schema.Resource {
 			"type": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true, // Not allowed to be changed, forces new item if changed.
+				ForceNew: true,
 			},
-			"default_value": {
+			"default_value_string": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"default_value_list", "default_value_map"},
@@ -50,13 +49,13 @@ func resourceCustomVariable() *schema.Resource {
 				Type:          schema.TypeList,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"default_value", "default_value_map"},
+				ConflictsWith: []string{"default_value_string", "default_value_map"},
 			},
 			"default_value_map": {
 				Type:          schema.TypeMap,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"default_value", "default_value_list"},
+				ConflictsWith: []string{"default_value_string", "default_value_list"},
 			},
 			"value_validation_regex": {
 				Type:     schema.TypeString,
@@ -111,7 +110,7 @@ func resourceCustomVariableCreate(ctx context.Context, d *schema.ResourceData, m
 
 	switch cvType {
 	case "string":
-		defaultValue = d.Get("default_value")
+		defaultValue = d.Get("default_value_string")
 	case "list":
 		defaultValue = d.Get("default_value_list")
 	case "map":
@@ -191,7 +190,7 @@ func resourceCustomVariableRead(ctx context.Context, d *schema.ResourceData, m i
 
 	switch cvType {
 	case "string":
-		if err := d.Set("default_value", cvValueStr); err != nil {
+		if err := d.Set("default_value_string", cvValueStr); err != nil {
 			return diag.FromErr(err)
 		}
 	case "list":
@@ -248,7 +247,7 @@ func resourceCustomVariableUpdate(ctx context.Context, d *schema.ResourceData, m
 	// Leave out fields that are not allowed to be changed like
 	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
 	// schema instead.
-	if d.HasChanges("description", "default_value", "value_validation_regex", "value_validation_message", "key_validation_regex", "key_validation_message", "owner_user_ids", "owner_user_group_ids") {
+	if d.HasChanges("description", "default_value_string", "default_value_list", "default_value_map", "value_validation_regex", "value_validation_message", "key_validation_regex", "key_validation_message", "owner_user_ids", "owner_user_group_ids") {
 		ownerUserIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_ids").(*schema.Set).List())
 		if err != nil {
 			return diag.Errorf("failed to convert owner_user_ids: %v", err)
@@ -263,7 +262,7 @@ func resourceCustomVariableUpdate(ctx context.Context, d *schema.ResourceData, m
 
 		switch cvType {
 		case "string":
-			defaultValue = d.Get("default_value")
+			defaultValue = d.Get("default_value_string")
 		case "list":
 			defaultValue = d.Get("default_value_list")
 		case "map":

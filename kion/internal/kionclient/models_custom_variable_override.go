@@ -12,9 +12,9 @@ type CustomVariableOverrideListResponse struct {
 				EntityName string      `json:"entity_name"`
 				Value      interface{} `json:"value"`
 			}
-			Override struct {
+			Override *struct {
 				Value interface{} `json:"value"`
-			}
+			} `json:"override"`
 			Value interface{} `json:"value"`
 		} `json:"items"`
 	} `json:"data"`
@@ -32,9 +32,9 @@ type CustomVariableOverrideResponse struct {
 			EntityName string      `json:"entity_name"`
 			Value      interface{} `json:"value"`
 		}
-		Override struct {
+		Override *struct {
 			Value interface{} `json:"value"`
-		}
+		} `json:"override"`
 		Value interface{} `json:"value"`
 	} `json:"data"`
 	Status int `json:"status"`

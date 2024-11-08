@@ -2,6 +2,7 @@ package kion
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -24,10 +25,22 @@ func resourceCustomVariableOverride() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"value": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"value_list", "value_map"},
 			},
-			// All following fields are in place of an ID since overrides do not have an ID.
+			"value_list": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"value", "value_map"},
+			},
+			"value_map": {
+				Type:          schema.TypeMap,
+				Optional:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"value", "value_list"},
+			},
 			"entity_type": {
 				Type:     schema.TypeString,
 				ForceNew: true,
@@ -64,7 +77,24 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 		return diag.Errorf("failed to get custom variable type: %v", err)
 	}
 
-	cvValue, err := hc.UnpackCvValueJsonStr(d.Get("value").(string), cvResp.Data.Type)
+	// Get the appropriate value based on type
+	var value interface{}
+	switch cvResp.Data.Type {
+	case "string":
+		value = d.Get("value")
+	case "list":
+		value = d.Get("value_list")
+	case "map":
+		value = d.Get("value_map")
+	default:
+		return diag.Errorf("unsupported type: %s", cvResp.Data.Type)
+	}
+
+	if value == nil {
+		return diag.Errorf("value_%s must be set when type is %s", cvResp.Data.Type, cvResp.Data.Type)
+	}
+
+	cvValue, err := hc.UnpackCvValueJsonStr(value, cvResp.Data.Type)
 	if err != nil {
 		return diag.Errorf("failed to process value: %v", err)
 	}
@@ -119,13 +149,39 @@ func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceD
 	}
 	item := resp.Data
 
-	cvValueStr, err := hc.PackCvValueIntoJsonStr(item.Value, cvResp.Data.Type)
-	if err != nil {
-		return diag.Errorf("failed to process value: %v", err)
+	// Only process if there's an override value
+	if item.Override != nil && item.Override.Value != nil {
+		cvValueStr, err := hc.PackCvValueIntoJsonStr(item.Override.Value, cvResp.Data.Type)
+		if err != nil {
+			return diag.Errorf("failed to process value: %v", err)
+		}
+
+		// Set the appropriate value based on type
+		switch cvResp.Data.Type {
+		case "string":
+			if err := d.Set("value", cvValueStr); err != nil {
+				return diag.FromErr(err)
+			}
+		case "list":
+			var list []interface{}
+			if err := json.Unmarshal([]byte(cvValueStr), &list); err != nil {
+				return diag.FromErr(err)
+			}
+			if err := d.Set("value_list", list); err != nil {
+				return diag.FromErr(err)
+			}
+		case "map":
+			var m map[string]interface{}
+			if err := json.Unmarshal([]byte(cvValueStr), &m); err != nil {
+				return diag.FromErr(err)
+			}
+			if err := d.Set("value_map", m); err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
 	data := make(map[string]interface{})
-	data["value"] = cvValueStr
 	data["entity_type"] = entityType
 	data["entity_id"] = entityID
 	data["custom_variable_id"] = cvID
@@ -151,16 +207,34 @@ func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.Resourc
 
 	hasChanged := false
 
-	if d.HasChanges("value") {
-		// Get the custom variable type first
-		cvID := d.Get("custom_variable_id").(string)
-		cvResp := new(hc.CustomVariableResponse)
-		err := client.GET(fmt.Sprintf("/v3/custom-variable/%s", cvID), cvResp)
-		if err != nil {
-			return diag.Errorf("failed to get custom variable type: %v", err)
+	// Get the custom variable type first
+	cvID := d.Get("custom_variable_id").(string)
+	cvResp := new(hc.CustomVariableResponse)
+	err := client.GET(fmt.Sprintf("/v3/custom-variable/%s", cvID), cvResp)
+	if err != nil {
+		return diag.Errorf("failed to get custom variable type: %v", err)
+	}
+
+	// Check for changes in any of the value fields
+	if d.HasChanges("value", "value_list", "value_map") {
+		// Get the appropriate value based on type
+		var value interface{}
+		switch cvResp.Data.Type {
+		case "string":
+			value = d.Get("value")
+		case "list":
+			value = d.Get("value_list")
+		case "map":
+			value = d.Get("value_map")
+		default:
+			return diag.Errorf("unsupported type: %s", cvResp.Data.Type)
 		}
 
-		cvValue, err := hc.UnpackCvValueJsonStr(d.Get("value").(string), cvResp.Data.Type)
+		if value == nil {
+			return diag.Errorf("value_%s must be set when type is %s", cvResp.Data.Type, cvResp.Data.Type)
+		}
+
+		cvValue, err := hc.UnpackCvValueJsonStr(value, cvResp.Data.Type)
 		if err != nil {
 			return diag.Errorf("failed to process value: %v", err)
 		}

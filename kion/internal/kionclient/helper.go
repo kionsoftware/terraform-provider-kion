@@ -653,65 +653,6 @@ func NormalizeCvValue(v string, cvType string) (string, error) {
 	}
 }
 
-// UnpackCvValueJsonStr converts the input value based on the custom variable type
-func UnpackCvValueJsonStr(input interface{}, cvType string) (interface{}, error) {
-	switch cvType {
-	case "string":
-		if str, ok := input.(string); ok {
-			return str, nil
-		}
-		return nil, fmt.Errorf("expected string value for type 'string', got %T", input)
-
-	case "list":
-		switch v := input.(type) {
-		case []interface{}, []string:
-			// For lists, we need to JSON encode the entire array
-			bytes, err := json.Marshal(v)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal list value: %v", err)
-			}
-			var list []interface{}
-			if err := json.Unmarshal(bytes, &list); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal list value: %v", err)
-			}
-			return list, nil
-		default:
-			return nil, fmt.Errorf("expected list value for type 'list', got %T", input)
-		}
-
-	case "map":
-		result := make(map[string]string)
-
-		// Handle different map types
-		switch v := input.(type) {
-		case map[string]interface{}:
-			for k, val := range v {
-				switch strVal := val.(type) {
-				case string:
-					result[k] = strVal
-				default:
-					// Try to convert to string if possible
-					bytes, err := json.Marshal(val)
-					if err != nil {
-						return nil, fmt.Errorf("failed to convert map value to string: %v", err)
-					}
-					result[k] = string(bytes)
-				}
-			}
-		case map[string]string:
-			for k, v := range v {
-				result[k] = v
-			}
-		default:
-			return nil, fmt.Errorf("expected map value for type 'map', got %T", input)
-		}
-		return result, nil
-
-	default:
-		return nil, fmt.Errorf("unsupported custom variable type: %s", cvType)
-	}
-}
-
 // PackCvValueIntoJsonStr converts the API response back to the appropriate format
 func PackCvValueIntoJsonStr(value interface{}, cvType string) (string, error) {
 	if value == nil {
@@ -720,26 +661,97 @@ func PackCvValueIntoJsonStr(value interface{}, cvType string) (string, error) {
 
 	switch cvType {
 	case "string":
-		if str, ok := value.(string); ok {
-			return str, nil
+		switch v := value.(type) {
+		case string:
+			return v, nil
+		default:
+			return "", fmt.Errorf("expected string value, got %T", value)
 		}
-		return "", fmt.Errorf("expected string value, got %T", value)
 
 	case "list":
-		bytes, err := json.Marshal(value)
-		if err != nil {
-			return "", fmt.Errorf("failed to marshal list value: %v", err)
+		switch v := value.(type) {
+		case []interface{}:
+			bytes, err := json.Marshal(v)
+			if err != nil {
+				return "", fmt.Errorf("failed to marshal list value: %v", err)
+			}
+			return string(bytes), nil
+		case string:
+			// If it's already a JSON string, validate it's a list
+			var list []interface{}
+			if err := json.Unmarshal([]byte(v), &list); err != nil {
+				return "", fmt.Errorf("invalid list JSON: %v", err)
+			}
+			return v, nil
+		default:
+			return "", fmt.Errorf("expected list value, got %T", value)
 		}
-		return string(bytes), nil
 
 	case "map":
-		bytes, err := json.Marshal(value)
-		if err != nil {
-			return "", fmt.Errorf("failed to marshal map value: %v", err)
+		switch v := value.(type) {
+		case map[string]interface{}:
+			bytes, err := json.Marshal(v)
+			if err != nil {
+				return "", fmt.Errorf("failed to marshal map value: %v", err)
+			}
+			return string(bytes), nil
+		case string:
+			// If it's already a JSON string, validate it's a map
+			var m map[string]interface{}
+			if err := json.Unmarshal([]byte(v), &m); err != nil {
+				return "", fmt.Errorf("invalid map JSON: %v", err)
+			}
+			return v, nil
+		default:
+			return "", fmt.Errorf("expected map value, got %T", value)
 		}
-		return string(bytes), nil
 
 	default:
 		return "", fmt.Errorf("unsupported custom variable type: %s", cvType)
+	}
+}
+
+// UnpackCvValueJsonStr converts the input value based on the custom variable type
+func UnpackCvValueJsonStr(input interface{}, cvType string) (interface{}, error) {
+	switch cvType {
+	case "string":
+		if str, ok := input.(string); ok {
+			// For strings, we need to send just the raw string
+			return str, nil
+		}
+		return nil, fmt.Errorf("expected string value for type 'string', got %T", input)
+
+	case "list":
+		switch v := input.(type) {
+		case []interface{}:
+			return v, nil
+		case []string:
+			// Convert []string to []interface{}
+			result := make([]interface{}, len(v))
+			for i, s := range v {
+				result[i] = s
+			}
+			return result, nil
+		default:
+			return nil, fmt.Errorf("expected list value for type 'list', got %T", input)
+		}
+
+	case "map":
+		switch v := input.(type) {
+		case map[string]interface{}:
+			return v, nil
+		case map[string]string:
+			// Convert map[string]string to map[string]interface{}
+			result := make(map[string]interface{})
+			for k, v := range v {
+				result[k] = v
+			}
+			return result, nil
+		default:
+			return nil, fmt.Errorf("expected map value for type 'map', got %T", input)
+		}
+
+	default:
+		return nil, fmt.Errorf("unsupported custom variable type: %s", cvType)
 	}
 }
