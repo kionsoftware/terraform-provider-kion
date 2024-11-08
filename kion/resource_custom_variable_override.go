@@ -56,9 +56,17 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
-	cvValue, err := hc.UnpackCvValueJsonStr(d.Get("value").(string))
+	// Get the custom variable type first
+	cvID := d.Get("custom_variable_id").(string)
+	cvResp := new(hc.CustomVariableResponse)
+	err := client.GET(fmt.Sprintf("/v3/custom-variable/%s", cvID), cvResp)
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.Errorf("failed to get custom variable type: %v", err)
+	}
+
+	cvValue, err := hc.UnpackCvValueJsonStr(d.Get("value").(string), cvResp.Data.Type)
+	if err != nil {
+		return diag.Errorf("failed to process value: %v", err)
 	}
 
 	data := hc.CustomVariableOverrideSet{
@@ -67,7 +75,6 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 
 	entityType := d.Get("entity_type").(string)
 	entityID := d.Get("entity_id").(string)
-	cvID := d.Get("custom_variable_id").(string)
 
 	err = client.PUT(fmt.Sprintf("/v3/%s/%s/custom-variable/%s", entityType, entityID, cvID), data)
 	if err != nil {
@@ -81,9 +88,7 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 
 	d.SetId(fmt.Sprintf("%s/%s/%s", entityType, entityID, cvID))
 
-	resourceCustomVariableOverrideRead(ctx, d, m)
-
-	return diags
+	return resourceCustomVariableOverrideRead(ctx, d, m)
 }
 
 func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -95,8 +100,15 @@ func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceD
 	entityID := d.Get("entity_id").(string)
 	cvID := d.Get("custom_variable_id").(string)
 
+	// Get the custom variable type first
+	cvResp := new(hc.CustomVariableResponse)
+	err := client.GET(fmt.Sprintf("/v3/custom-variable/%s", cvID), cvResp)
+	if err != nil {
+		return diag.Errorf("failed to get custom variable type: %v", err)
+	}
+
 	resp := new(hc.CustomVariableOverrideResponse)
-	err := client.GET(fmt.Sprintf("/v3/%s/%s/custom-variable/%s", entityType, entityID, cvID), resp)
+	err = client.GET(fmt.Sprintf("/v3/%s/%s/custom-variable/%s", entityType, entityID, cvID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -107,9 +119,9 @@ func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceD
 	}
 	item := resp.Data
 
-	cvValueStr, err := hc.PackCvValueIntoJsonStr(item.Value)
+	cvValueStr, err := hc.PackCvValueIntoJsonStr(item.Value, cvResp.Data.Type)
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.Errorf("failed to process value: %v", err)
 	}
 
 	data := make(map[string]interface{})
@@ -139,20 +151,22 @@ func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.Resourc
 
 	hasChanged := false
 
-	// Determine if the attributes that are updatable are changed.
-	// Leave out fields that are not allowed to be changed like
-	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
-	// schema instead.
 	if d.HasChanges("value") {
-
-		cvValue, err := hc.UnpackCvValueJsonStr(d.Get("value").(string))
+		// Get the custom variable type first
+		cvID := d.Get("custom_variable_id").(string)
+		cvResp := new(hc.CustomVariableResponse)
+		err := client.GET(fmt.Sprintf("/v3/custom-variable/%s", cvID), cvResp)
 		if err != nil {
-			return diag.Errorf(err.Error())
+			return diag.Errorf("failed to get custom variable type: %v", err)
+		}
+
+		cvValue, err := hc.UnpackCvValueJsonStr(d.Get("value").(string), cvResp.Data.Type)
+		if err != nil {
+			return diag.Errorf("failed to process value: %v", err)
 		}
 
 		entityType := d.Get("entity_type").(string)
 		entityID := d.Get("entity_id").(string)
-		cvID := d.Get("custom_variable_id").(string)
 
 		req := hc.CustomVariableOverrideSet{
 			Value: cvValue,
