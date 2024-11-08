@@ -2,6 +2,7 @@ package kion
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -41,8 +42,21 @@ func resourceCustomVariable() *schema.Resource {
 				ForceNew: true, // Not allowed to be changed, forces new item if changed.
 			},
 			"default_value": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"default_value_list", "default_value_map"},
+			},
+			"default_value_list": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"default_value", "default_value_map"},
+			},
+			"default_value_map": {
+				Type:          schema.TypeMap,
+				Optional:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"default_value", "default_value_list"},
 			},
 			"value_validation_regex": {
 				Type:     schema.TypeString,
@@ -92,9 +106,27 @@ func resourceCustomVariableCreate(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("failed to convert owner_user_group_ids: %v", err)
 	}
 
-	cvValue, err := hc.UnpackCvValueJsonStr(d.Get("default_value").(string))
+	cvType := d.Get("type").(string)
+	var defaultValue interface{}
+
+	switch cvType {
+	case "string":
+		defaultValue = d.Get("default_value")
+	case "list":
+		defaultValue = d.Get("default_value_list")
+	case "map":
+		defaultValue = d.Get("default_value_map")
+	default:
+		return diag.Errorf("unsupported type: %s", cvType)
+	}
+
+	if defaultValue == nil {
+		return diag.Errorf("default_value_%s must be set when type is %s", cvType, cvType)
+	}
+
+	cvValue, err := hc.UnpackCvValueJsonStr(defaultValue, cvType)
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.Errorf("failed to process default_value: %v", err)
 	}
 
 	post := hc.CustomVariableCreate{
@@ -151,16 +183,39 @@ func resourceCustomVariableRead(ctx context.Context, d *schema.ResourceData, m i
 	}
 	item := resp.Data
 
-	cvValueStr, err := hc.PackCvValueIntoJsonStr(item.DefaultValue)
+	cvType := item.Type
+	cvValueStr, err := hc.PackCvValueIntoJsonStr(item.DefaultValue, cvType)
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.Errorf("failed to process default_value: %v", err)
+	}
+
+	switch cvType {
+	case "string":
+		if err := d.Set("default_value", cvValueStr); err != nil {
+			return diag.FromErr(err)
+		}
+	case "list":
+		var list []interface{}
+		if err := json.Unmarshal([]byte(cvValueStr), &list); err != nil {
+			return diag.FromErr(err)
+		}
+		if err := d.Set("default_value_list", list); err != nil {
+			return diag.FromErr(err)
+		}
+	case "map":
+		var m map[string]interface{}
+		if err := json.Unmarshal([]byte(cvValueStr), &m); err != nil {
+			return diag.FromErr(err)
+		}
+		if err := d.Set("default_value_map", m); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	data := make(map[string]interface{})
 	data["name"] = item.Name
 	data["description"] = item.Description
 	data["type"] = item.Type
-	data["default_value"] = cvValueStr
 	data["value_validation_regex"] = item.ValueValidationRegex
 	data["value_validation_message"] = item.ValueValidationMessage
 	data["key_validation_regex"] = item.KeyValidationRegex
@@ -203,9 +258,27 @@ func resourceCustomVariableUpdate(ctx context.Context, d *schema.ResourceData, m
 			return diag.Errorf("failed to convert owner_user_group_ids: %v", err)
 		}
 
-		cvValue, err := hc.UnpackCvValueJsonStr(d.Get("default_value").(string))
+		cvType := d.Get("type").(string)
+		var defaultValue interface{}
+
+		switch cvType {
+		case "string":
+			defaultValue = d.Get("default_value")
+		case "list":
+			defaultValue = d.Get("default_value_list")
+		case "map":
+			defaultValue = d.Get("default_value_map")
+		default:
+			return diag.Errorf("unsupported type: %s", cvType)
+		}
+
+		if defaultValue == nil {
+			return diag.Errorf("default_value_%s must be set when type is %s", cvType, cvType)
+		}
+
+		cvValue, err := hc.UnpackCvValueJsonStr(defaultValue, cvType)
 		if err != nil {
-			return diag.Errorf(err.Error())
+			return diag.Errorf("failed to process default_value: %v", err)
 		}
 
 		req := hc.CustomVariableUpdate{

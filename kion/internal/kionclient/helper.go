@@ -625,28 +625,121 @@ func ValidateAppRoleID(ctx context.Context, d *schema.ResourceDiff, meta interfa
 	return nil
 }
 
-// UnpackCvValueJsonStr unpacks the CV terraform value string schema to get the CV value
-func UnpackCvValueJsonStr(cvValueJsonStr string) (interface{}, error) {
-	var valueJsonMap map[string]interface{}
-	err := json.Unmarshal([]byte(cvValueJsonStr), &valueJsonMap)
-	if err != nil {
-		return nil, fmt.Errorf(`failed to unmarshal CV value JSON "%s", should be in format {"value": <string, list of strings, or map of string to string>}: %v`, cvValueJsonStr, err)
-	}
-	var defaultValue interface{}
-	if valueJsonMap != nil {
-		if _, ok := valueJsonMap["value"]; ok {
-			defaultValue = valueJsonMap["value"]
+// NormalizeCvValue normalizes a custom variable value based on its type
+func NormalizeCvValue(v string, cvType string) (string, error) {
+	switch cvType {
+	case "string":
+		// For strings, wrap in the expected format
+		return fmt.Sprintf(`{"value":%q}`, v), nil
+
+	case "list", "map":
+		// For lists and maps, try to parse as JSON first
+		var parsed interface{}
+		if err := json.Unmarshal([]byte(v), &parsed); err != nil {
+			return "", fmt.Errorf("invalid JSON for type %s: %v", cvType, err)
 		}
+		// Wrap in the expected format
+		wrapper := map[string]interface{}{
+			"value": parsed,
+		}
+		bytes, err := json.Marshal(wrapper)
+		if err != nil {
+			return "", err
+		}
+		return string(bytes), nil
+
+	default:
+		return "", fmt.Errorf("unsupported custom variable type: %s", cvType)
 	}
-	return defaultValue, nil
 }
 
-// PackCvValueIntoJsonStr packs the CV interface value into a JSON string to be stored in the terraform schema
-func PackCvValueIntoJsonStr(value interface{}) (string, error) {
-	valueJsonMap := map[string]interface{}{"value": value}
-	valueJsonStr, err := json.Marshal(valueJsonMap)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal returned CV value '%v' into JSON: %v", value, err)
+// UnpackCvValueJsonStr converts the input value based on the custom variable type
+func UnpackCvValueJsonStr(input interface{}, cvType string) (interface{}, error) {
+	switch cvType {
+	case "string":
+		if str, ok := input.(string); ok {
+			return str, nil
+		}
+		return nil, fmt.Errorf("expected string value for type 'string', got %T", input)
+
+	case "list":
+		switch v := input.(type) {
+		case []interface{}, []string:
+			// For lists, we need to JSON encode the entire array
+			bytes, err := json.Marshal(v)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal list value: %v", err)
+			}
+			var list []interface{}
+			if err := json.Unmarshal(bytes, &list); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal list value: %v", err)
+			}
+			return list, nil
+		default:
+			return nil, fmt.Errorf("expected list value for type 'list', got %T", input)
+		}
+
+	case "map":
+		result := make(map[string]string)
+
+		// Handle different map types
+		switch v := input.(type) {
+		case map[string]interface{}:
+			for k, val := range v {
+				switch strVal := val.(type) {
+				case string:
+					result[k] = strVal
+				default:
+					// Try to convert to string if possible
+					bytes, err := json.Marshal(val)
+					if err != nil {
+						return nil, fmt.Errorf("failed to convert map value to string: %v", err)
+					}
+					result[k] = string(bytes)
+				}
+			}
+		case map[string]string:
+			for k, v := range v {
+				result[k] = v
+			}
+		default:
+			return nil, fmt.Errorf("expected map value for type 'map', got %T", input)
+		}
+		return result, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported custom variable type: %s", cvType)
 	}
-	return string(valueJsonStr), nil
+}
+
+// PackCvValueIntoJsonStr converts the API response back to the appropriate format
+func PackCvValueIntoJsonStr(value interface{}, cvType string) (string, error) {
+	if value == nil {
+		return "", nil
+	}
+
+	switch cvType {
+	case "string":
+		if str, ok := value.(string); ok {
+			return str, nil
+		}
+		return "", fmt.Errorf("expected string value, got %T", value)
+
+	case "list":
+		bytes, err := json.Marshal(value)
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal list value: %v", err)
+		}
+		return string(bytes), nil
+
+	case "map":
+		bytes, err := json.Marshal(value)
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal map value: %v", err)
+		}
+		return string(bytes), nil
+
+	default:
+		return "", fmt.Errorf("unsupported custom variable type: %s", cvType)
+	}
 }

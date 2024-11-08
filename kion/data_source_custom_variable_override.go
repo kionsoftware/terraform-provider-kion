@@ -139,9 +139,15 @@ func getAllOUOverrides(d *schema.ResourceData, client *hc.Client) ([]map[string]
 				continue
 			}
 
-			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value)
+			cvResp := new(hc.CustomVariableResponse)
+			err := client.GET(fmt.Sprintf("/v3/custom-variable/%d", override.CustomVariableID), cvResp)
 			if err != nil {
-				return nil, diag.Errorf("Error packing CV value: %v", err)
+				return nil, diag.Errorf("failed to get custom variable type: %v", err)
+			}
+
+			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
+			if err != nil {
+				return nil, diag.Errorf("failed to process value: %v", err)
 			}
 
 			data := map[string]interface{}{
@@ -192,9 +198,15 @@ func getAllProjectOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 				continue
 			}
 
-			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value)
+			cvResp := new(hc.CustomVariableResponse)
+			err := client.GET(fmt.Sprintf("/v3/custom-variable/%d", override.CustomVariableID), cvResp)
 			if err != nil {
-				return nil, diag.Errorf("Error packing CV value: %v", err)
+				return nil, diag.Errorf("failed to get custom variable type: %v", err)
+			}
+
+			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
+			if err != nil {
+				return nil, diag.Errorf("failed to process value: %v", err)
 			}
 
 			data := map[string]interface{}{
@@ -246,9 +258,15 @@ func getAllAccountOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 				continue
 			}
 
-			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value)
+			cvResp := new(hc.CustomVariableResponse)
+			err := client.GET(fmt.Sprintf("/v3/custom-variable/%d", override.CustomVariableID), cvResp)
 			if err != nil {
-				return nil, diag.Errorf("Error packing CV value: %v", err)
+				return nil, diag.Errorf("failed to get custom variable type: %v", err)
+			}
+
+			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
+			if err != nil {
+				return nil, diag.Errorf("failed to process value: %v", err)
 			}
 
 			data := map[string]interface{}{
@@ -300,9 +318,15 @@ func getAllAccountCacheOverrides(d *schema.ResourceData, client *hc.Client) ([]m
 				continue
 			}
 
-			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value)
+			cvResp := new(hc.CustomVariableResponse)
+			err := client.GET(fmt.Sprintf("/v3/custom-variable/%d", override.CustomVariableID), cvResp)
 			if err != nil {
-				return nil, diag.Errorf("Error packing CV value: %v", err)
+				return nil, diag.Errorf("failed to get custom variable type: %v", err)
+			}
+
+			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
+			if err != nil {
+				return nil, diag.Errorf("failed to process value: %v", err)
 			}
 
 			data := map[string]interface{}{
