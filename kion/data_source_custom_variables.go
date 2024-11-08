@@ -105,43 +105,34 @@ func dataSourceCustomVariablesRead(ctx context.Context, d *schema.ResourceData, 
 	resp := new(hc.CustomVariableListResponse)
 	err := client.GET("/v3/custom-variable?count=999999", resp)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read Custom Variables",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
-		})
-		return diags
+		return hc.HandleError(fmt.Errorf("unable to read Custom Variables: %v", err))
 	}
 
 	f := hc.NewFilterable(d)
-
 	arr := make([]map[string]interface{}, 0)
+
 	for _, item := range resp.Data.Items {
 		cvValueStr, err := hc.PackCvValueIntoJsonStr(item.DefaultValue, item.Type)
 		if err != nil {
-			return diag.Errorf("failed to process default_value: %v", err)
+			return hc.HandleError(fmt.Errorf("failed to process default_value: %v", err))
 		}
 
-		data := make(map[string]interface{})
-		data["name"] = item.Name
-		data["description"] = item.Description
-		data["type"] = item.Type
-		data["default_value"] = cvValueStr
-		data["value_validation_regex"] = item.ValueValidationRegex
-		data["value_validation_message"] = item.ValueValidationMessage
-		data["key_validation_regex"] = item.KeyValidationRegex
-		data["key_validation_message"] = item.KeyValidationMessage
-		data["owner_user_ids"] = item.OwnerUserIDs
-		data["owner_user_group_ids"] = item.OwnerUserGroupIDs
+		data := map[string]interface{}{
+			"name":                     item.Name,
+			"description":              item.Description,
+			"type":                     item.Type,
+			"default_value":            cvValueStr,
+			"value_validation_regex":   item.ValueValidationRegex,
+			"value_validation_message": item.ValueValidationMessage,
+			"key_validation_regex":     item.KeyValidationRegex,
+			"key_validation_message":   item.KeyValidationMessage,
+			"owner_user_ids":           item.OwnerUserIDs,
+			"owner_user_group_ids":     item.OwnerUserGroupIDs,
+		}
 
 		match, err := f.Match(data)
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to filter Custom Variables",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "filter"),
-			})
-			return diags
+			return hc.HandleError(fmt.Errorf("unable to filter Custom Variables: %v", err))
 		} else if !match {
 			continue
 		}
@@ -149,16 +140,7 @@ func dataSourceCustomVariablesRead(ctx context.Context, d *schema.ResourceData, 
 		arr = append(arr, data)
 	}
 
-	if err := d.Set("list", arr); err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read Custom Variables",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
-		})
-		return diags
-	}
-
-	// Always run.
+	diags = append(diags, hc.SafeSet(d, "list", arr, "Failed to set list")...)
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return diags

@@ -66,7 +66,6 @@ func resourceCustomVariableOverride() *schema.Resource {
 }
 
 func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
 	// Get the custom variable type first
@@ -74,7 +73,7 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 	cvResp := new(hc.CustomVariableResponse)
 	err := client.GET(fmt.Sprintf("/v3/custom-variable/%s", cvID), cvResp)
 	if err != nil {
-		return diag.Errorf("failed to get custom variable type: %v", err)
+		return hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
 	}
 
 	// Get the appropriate value based on type
@@ -87,16 +86,16 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 	case "map":
 		value = d.Get("value_map")
 	default:
-		return diag.Errorf("unsupported type: %s", cvResp.Data.Type)
+		return hc.HandleError(fmt.Errorf("unsupported type: %s", cvResp.Data.Type))
 	}
 
 	if value == nil {
-		return diag.Errorf("value_%s must be set when type is %s", cvResp.Data.Type, cvResp.Data.Type)
+		return hc.HandleError(fmt.Errorf("value_%s must be set when type is %s", cvResp.Data.Type, cvResp.Data.Type))
 	}
 
 	cvValue, err := hc.UnpackCvValueJsonStr(value, cvResp.Data.Type)
 	if err != nil {
-		return diag.Errorf("failed to process value: %v", err)
+		return hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 	}
 
 	data := hc.CustomVariableOverrideSet{
@@ -108,12 +107,7 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 
 	err = client.PUT(fmt.Sprintf("/v3/%s/%s/custom-variable/%s", entityType, entityID, cvID), data)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create CustomVariable Override",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), data),
-		})
-		return diags
+		return hc.HandleError(fmt.Errorf("unable to create CustomVariable Override: %v", err))
 	}
 
 	d.SetId(fmt.Sprintf("%s/%s/%s", entityType, entityID, cvID))
@@ -124,7 +118,6 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
-	ID := d.Id()
 
 	entityType := d.Get("entity_type").(string)
 	entityID := d.Get("entity_id").(string)
@@ -134,18 +127,13 @@ func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceD
 	cvResp := new(hc.CustomVariableResponse)
 	err := client.GET(fmt.Sprintf("/v3/custom-variable/%s", cvID), cvResp)
 	if err != nil {
-		return diag.Errorf("failed to get custom variable type: %v", err)
+		return hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
 	}
 
 	resp := new(hc.CustomVariableOverrideResponse)
 	err = client.GET(fmt.Sprintf("/v3/%s/%s/custom-variable/%s", entityType, entityID, cvID), resp)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read CustomVariable Override",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+		return hc.HandleError(fmt.Errorf("unable to read CustomVariable Override: %v", err))
 	}
 	item := resp.Data
 
@@ -153,70 +141,53 @@ func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceD
 	if item.Override != nil && item.Override.Value != nil {
 		cvValueStr, err := hc.PackCvValueIntoJsonStr(item.Override.Value, cvResp.Data.Type)
 		if err != nil {
-			return diag.Errorf("failed to process value: %v", err)
+			return hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 		}
 
 		// Set the appropriate value based on type
 		switch cvResp.Data.Type {
 		case "string":
-			if err := d.Set("value", cvValueStr); err != nil {
-				return diag.FromErr(err)
-			}
+			diags = append(diags, hc.SafeSet(d, "value", cvValueStr, "Failed to set value")...)
 		case "list":
 			var list []interface{}
 			if err := json.Unmarshal([]byte(cvValueStr), &list); err != nil {
-				return diag.FromErr(err)
+				return hc.HandleError(err)
 			}
-			if err := d.Set("value_list", list); err != nil {
-				return diag.FromErr(err)
-			}
+			diags = append(diags, hc.SafeSet(d, "value_list", list, "Failed to set value_list")...)
 		case "map":
 			var m map[string]interface{}
 			if err := json.Unmarshal([]byte(cvValueStr), &m); err != nil {
-				return diag.FromErr(err)
+				return hc.HandleError(err)
 			}
-			if err := d.Set("value_map", m); err != nil {
-				return diag.FromErr(err)
-			}
+			diags = append(diags, hc.SafeSet(d, "value_map", m, "Failed to set value_map")...)
 		}
 	}
 
-	data := make(map[string]interface{})
-	data["entity_type"] = entityType
-	data["entity_id"] = entityID
-	data["custom_variable_id"] = cvID
+	fields := map[string]interface{}{
+		"entity_type":        entityType,
+		"entity_id":          entityID,
+		"custom_variable_id": cvID,
+	}
 
-	for k, v := range data {
-		if err := d.Set(k, v); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to read and set CustomVariable Override",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
-		}
+	for k, v := range fields {
+		diags = append(diags, hc.SafeSet(d, k, v, fmt.Sprintf("Failed to set %s", k))...)
 	}
 
 	return diags
 }
 
 func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
-	ID := d.Id()
 
-	hasChanged := false
-
-	// Get the custom variable type first
-	cvID := d.Get("custom_variable_id").(string)
-	cvResp := new(hc.CustomVariableResponse)
-	err := client.GET(fmt.Sprintf("/v3/custom-variable/%s", cvID), cvResp)
-	if err != nil {
-		return diag.Errorf("failed to get custom variable type: %v", err)
-	}
-
-	// Check for changes in any of the value fields
 	if d.HasChanges("value", "value_list", "value_map") {
+		// Get the custom variable type first
+		cvID := d.Get("custom_variable_id").(string)
+		cvResp := new(hc.CustomVariableResponse)
+		err := client.GET(fmt.Sprintf("/v3/custom-variable/%s", cvID), cvResp)
+		if err != nil {
+			return hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
+		}
+
 		// Get the appropriate value based on type
 		var value interface{}
 		switch cvResp.Data.Type {
@@ -227,16 +198,16 @@ func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.Resourc
 		case "map":
 			value = d.Get("value_map")
 		default:
-			return diag.Errorf("unsupported type: %s", cvResp.Data.Type)
+			return hc.HandleError(fmt.Errorf("unsupported type: %s", cvResp.Data.Type))
 		}
 
 		if value == nil {
-			return diag.Errorf("value_%s must be set when type is %s", cvResp.Data.Type, cvResp.Data.Type)
+			return hc.HandleError(fmt.Errorf("value_%s must be set when type is %s", cvResp.Data.Type, cvResp.Data.Type))
 		}
 
 		cvValue, err := hc.UnpackCvValueJsonStr(value, cvResp.Data.Type)
 		if err != nil {
-			return diag.Errorf("failed to process value: %v", err)
+			return hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 		}
 
 		entityType := d.Get("entity_type").(string)
@@ -248,23 +219,11 @@ func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.Resourc
 
 		err = client.PUT(fmt.Sprintf("/v3/%s/%s/custom-variable/%s", entityType, entityID, cvID), req)
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to update CustomVariable Override",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+			return hc.HandleError(fmt.Errorf("unable to update CustomVariable Override: %v", err))
 		}
-		hasChanged = true
-	}
 
-	if hasChanged {
-		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Failed to set last_updated",
-				Detail:   err.Error(),
-			})
+		diags := hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Failed to set last_updated")
+		if diags.HasError() {
 			return diags
 		}
 	}
@@ -273,9 +232,7 @@ func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.Resourc
 }
 
 func resourceCustomVariableOverrideDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
-	ID := d.Id()
 
 	entityType := d.Get("entity_type").(string)
 	entityID := d.Get("entity_id").(string)
@@ -283,17 +240,10 @@ func resourceCustomVariableOverrideDelete(ctx context.Context, d *schema.Resourc
 
 	err := client.DELETE(fmt.Sprintf("/v3/%s/%s/custom-variable/%s", entityType, entityID, cvID), nil)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to delete CustomVariable Override",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+		return hc.HandleError(fmt.Errorf("unable to delete CustomVariable Override: %v", err))
 	}
 
-	// d.SetId("") is automatically called assuming delete returns no errors, but
-	// it is added here for explicitness.
 	d.SetId("")
 
-	return diags
+	return nil
 }
