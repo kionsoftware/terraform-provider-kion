@@ -2,6 +2,7 @@ package kion
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -46,11 +47,9 @@ func dataSourceCustomVariable() *schema.Resource {
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						// Notice there is no 'id' field specified because it will be created.
 						"name": {
 							Type:     schema.TypeString,
 							Computed: true,
-							ForceNew: true, // Not allowed to be changed, forces new item if changed.
 						},
 						"description": {
 							Type:     schema.TypeString,
@@ -59,11 +58,20 @@ func dataSourceCustomVariable() *schema.Resource {
 						"type": {
 							Type:     schema.TypeString,
 							Computed: true,
-							ForceNew: true, // Not allowed to be changed, forces new item if changed.
 						},
-						"default_value": {
+						"default_value_string": {
 							Type:     schema.TypeString,
 							Computed: true,
+						},
+						"default_value_list": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
+						"default_value_map": {
+							Type:     schema.TypeMap,
+							Computed: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
 						"value_validation_regex": {
 							Type:     schema.TypeString,
@@ -121,13 +129,29 @@ func dataSourceCustomVariablesRead(ctx context.Context, d *schema.ResourceData, 
 			"name":                     item.Name,
 			"description":              item.Description,
 			"type":                     item.Type,
-			"default_value":            cvValueStr,
 			"value_validation_regex":   item.ValueValidationRegex,
 			"value_validation_message": item.ValueValidationMessage,
 			"key_validation_regex":     item.KeyValidationRegex,
 			"key_validation_message":   item.KeyValidationMessage,
 			"owner_user_ids":           item.OwnerUserIDs,
 			"owner_user_group_ids":     item.OwnerUserGroupIDs,
+		}
+
+		switch item.Type {
+		case "string":
+			data["default_value_string"] = cvValueStr
+		case "list":
+			var list []interface{}
+			if err := json.Unmarshal([]byte(cvValueStr), &list); err != nil {
+				return hc.HandleError(err)
+			}
+			data["default_value_list"] = list
+		case "map":
+			var m map[string]interface{}
+			if err := json.Unmarshal([]byte(cvValueStr), &m); err != nil {
+				return hc.HandleError(err)
+			}
+			data["default_value_map"] = m
 		}
 
 		match, err := f.Match(data)

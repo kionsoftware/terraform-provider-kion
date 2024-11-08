@@ -24,7 +24,7 @@ func resourceCustomVariableOverride() *schema.Resource {
 			},
 		},
 		Schema: map[string]*schema.Schema{
-			"value": {
+			"value_string": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"value_list", "value_map"},
@@ -33,13 +33,13 @@ func resourceCustomVariableOverride() *schema.Resource {
 				Type:          schema.TypeList,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"value", "value_map"},
+				ConflictsWith: []string{"value_string", "value_map"},
 			},
 			"value_map": {
 				Type:          schema.TypeMap,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"value", "value_list"},
+				ConflictsWith: []string{"value_string", "value_list"},
 			},
 			"entity_type": {
 				Type:     schema.TypeString,
@@ -80,7 +80,7 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 	var value interface{}
 	switch cvResp.Data.Type {
 	case "string":
-		value = d.Get("value")
+		value = d.Get("value_string")
 	case "list":
 		value = d.Get("value_list")
 	case "map":
@@ -147,7 +147,7 @@ func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceD
 		// Set the appropriate value based on type
 		switch cvResp.Data.Type {
 		case "string":
-			diags = append(diags, hc.SafeSet(d, "value", cvValueStr, "Failed to set value")...)
+			diags = append(diags, hc.SafeSet(d, "value_string", cvValueStr, "Failed to set value")...)
 		case "list":
 			var list []interface{}
 			if err := json.Unmarshal([]byte(cvValueStr), &list); err != nil {
@@ -179,7 +179,7 @@ func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceD
 func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*hc.Client)
 
-	if d.HasChanges("value", "value_list", "value_map") {
+	if d.HasChanges("value_string", "value_list", "value_map") {
 		// Get the custom variable type first
 		cvID := d.Get("custom_variable_id").(string)
 		cvResp := new(hc.CustomVariableResponse)
@@ -192,7 +192,7 @@ func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.Resourc
 		var value interface{}
 		switch cvResp.Data.Type {
 		case "string":
-			value = d.Get("value")
+			value = d.Get("value_string")
 		case "list":
 			value = d.Get("value_list")
 		case "map":

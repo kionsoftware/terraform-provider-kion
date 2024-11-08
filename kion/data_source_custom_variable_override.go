@@ -46,11 +46,20 @@ func dataSourceCustomVariableOverride() *schema.Resource {
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"value": {
+						"value_string": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						// All following fields are in place of an ID since overrides do not have an ID.
+						"value_list": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
+						"value_map": {
+							Type:     schema.TypeMap,
+							Optional: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
 						"entity_type": {
 							Type:     schema.TypeString,
 							ForceNew: true,
@@ -102,16 +111,7 @@ func dataSourceCustomVariableOverrideRead(ctx context.Context, d *schema.Resourc
 	}
 	arr = append(arr, accountCacheOverrides...)
 
-	if err := d.Set("list", arr); err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read Custom Variables",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
-		})
-		return diags
-	}
-
-	// Always run.
+	diags = append(diags, hc.SafeSet(d, "list", arr, "Failed to set list")...)
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return diags
@@ -151,7 +151,7 @@ func getAllOUOverrides(d *schema.ResourceData, client *hc.Client) ([]map[string]
 			}
 
 			data := map[string]interface{}{
-				"value":              cvValueStr,
+				"value_string":       cvValueStr,
 				"entity_type":        "ou",
 				"entity_id":          fmt.Sprintf("%d", ou.ID),
 				"custom_variable_id": fmt.Sprintf("%d", override.CustomVariableID),
@@ -204,7 +204,7 @@ func getAllProjectOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 			}
 
 			data := map[string]interface{}{
-				"value":              cvValueStr,
+				"value_string":       cvValueStr,
 				"entity_type":        "project",
 				"entity_id":          fmt.Sprintf("%d", project.ID),
 				"custom_variable_id": fmt.Sprintf("%d", override.CustomVariableID),
@@ -258,7 +258,7 @@ func getAllAccountOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 			}
 
 			data := map[string]interface{}{
-				"value":              cvValueStr,
+				"value_string":       cvValueStr,
 				"entity_type":        "account",
 				"entity_id":          fmt.Sprintf("%d", account.ID),
 				"custom_variable_id": fmt.Sprintf("%d", override.CustomVariableID),
@@ -312,7 +312,7 @@ func getAllAccountCacheOverrides(d *schema.ResourceData, client *hc.Client) ([]m
 			}
 
 			data := map[string]interface{}{
-				"value":              cvValueStr,
+				"value_string":       cvValueStr,
 				"entity_type":        "account-cache",
 				"entity_id":          fmt.Sprintf("%d", accountCache.ID),
 				"custom_variable_id": fmt.Sprintf("%d", override.CustomVariableID),
