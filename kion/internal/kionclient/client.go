@@ -72,7 +72,7 @@ func (client *Client) doRequest(req *http.Request) ([]byte, int, error) {
 		return nil, res.StatusCode, NewRequestError(res.StatusCode, err)
 	}
 
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		return nil, res.StatusCode, NewRequestError(res.StatusCode, fmt.Errorf("url: %s, method: %s, status: %d, body: %s", req.URL.String(), req.Method, res.StatusCode, body))
 	}
 
