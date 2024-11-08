@@ -3,7 +3,6 @@ package kion
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -93,16 +92,15 @@ func resourceCustomVariable() *schema.Resource {
 }
 
 func resourceCustomVariableCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
 	ownerUserIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_ids").(*schema.Set).List())
 	if err != nil {
-		return diag.Errorf("failed to convert owner_user_ids: %v", err)
+		return hc.HandleError(fmt.Errorf("failed to convert owner_user_ids: %v", err))
 	}
 	ownerUserGroupIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_group_ids").(*schema.Set).List())
 	if err != nil {
-		return diag.Errorf("failed to convert owner_user_group_ids: %v", err)
+		return hc.HandleError(fmt.Errorf("failed to convert owner_user_group_ids: %v", err))
 	}
 
 	cvType := d.Get("type").(string)
@@ -116,22 +114,22 @@ func resourceCustomVariableCreate(ctx context.Context, d *schema.ResourceData, m
 	case "map":
 		defaultValue = d.Get("default_value_map")
 	default:
-		return diag.Errorf("unsupported type: %s", cvType)
+		return hc.HandleError(fmt.Errorf("unsupported type: %s", cvType))
 	}
 
 	if defaultValue == nil {
-		return diag.Errorf("default_value_%s must be set when type is %s", cvType, cvType)
+		return hc.HandleError(fmt.Errorf("default_value_%s must be set when type is %s", cvType, cvType))
 	}
 
 	cvValue, err := hc.UnpackCvValueJsonStr(defaultValue, cvType)
 	if err != nil {
-		return diag.Errorf("failed to process default_value: %v", err)
+		return hc.HandleError(fmt.Errorf("failed to process default_value: %v", err))
 	}
 
 	post := hc.CustomVariableCreate{
 		Name:                   d.Get("name").(string),
 		Description:            d.Get("description").(string),
-		Type:                   d.Get("type").(string),
+		Type:                   cvType,
 		DefaultValue:           cvValue,
 		ValueValidationRegex:   d.Get("value_validation_regex").(string),
 		ValueValidationMessage: d.Get("value_validation_message").(string),
@@ -143,26 +141,14 @@ func resourceCustomVariableCreate(ctx context.Context, d *schema.ResourceData, m
 
 	resp, err := client.POST("/v3/custom-variable", post)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create CustomVariable",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), post),
-		})
-		return diags
+		return hc.HandleError(fmt.Errorf("unable to create CustomVariable: %v", err))
 	} else if resp.RecordID == 0 {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create CustomVariable",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), post),
-		})
-		return diags
+		return hc.HandleError(fmt.Errorf("received item ID of 0"))
 	}
 
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	resourceComplianceStandardRead(ctx, d, m)
-
-	return diags
+	return resourceCustomVariableRead(ctx, d, m)
 }
 
 func resourceCustomVariableRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -173,88 +159,67 @@ func resourceCustomVariableRead(ctx context.Context, d *schema.ResourceData, m i
 	resp := new(hc.CustomVariableResponse)
 	err := client.GET(fmt.Sprintf("/v3/custom-variable/%s", ID), resp)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read CustomVariable",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+		return hc.HandleError(fmt.Errorf("unable to read CustomVariable: %v", err))
 	}
 	item := resp.Data
 
 	cvType := item.Type
 	cvValueStr, err := hc.PackCvValueIntoJsonStr(item.DefaultValue, cvType)
 	if err != nil {
-		return diag.Errorf("failed to process default_value: %v", err)
+		return hc.HandleError(fmt.Errorf("failed to process default_value: %v", err))
 	}
 
 	switch cvType {
 	case "string":
-		if err := d.Set("default_value_string", cvValueStr); err != nil {
-			return diag.FromErr(err)
-		}
+		diags = append(diags, hc.SafeSet(d, "default_value_string", cvValueStr, "Failed to set default_value_string")...)
 	case "list":
 		var list []interface{}
 		if err := json.Unmarshal([]byte(cvValueStr), &list); err != nil {
-			return diag.FromErr(err)
+			return hc.HandleError(err)
 		}
-		if err := d.Set("default_value_list", list); err != nil {
-			return diag.FromErr(err)
-		}
+		diags = append(diags, hc.SafeSet(d, "default_value_list", list, "Failed to set default_value_list")...)
 	case "map":
 		var m map[string]interface{}
 		if err := json.Unmarshal([]byte(cvValueStr), &m); err != nil {
-			return diag.FromErr(err)
+			return hc.HandleError(err)
 		}
-		if err := d.Set("default_value_map", m); err != nil {
-			return diag.FromErr(err)
-		}
+		diags = append(diags, hc.SafeSet(d, "default_value_map", m, "Failed to set default_value_map")...)
 	}
 
-	data := make(map[string]interface{})
-	data["name"] = item.Name
-	data["description"] = item.Description
-	data["type"] = item.Type
-	data["value_validation_regex"] = item.ValueValidationRegex
-	data["value_validation_message"] = item.ValueValidationMessage
-	data["key_validation_regex"] = item.KeyValidationRegex
-	data["key_validation_message"] = item.KeyValidationMessage
-	data["owner_user_ids"] = item.OwnerUserIDs
-	data["owner_user_group_ids"] = item.OwnerUserGroupIDs
+	fields := map[string]interface{}{
+		"name":                     item.Name,
+		"description":              item.Description,
+		"type":                     item.Type,
+		"value_validation_regex":   item.ValueValidationRegex,
+		"value_validation_message": item.ValueValidationMessage,
+		"key_validation_regex":     item.KeyValidationRegex,
+		"key_validation_message":   item.KeyValidationMessage,
+		"owner_user_ids":           item.OwnerUserIDs,
+		"owner_user_group_ids":     item.OwnerUserGroupIDs,
+	}
 
-	for k, v := range data {
-		if err := d.Set(k, v); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to read and set CustomVariable",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
-		}
+	for k, v := range fields {
+		diags = append(diags, hc.SafeSet(d, k, v, fmt.Sprintf("Failed to set %s", k))...)
 	}
 
 	return diags
 }
 
 func resourceCustomVariableUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	hasChanged := false
+	if d.HasChanges("description", "default_value_string", "default_value_list", "default_value_map",
+		"value_validation_regex", "value_validation_message", "key_validation_regex",
+		"key_validation_message", "owner_user_ids", "owner_user_group_ids") {
 
-	// Determine if the attributes that are updatable are changed.
-	// Leave out fields that are not allowed to be changed like
-	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
-	// schema instead.
-	if d.HasChanges("description", "default_value_string", "default_value_list", "default_value_map", "value_validation_regex", "value_validation_message", "key_validation_regex", "key_validation_message", "owner_user_ids", "owner_user_group_ids") {
 		ownerUserIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_ids").(*schema.Set).List())
 		if err != nil {
-			return diag.Errorf("failed to convert owner_user_ids: %v", err)
+			return hc.HandleError(fmt.Errorf("failed to convert owner_user_ids: %v", err))
 		}
 		ownerUserGroupIDs, err := hc.ConvertInterfaceSliceToIntSlice(d.Get("owner_user_group_ids").(*schema.Set).List())
 		if err != nil {
-			return diag.Errorf("failed to convert owner_user_group_ids: %v", err)
+			return hc.HandleError(fmt.Errorf("failed to convert owner_user_group_ids: %v", err))
 		}
 
 		cvType := d.Get("type").(string)
@@ -268,16 +233,16 @@ func resourceCustomVariableUpdate(ctx context.Context, d *schema.ResourceData, m
 		case "map":
 			defaultValue = d.Get("default_value_map")
 		default:
-			return diag.Errorf("unsupported type: %s", cvType)
+			return hc.HandleError(fmt.Errorf("unsupported type: %s", cvType))
 		}
 
 		if defaultValue == nil {
-			return diag.Errorf("default_value_%s must be set when type is %s", cvType, cvType)
+			return hc.HandleError(fmt.Errorf("default_value_%s must be set when type is %s", cvType, cvType))
 		}
 
 		cvValue, err := hc.UnpackCvValueJsonStr(defaultValue, cvType)
 		if err != nil {
-			return diag.Errorf("failed to process default_value: %v", err)
+			return hc.HandleError(fmt.Errorf("failed to process default_value: %v", err))
 		}
 
 		req := hc.CustomVariableUpdate{
@@ -293,23 +258,11 @@ func resourceCustomVariableUpdate(ctx context.Context, d *schema.ResourceData, m
 
 		err = client.PUT(fmt.Sprintf("/v3/custom-variable/%s", ID), req)
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to update CustomVariable",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+			return hc.HandleError(fmt.Errorf("unable to update CustomVariable: %v", err))
 		}
-		hasChanged = true
-	}
 
-	if hasChanged {
-		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Failed to set last_updated",
-				Detail:   err.Error(),
-			})
+		diags := hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Failed to set last_updated")
+		if diags.HasError() {
 			return diags
 		}
 	}
@@ -318,23 +271,15 @@ func resourceCustomVariableUpdate(ctx context.Context, d *schema.ResourceData, m
 }
 
 func resourceCustomVariableDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := client.DELETE(fmt.Sprintf("/v3/custom-variable/%s", ID), nil)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to delete CustomVariable",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+		return hc.HandleError(fmt.Errorf("unable to delete CustomVariable: %v", err))
 	}
 
-	// d.SetId("") is automatically called assuming delete returns no errors, but
-	// it is added here for explicitness.
 	d.SetId("")
 
-	return diags
+	return nil
 }

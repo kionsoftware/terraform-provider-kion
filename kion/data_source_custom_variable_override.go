@@ -118,36 +118,36 @@ func dataSourceCustomVariableOverrideRead(ctx context.Context, d *schema.Resourc
 }
 
 func getAllOUOverrides(d *schema.ResourceData, client *hc.Client) ([]map[string]interface{}, diag.Diagnostics) {
-	var diags diag.Diagnostics
 	var ous hc.OUListResponse
 	err := client.GET("/v3/ou", &ous)
 	if err != nil {
-		return nil, diag.Errorf("Error getting OUs: %v", err)
+		return nil, hc.HandleError(fmt.Errorf("error getting OUs: %v", err))
 	}
 
 	f := hc.NewFilterable(d)
 	var arr []map[string]interface{}
+
 	for _, ou := range ous.Data {
 		var overrides hc.CustomVariableOverrideListResponse
 		err := client.GET(fmt.Sprintf("/v3/ou/%d/custom-variable?count=999999", ou.ID), &overrides)
 		if err != nil {
-			return nil, diag.Errorf("Error getting OU overrides: %v", err)
+			return nil, hc.HandleError(fmt.Errorf("error getting OU overrides: %v", err))
 		}
 
 		for _, override := range overrides.Data.Items {
-			if override.Override.Value == nil {
+			if override.Override == nil || override.Override.Value == nil {
 				continue
 			}
 
 			cvResp := new(hc.CustomVariableResponse)
 			err := client.GET(fmt.Sprintf("/v3/custom-variable/%d", override.CustomVariableID), cvResp)
 			if err != nil {
-				return nil, diag.Errorf("failed to get custom variable type: %v", err)
+				return nil, hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
 			}
 
 			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
 			if err != nil {
-				return nil, diag.Errorf("failed to process value: %v", err)
+				return nil, hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 			}
 
 			data := map[string]interface{}{
@@ -159,12 +159,7 @@ func getAllOUOverrides(d *schema.ResourceData, client *hc.Client) ([]map[string]
 
 			match, err := f.Match(data)
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to filter Custom Variables",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "filter"),
-				})
-				return nil, diags
+				return nil, hc.HandleError(fmt.Errorf("unable to filter Custom Variables: %v", err))
 			} else if !match {
 				continue
 			}
@@ -177,11 +172,10 @@ func getAllOUOverrides(d *schema.ResourceData, client *hc.Client) ([]map[string]
 }
 
 func getAllProjectOverrides(d *schema.ResourceData, client *hc.Client) ([]map[string]interface{}, diag.Diagnostics) {
-	var diags diag.Diagnostics
 	var projects hc.ProjectListResponse
 	err := client.GET("/v3/project", &projects)
 	if err != nil {
-		return nil, diag.Errorf("Error getting projects: %v", err)
+		return nil, hc.HandleError(fmt.Errorf("error getting projects: %v", err))
 	}
 
 	f := hc.NewFilterable(d)
@@ -190,7 +184,7 @@ func getAllProjectOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 		var overrides hc.CustomVariableOverrideListResponse
 		err := client.GET(fmt.Sprintf("/v3/project/%d/custom-variable?count=999999", project.ID), &overrides)
 		if err != nil {
-			return nil, diag.Errorf("Error getting project overrides: %v", err)
+			return nil, hc.HandleError(fmt.Errorf("error getting project overrides: %v", err))
 		}
 
 		for _, override := range overrides.Data.Items {
@@ -201,12 +195,12 @@ func getAllProjectOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 			cvResp := new(hc.CustomVariableResponse)
 			err := client.GET(fmt.Sprintf("/v3/custom-variable/%d", override.CustomVariableID), cvResp)
 			if err != nil {
-				return nil, diag.Errorf("failed to get custom variable type: %v", err)
+				return nil, hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
 			}
 
 			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
 			if err != nil {
-				return nil, diag.Errorf("failed to process value: %v", err)
+				return nil, hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 			}
 
 			data := map[string]interface{}{
@@ -218,12 +212,7 @@ func getAllProjectOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 
 			match, err := f.Match(data)
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to filter Custom Variables",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "filter"),
-				})
-				return nil, diags
+				return nil, hc.HandleError(fmt.Errorf("unable to filter Custom Variables: %v", err))
 			}
 			if !match {
 				continue
@@ -237,11 +226,10 @@ func getAllProjectOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 }
 
 func getAllAccountOverrides(d *schema.ResourceData, client *hc.Client) ([]map[string]interface{}, diag.Diagnostics) {
-	var diags diag.Diagnostics
 	var accounts hc.AccountListResponse
 	err := client.GET("/v3/account", &accounts)
 	if err != nil {
-		return nil, diag.Errorf("Error getting accounts: %v", err)
+		return nil, hc.HandleError(fmt.Errorf("error getting accounts: %v", err))
 	}
 
 	f := hc.NewFilterable(d)
@@ -250,7 +238,7 @@ func getAllAccountOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 		var overrides hc.CustomVariableOverrideListResponse
 		err := client.GET(fmt.Sprintf("/v3/account/%d/custom-variable?count=999999", account.ID), &overrides)
 		if err != nil {
-			return nil, diag.Errorf("Error getting account overrides: %v", err)
+			return nil, hc.HandleError(fmt.Errorf("error getting account overrides: %v", err))
 		}
 
 		for _, override := range overrides.Data.Items {
@@ -261,12 +249,12 @@ func getAllAccountOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 			cvResp := new(hc.CustomVariableResponse)
 			err := client.GET(fmt.Sprintf("/v3/custom-variable/%d", override.CustomVariableID), cvResp)
 			if err != nil {
-				return nil, diag.Errorf("failed to get custom variable type: %v", err)
+				return nil, hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
 			}
 
 			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
 			if err != nil {
-				return nil, diag.Errorf("failed to process value: %v", err)
+				return nil, hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 			}
 
 			data := map[string]interface{}{
@@ -278,12 +266,7 @@ func getAllAccountOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 
 			match, err := f.Match(data)
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to filter Custom Variables",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "filter"),
-				})
-				return nil, diags
+				return nil, hc.HandleError(fmt.Errorf("unable to filter Custom Variables: %v", err))
 			}
 			if !match {
 				continue
@@ -297,11 +280,10 @@ func getAllAccountOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 }
 
 func getAllAccountCacheOverrides(d *schema.ResourceData, client *hc.Client) ([]map[string]interface{}, diag.Diagnostics) {
-	var diags diag.Diagnostics
 	var accountCaches hc.AccountCacheListResponse
 	err := client.GET("/v3/account-cache", &accountCaches)
 	if err != nil {
-		return nil, diag.Errorf("Error getting account caches: %v", err)
+		return nil, hc.HandleError(fmt.Errorf("error getting account caches: %v", err))
 	}
 
 	f := hc.NewFilterable(d)
@@ -310,7 +292,7 @@ func getAllAccountCacheOverrides(d *schema.ResourceData, client *hc.Client) ([]m
 		var overrides hc.CustomVariableOverrideListResponse
 		err := client.GET(fmt.Sprintf("/v3/account-cache/%d/custom-variable?count=999999", accountCache.ID), &overrides)
 		if err != nil {
-			return nil, diag.Errorf("Error getting account cache overrides: %v", err)
+			return nil, hc.HandleError(fmt.Errorf("error getting account cache overrides: %v", err))
 		}
 
 		for _, override := range overrides.Data.Items {
@@ -321,12 +303,12 @@ func getAllAccountCacheOverrides(d *schema.ResourceData, client *hc.Client) ([]m
 			cvResp := new(hc.CustomVariableResponse)
 			err := client.GET(fmt.Sprintf("/v3/custom-variable/%d", override.CustomVariableID), cvResp)
 			if err != nil {
-				return nil, diag.Errorf("failed to get custom variable type: %v", err)
+				return nil, hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
 			}
 
 			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
 			if err != nil {
-				return nil, diag.Errorf("failed to process value: %v", err)
+				return nil, hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 			}
 
 			data := map[string]interface{}{
@@ -338,12 +320,7 @@ func getAllAccountCacheOverrides(d *schema.ResourceData, client *hc.Client) ([]m
 
 			match, err := f.Match(data)
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to filter Custom Variables",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "filter"),
-				})
-				return nil, diags
+				return nil, hc.HandleError(fmt.Errorf("unable to filter Custom Variables: %v", err))
 			}
 			if !match {
 				continue
