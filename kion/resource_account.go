@@ -120,10 +120,6 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 	if hasChanged {
 		diags = append(diags, hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Failed to set last_updated")...)
-		tflog.Info(ctx, "Updated account", map[string]interface{}{
-			"id":       ID,
-			"location": accountLocation,
-		})
 	}
 
 	return diags
@@ -153,11 +149,6 @@ func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interf
 	if err := client.DELETE(accountUrl, nil); err != nil {
 		return append(diags, hc.HandleError(fmt.Errorf("failed to delete account (ID: %s): %v", ID, err))...)
 	}
-
-	tflog.Info(ctx, "Account deleted successfully", map[string]interface{}{
-		"id":       ID,
-		"location": accountLocation,
-	})
 
 	d.SetId("")
 	return diags

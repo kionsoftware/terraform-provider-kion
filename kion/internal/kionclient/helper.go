@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -372,77 +371,6 @@ func makeMapFromArray(arr []int) map[int]bool {
 		m[v] = true
 	}
 	return m
-}
-
-// GenerateAccTestChecksForResourceOwners generates a list of Terraform acceptance test check functions
-// to verify that the specified resource owners (user IDs and user group IDs) are correctly set in a resource's state.
-func GenerateAccTestChecksForResourceOwners(resourceType, resourceName string, ownerUserIds, ownerUserGroupIds *[]int) []resource.TestCheckFunc {
-	var funcs []resource.TestCheckFunc
-
-	if ownerUserIds != nil {
-		for idx, id := range *ownerUserIds {
-			funcs = append(funcs, resource.TestCheckResourceAttr(
-				resourceType+"."+resourceName,
-				fmt.Sprintf("owner_users.%v.id", idx),
-				fmt.Sprint(id),
-			))
-		}
-	}
-
-	if ownerUserGroupIds != nil {
-		for idx, id := range *ownerUserGroupIds {
-			funcs = append(funcs, resource.TestCheckResourceAttr(
-				resourceType+"."+resourceName,
-				fmt.Sprintf("owner_user_groups.%v.id", idx),
-				fmt.Sprint(id),
-			))
-		}
-	}
-
-	return funcs
-}
-
-// GenerateOwnerClausesForResourceTest generates a string containing HCL code for setting
-// owner users and owner user groups in a Terraform resource test case.
-func GenerateOwnerClausesForResourceTest(ownerUserIds, ownerUserGroupIds *[]int) (ownerClauses string) {
-	if ownerUserIds != nil {
-		for _, id := range *ownerUserIds {
-			ownerClauses += fmt.Sprintf("\nowner_users { id = %v }", id)
-		}
-	}
-
-	if ownerUserGroupIds != nil {
-		for _, id := range *ownerUserGroupIds {
-			ownerClauses += fmt.Sprintf("\nowner_user_groups { id = %v }", id)
-		}
-	}
-
-	return
-}
-
-// TestAccOUGenerateDataSourceDeclarationFilter generates a string containing HCL code
-// for declaring a Terraform data source with a filter based on the "name" attribute.
-func TestAccOUGenerateDataSourceDeclarationFilter(dataSourceName, localName, name string) string {
-	return fmt.Sprintf(`
-		data "%v" "%v" {
-			filter {
-				name = "name"
-				values = ["%v"]
-			}
-		}`, dataSourceName, localName, name)
-}
-
-// TestAccOUGenerateDataSourceDeclarationAll generates a string containing HCL code
-// for declaring a Terraform data source without any filters.
-func TestAccOUGenerateDataSourceDeclarationAll(dataSourceName, localName string) string {
-	return fmt.Sprintf(`
-		data "%v" "%v" {}`, dataSourceName, localName)
-}
-
-// PrintHCLConfig prints a provided HCL configuration string to the console.
-func PrintHCLConfig(config string) {
-	fmt.Println("Generated HCL configuration:")
-	fmt.Println(config)
 }
 
 // ConvertInterfaceSliceToIntSlice converts a slice of interfaces to a slice of integers.

@@ -650,7 +650,7 @@ func handleCacheToProjectConversion(ctx context.Context, d *schema.ResourceData,
 
 	accountCacheId, err := strconv.Atoi(ID)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("invalid account cache ID: %v", err))
+		return append(diags, hc.HandleError(fmt.Errorf("invalid account cache ID: %v", err))...)
 	}
 
 	projectId := d.Get("project_id").(int)
@@ -675,7 +675,7 @@ func handleProjectToCacheConversion(ctx context.Context, d *schema.ResourceData,
 	var diags diag.Diagnostics
 	accountId, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("invalid account ID: %v", err))
+		return append(diags, hc.HandleError(fmt.Errorf("invalid account ID: %v", err))...)
 	}
 
 	tflog.Debug(ctx, "Converting AWS account from project to cache", map[string]interface{}{
