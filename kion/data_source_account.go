@@ -130,7 +130,7 @@ func dataSourceAccountRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	resp := new(hc.AccountListResponse)
 	if err := client.GET("/v3/account", resp); err != nil {
-		return diag.FromErr(fmt.Errorf("failed to read accounts: %v", err))
+		return append(diags, hc.HandleError(fmt.Errorf("failed to read accounts: %v", err))...)
 	}
 
 	f := hc.NewFilterable(d)
@@ -159,7 +159,7 @@ func dataSourceAccountRead(ctx context.Context, d *schema.ResourceData, m interf
 
 		match, err := f.Match(data)
 		if err != nil {
-			return diag.FromErr(fmt.Errorf("failed to filter accounts: %v", err))
+			return append(diags, hc.HandleError(fmt.Errorf("failed to filter accounts: %v", err))...)
 		}
 		if !match {
 			continue

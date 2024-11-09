@@ -130,7 +130,7 @@ func dataSourceCachedAccountRead(ctx context.Context, d *schema.ResourceData, m 
 
 	resp := new(hc.AccountCacheListResponse)
 	if err := client.GET("/v3/account-cache", resp); err != nil {
-		return diag.FromErr(fmt.Errorf("failed to read cached accounts: %v", err))
+		return append(diags, hc.HandleError(fmt.Errorf("failed to read cached accounts: %v", err))...)
 	}
 
 	f := hc.NewFilterable(d)
@@ -156,7 +156,7 @@ func dataSourceCachedAccountRead(ctx context.Context, d *schema.ResourceData, m 
 
 		match, err := f.Match(data)
 		if err != nil {
-			return diag.FromErr(fmt.Errorf("failed to filter cached accounts: %v", err))
+			return append(diags, hc.HandleError(fmt.Errorf("failed to filter cached accounts: %v", err))...)
 		}
 		if !match {
 			continue
