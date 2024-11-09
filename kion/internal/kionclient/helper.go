@@ -762,3 +762,26 @@ func UnpackCvValueJsonStr(input interface{}, cvType string) (interface{}, error)
 		return nil, fmt.Errorf("unsupported custom variable type: %s", cvType)
 	}
 }
+
+// GetMoveProjectSettings retrieves move project settings from the schema.ResourceData
+// and returns a pointer to an AccountMove object. If no move project settings are found,
+// it returns a default AccountMove object.
+func GetMoveProjectSettings(d *schema.ResourceData) *AccountMove {
+	if v, exists := d.GetOk("move_project_settings"); exists {
+		moveSettings := v.(*schema.Set)
+		for _, item := range moveSettings.List() {
+			if moveSettingsMap, ok := item.(map[string]interface{}); ok {
+				return &AccountMove{
+					ProjectID:        d.Get("project_id").(int),
+					FinancialSetting: moveSettingsMap["financials"].(string),
+					MoveDate:         moveSettingsMap["move_datecode"].(int),
+				}
+			}
+		}
+	}
+	return &AccountMove{
+		ProjectID:        d.Get("project_id").(int),
+		FinancialSetting: "move",
+		MoveDate:         0,
+	}
+}
