@@ -6,11 +6,11 @@ description: |-
   Creates or imports an AWS Account and adds it to a Kion project or the Kion account cache.
   If account_number is provided, an existing account will be imported into Kion, otherwise a new AWS account will be created.  If project_id is provided the account will be added to the corresponding project, otherwise the account will be added to the account cache.
   Once added, an account can be moved between projects or in and out of the account cache by changing the project_id.  When moving accounts between projects, use move_project_settings to control how financials will be treated between the old and new project.
-  When importing an existing Kion account into terraform state (different from using terraform to import an existing AWS account into Kion), you must use the account_id= or account_cache_id= ID prefix to indicate whether the ID is an account ID or a cached account ID.
-  For example:
-  terraform import kion_aws_account.test-account account_id=123
-  terraform import kion_aws_account.test-cached-account account_cache_id=321
-  
+  When importing existing Kion accounts into terraform state, you can use one of these methods:
+  Default import (tries project first, then cache):
+  terraform import kionawsaccount.example 123Explicit project account import:
+  terraform import kionawsaccount.example account_id=123Explicit cache account import:
+  terraform import kionawsaccount.example accountcacheid=123
   NOTE: This resource requires Kion v3.8.4 or greater.
 ---
 
@@ -22,12 +22,16 @@ If `account_number` is provided, an existing account will be imported into Kion,
 
 Once added, an account can be moved between projects or in and out of the account cache by changing the `project_id`.  When moving accounts between projects, use `move_project_settings` to control how financials will be treated between the old and new project.
 
-When importing an existing Kion account into terraform state (different from using terraform to import an existing AWS account into Kion), you must use the `account_id=` or `account_cache_id=` ID prefix to indicate whether the ID is an account ID or a cached account ID.
+When importing existing Kion accounts into terraform state, you can use one of these methods:
 
-For example:
+1. Default import (tries project first, then cache):
+    terraform import kion_aws_account.example 123
 
-    terraform import kion_aws_account.test-account account_id=123
-    terraform import kion_aws_account.test-cached-account account_cache_id=321
+2. Explicit project account import:
+    terraform import kion_aws_account.example account_id=123
+
+3. Explicit cache account import:
+    terraform import kion_aws_account.example account_cache_id=123
 
 **NOTE:** This resource requires Kion v3.8.4 or greater.
 
@@ -76,7 +80,7 @@ output "kion_account_id" {
 - `last_updated` (String)
 - `linked_role` (String) The AWS organization service role.
 - `move_project_settings` (Block Set, Max: 1) Parameters used when moving an account between Kion projects.  These settings are ignored unless moving an account. (see [below for nested schema](#nestedblock--move_project_settings))
-- `project_id` (Number) The ID of the Kion project to place this account within.  If empty, the account will be placed within the account cache.
+- `project_id` (Number) The ID of the Kion project to place this account within. If empty, the account will be placed within the account cache.
 - `skip_access_checking` (Boolean) True to skip periodic access checking on the account.
 - `start_datecode` (String) Date when the AWS account will starting submitting payments against a funding source (YYYY-MM).  Required if placing an account within a project.
 - `use_org_account_info` (Boolean) True to keep the account name and email address in Kion in sync with the account name and email address as set in AWS Organization.
@@ -87,7 +91,7 @@ output "kion_account_id" {
 - `created_at` (String)
 - `id` (String) The ID of this resource.
 - `linked_account_number` (String) For AWS GovCloud accounts, this is the linked commercial account.  Otherwise this is empty.
-- `location` (String) Where the account is attached.  Either "project" or "cache".
+- `location` (String) Where the account is attached. Either "project" or "cache".
 - `service_external_id` (String) The external ID used for automated internal actions using the service role for this account.
 
 <a id="nestedblock--aws_organizational_unit"></a>
