@@ -635,11 +635,11 @@ const (
 // NormalizeCvValue normalizes a custom variable value based on its type
 func NormalizeCvValue(v string, cvType string) (string, error) {
 	switch cvType {
-	case "string":
+	case TypeString:
 		// For strings, wrap in the expected format
 		return fmt.Sprintf(`{"value":%q}`, v), nil
 
-	case "list", "map":
+	case TypeList, TypeMap:
 		// For lists and maps, try to parse as JSON first
 		var parsed interface{}
 		if err := json.Unmarshal([]byte(v), &parsed); err != nil {
@@ -667,7 +667,7 @@ func PackCvValueIntoJsonStr(value interface{}, cvType string) (string, error) {
 	}
 
 	switch cvType {
-	case "string":
+	case TypeString:
 		switch v := value.(type) {
 		case string:
 			return v, nil
@@ -675,7 +675,7 @@ func PackCvValueIntoJsonStr(value interface{}, cvType string) (string, error) {
 			return "", fmt.Errorf("expected string value, got %T", value)
 		}
 
-	case "list":
+	case TypeList:
 		switch v := value.(type) {
 		case []interface{}:
 			bytes, err := json.Marshal(v)
@@ -694,7 +694,7 @@ func PackCvValueIntoJsonStr(value interface{}, cvType string) (string, error) {
 			return "", fmt.Errorf("expected list value, got %T", value)
 		}
 
-	case "map":
+	case TypeMap:
 		switch v := value.(type) {
 		case map[string]interface{}:
 			bytes, err := json.Marshal(v)
@@ -721,14 +721,14 @@ func PackCvValueIntoJsonStr(value interface{}, cvType string) (string, error) {
 // UnpackCvValueJsonStr converts the input value based on the custom variable type
 func UnpackCvValueJsonStr(input interface{}, cvType string) (interface{}, error) {
 	switch cvType {
-	case "string":
+	case TypeString:
 		if str, ok := input.(string); ok {
 			// For strings, we need to send just the raw string
 			return str, nil
 		}
-		return nil, fmt.Errorf("expected string value for type 'string', got %T", input)
+		return nil, fmt.Errorf("expected string value for type '%s', got %T", TypeString, input)
 
-	case "list":
+	case TypeList:
 		switch v := input.(type) {
 		case []interface{}:
 			return v, nil
@@ -740,10 +740,10 @@ func UnpackCvValueJsonStr(input interface{}, cvType string) (interface{}, error)
 			}
 			return result, nil
 		default:
-			return nil, fmt.Errorf("expected list value for type 'list', got %T", input)
+			return nil, fmt.Errorf("expected list value for type '%s', got %T", TypeList, input)
 		}
 
-	case "map":
+	case TypeMap:
 		switch v := input.(type) {
 		case map[string]interface{}:
 			return v, nil
@@ -755,7 +755,7 @@ func UnpackCvValueJsonStr(input interface{}, cvType string) (interface{}, error)
 			}
 			return result, nil
 		default:
-			return nil, fmt.Errorf("expected map value for type 'map', got %T", input)
+			return nil, fmt.Errorf("expected map value for type '%s', got %T", TypeMap, input)
 		}
 
 	default:
