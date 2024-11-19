@@ -79,11 +79,11 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 	// Get the appropriate value based on type
 	var value interface{}
 	switch cvResp.Data.Type {
-	case "string":
+	case hc.TypeString:
 		value = d.Get("value_string")
-	case "list":
+	case hc.TypeList:
 		value = d.Get("value_list")
-	case "map":
+	case hc.TypeMap:
 		value = d.Get("value_map")
 	default:
 		return hc.HandleError(fmt.Errorf("unsupported type: %s", cvResp.Data.Type))
@@ -146,15 +146,15 @@ func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceD
 
 		// Set the appropriate value based on type
 		switch cvResp.Data.Type {
-		case "string":
+		case hc.TypeString:
 			diags = append(diags, hc.SafeSet(d, "value_string", cvValueStr, "Failed to set value")...)
-		case "list":
+		case hc.TypeList:
 			var list []interface{}
 			if err := json.Unmarshal([]byte(cvValueStr), &list); err != nil {
 				return hc.HandleError(err)
 			}
 			diags = append(diags, hc.SafeSet(d, "value_list", list, "Failed to set value_list")...)
-		case "map":
+		case hc.TypeMap:
 			var m map[string]interface{}
 			if err := json.Unmarshal([]byte(cvValueStr), &m); err != nil {
 				return hc.HandleError(err)
@@ -191,11 +191,11 @@ func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.Resourc
 		// Get the appropriate value based on type
 		var value interface{}
 		switch cvResp.Data.Type {
-		case "string":
+		case hc.TypeString:
 			value = d.Get("value_string")
-		case "list":
+		case hc.TypeList:
 			value = d.Get("value_list")
-		case "map":
+		case hc.TypeMap:
 			value = d.Get("value_map")
 		default:
 			return hc.HandleError(fmt.Errorf("unsupported type: %s", cvResp.Data.Type))

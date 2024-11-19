@@ -625,6 +625,13 @@ func ValidateAppRoleID(ctx context.Context, d *schema.ResourceDiff, meta interfa
 	return nil
 }
 
+// Custom Variable Types
+const (
+	TypeString = "string"
+	TypeList   = "list"
+	TypeMap    = "map"
+)
+
 // NormalizeCvValue normalizes a custom variable value based on its type
 func NormalizeCvValue(v string, cvType string) (string, error) {
 	switch cvType {
