@@ -12,6 +12,12 @@ import (
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
+const (
+	typeString = "string"
+	typeList   = "list"
+	typeMap    = "map"
+)
+
 func dataSourceCustomVariable() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceCustomVariablesRead,
@@ -138,15 +144,15 @@ func dataSourceCustomVariablesRead(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		switch item.Type {
-		case "string":
+		case typeString:
 			data["default_value_string"] = cvValueStr
-		case "list":
+		case typeList:
 			var list []interface{}
 			if err := json.Unmarshal([]byte(cvValueStr), &list); err != nil {
 				return hc.HandleError(err)
 			}
 			data["default_value_list"] = list
-		case "map":
+		case typeMap:
 			var m map[string]interface{}
 			if err := json.Unmarshal([]byte(cvValueStr), &m); err != nil {
 				return hc.HandleError(err)
