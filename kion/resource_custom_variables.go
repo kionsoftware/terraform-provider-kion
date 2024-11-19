@@ -107,11 +107,11 @@ func resourceCustomVariableCreate(ctx context.Context, d *schema.ResourceData, m
 	var defaultValue interface{}
 
 	switch cvType {
-	case "string":
+	case hc.TypeString:
 		defaultValue = d.Get("default_value_string")
-	case "list":
+	case hc.TypeList:
 		defaultValue = d.Get("default_value_list")
-	case "map":
+	case hc.TypeMap:
 		defaultValue = d.Get("default_value_map")
 	default:
 		return hc.HandleError(fmt.Errorf("unsupported type: %s", cvType))
@@ -226,11 +226,11 @@ func resourceCustomVariableUpdate(ctx context.Context, d *schema.ResourceData, m
 		var defaultValue interface{}
 
 		switch cvType {
-		case "string":
+		case hc.TypeString:
 			defaultValue = d.Get("default_value_string")
-		case "list":
+		case hc.TypeList:
 			defaultValue = d.Get("default_value_list")
-		case "map":
+		case hc.TypeMap:
 			defaultValue = d.Get("default_value_map")
 		default:
 			return hc.HandleError(fmt.Errorf("unsupported type: %s", cvType))
