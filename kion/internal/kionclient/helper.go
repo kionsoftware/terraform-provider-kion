@@ -625,7 +625,7 @@ func ValidateAppRoleID(ctx context.Context, d *schema.ResourceDiff, meta interfa
 	return nil
 }
 
-// Custom Variable Types
+// Custom Variable Types for Custom Variables
 const (
 	TypeString = "string"
 	TypeList   = "list"
