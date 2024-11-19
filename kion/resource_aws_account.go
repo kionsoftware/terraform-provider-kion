@@ -387,18 +387,6 @@ func createAwsAccount(ctx context.Context, client *hc.Client, d *schema.Resource
 	return diags, respCache.RecordID
 }
 
-// logPostData logs the data being posted for account creation. It returns an error if marshaling fails.
-func logPostData(ctx context.Context, client *hc.Client, postData interface{}) error {
-	// This line makes the linter recognize that client is used
-	_ = client
-	rb, err := json.Marshal(postData)
-	if err != nil {
-		return err
-	}
-	tflog.Debug(ctx, "Creating new AWS account via POST /v3/account-cache/create?account-type=aws", map[string]interface{}{"postData": string(rb)})
-	return nil
-}
-
 // populateOrgUnitFromResourceData parses OU details from Terraform data, updating AccountCacheNewAWSCreate for account creation.
 func populateOrgUnitFromResourceData(d *schema.ResourceData, postCacheData *hc.AccountCacheNewAWSCreate) error {
 	if v, exists := d.GetOk("aws_organizational_unit"); exists {
@@ -641,12 +629,7 @@ func validateAwsAccountStartDatecode(ctx context.Context, d *schema.ResourceDiff
 
 func handleCacheToProjectConversion(ctx context.Context, d *schema.ResourceData, client *hc.Client) diag.Diagnostics {
 	var diags diag.Diagnostics
-	ID := d.Id()
-
-	// Handle ID with prefix
-	if strings.HasPrefix(ID, "account_cache_id=") {
-		ID = strings.TrimPrefix(ID, "account_cache_id=")
-	}
+	ID := strings.TrimPrefix(d.Id(), "account_cache_id=")
 
 	accountCacheId, err := strconv.Atoi(ID)
 	if err != nil {
