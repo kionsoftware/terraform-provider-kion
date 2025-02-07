@@ -134,8 +134,8 @@ func resourceAwsIamPolicyRead(ctx context.Context, d *schema.ResourceData, m int
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	resp := new(hc.IAMPolicyResponse)
-	err := client.GET(fmt.Sprintf("/v3/iam-policy/%s", ID), resp)
+	resp := new(hc.IAMPolicyV4Response)
+	err := client.GET(fmt.Sprintf("/v4/iam-policy/%s", ID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -144,29 +144,29 @@ func resourceAwsIamPolicyRead(ctx context.Context, d *schema.ResourceData, m int
 		})
 		return diags
 	}
-	item := resp.Data
 
+	item := resp.Data.IamPolicy
 	data := make(map[string]interface{})
-	data["aws_iam_path"] = item.IamPolicy.AwsIamPath
-	data["aws_managed_policy"] = item.IamPolicy.AwsManagedPolicy
-	data["description"] = item.IamPolicy.Description
-	data["name"] = item.IamPolicy.Name
-	if hc.InflateObjectWithID(item.OwnerUserGroups) != nil {
-		data["owner_user_groups"] = hc.InflateObjectWithID(item.OwnerUserGroups)
+	data["aws_iam_path"] = item.AwsIamPath
+	data["aws_managed_policy"] = item.AwsManagedPolicy
+	data["description"] = item.Description
+	data["name"] = item.Name
+	if hc.InflateObjectWithID(resp.Data.OwnerUserGroups) != nil {
+		data["owner_user_groups"] = hc.InflateObjectWithID(resp.Data.OwnerUserGroups)
 	}
-	if hc.InflateObjectWithID(item.OwnerUsers) != nil {
-		data["owner_users"] = hc.InflateObjectWithID(item.OwnerUsers)
+	if hc.InflateObjectWithID(resp.Data.OwnerUsers) != nil {
+		data["owner_users"] = hc.InflateObjectWithID(resp.Data.OwnerUsers)
 	}
-	data["path_suffix"] = item.IamPolicy.PathSuffix
-	data["policy"] = item.IamPolicy.Policy
-	data["system_managed_policy"] = item.IamPolicy.SystemManagedPolicy
+	data["path_suffix"] = item.PathSuffix
+	data["policy"] = item.Policy
+	data["system_managed_policy"] = item.SystemManagedPolicy
 
 	for k, v := range data {
 		if err := d.Set(k, v); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to read and set AwsIamPolicy",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), d.Id()),
 			})
 			return diags
 		}
