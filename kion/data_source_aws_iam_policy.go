@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
@@ -105,6 +106,31 @@ func dataSourceAwsIamPolicy() *schema.Resource {
 					},
 				},
 			},
+			"query": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Query string for IAM policy name matching",
+			},
+			"policy_type": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Policy type filter. Valid values are 'user', 'aws', or 'system'",
+				ValidateFunc: validation.StringInSlice([]string{
+					"user",
+					"aws",
+					"system",
+				}, false),
+			},
+			"page": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Page number of results",
+			},
+			"page_size": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Number of results per page",
+			},
 		},
 	}
 }
@@ -113,8 +139,24 @@ func dataSourceAwsIamPolicyRead(ctx context.Context, d *schema.ResourceData, m i
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
-	resp := new(hc.IAMPolicyListResponse)
-	err := client.GET("/v3/iam-policy", resp)
+	respV4 := new(hc.IAMPolicyV4ListResponse)
+	params := make(map[string]string)
+	if v, ok := d.GetOk("query"); ok {
+		params["query"] = v.(string)
+	}
+	if v, ok := d.GetOk("policy_type"); ok {
+		params["policy-type"] = v.(string)
+	}
+	if v, ok := d.GetOk("page"); ok {
+		params["page"] = strconv.Itoa(v.(int))
+		if v2, ok := d.GetOk("page_size"); ok {
+			params["count"] = strconv.Itoa(v2.(int))
+		} else {
+			params["count"] = "100" // default page size
+		}
+	}
+
+	err := client.GETWithParams("/v4/iam-policy", params, respV4)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -124,10 +166,15 @@ func dataSourceAwsIamPolicyRead(ctx context.Context, d *schema.ResourceData, m i
 		return diags
 	}
 
+	return processV4Response(d, respV4)
+}
+
+func processV4Response(d *schema.ResourceData, resp *hc.IAMPolicyV4ListResponse) diag.Diagnostics {
+	var diags diag.Diagnostics
 	f := hc.NewFilterable(d)
 
 	arr := make([]map[string]interface{}, 0)
-	for _, item := range resp.Data {
+	for _, item := range resp.Data.Items {
 		data := make(map[string]interface{})
 		data["aws_iam_path"] = item.IamPolicy.AwsIamPath
 		data["aws_managed_policy"] = item.IamPolicy.AwsManagedPolicy
