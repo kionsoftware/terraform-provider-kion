@@ -125,18 +125,11 @@ func dataSourceComplianceCheck() *schema.Resource {
 }
 
 func dataSourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
 	resp := new(hc.ComplianceCheckListResponse)
-	err := client.GET("/v3/compliance/check", resp)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read ComplianceCheck",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
-		})
-		return diags
+	if err := client.GET("/v3/compliance/check", resp); err != nil {
+		return diag.FromErr(err)
 	}
 
 	f := hc.NewFilterable(d)
@@ -168,12 +161,7 @@ func dataSourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, 
 
 		match, err := f.Match(data)
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to filter ComplianceCheck",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "filter"),
-			})
-			return diags
+			return diag.FromErr(fmt.Errorf("error matching compliance check: %w", err))
 		} else if !match {
 			continue
 		}
@@ -182,16 +170,11 @@ func dataSourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	if err := d.Set("list", arr); err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read ComplianceCheck",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
-		})
-		return diags
+		return diag.FromErr(fmt.Errorf("error setting list: %w", err))
 	}
 
 	// Always run.
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
-	return diags
+	return nil
 }

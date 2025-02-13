@@ -181,117 +181,114 @@ func resourceComplianceStandardRead(ctx context.Context, d *schema.ResourceData,
 }
 
 func resourceComplianceStandardUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
 
 	// Determine if the attributes that are updatable are changed.
-	// Leave out fields that are not allowed to be changed like
-	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
-	// schema instead.
-	if d.HasChanges("description",
-		"name") {
+	if d.HasChanges("description", "name") {
 		hasChanged++
 		req := hc.ComplianceStandardUpdate{
 			Description: d.Get("description").(string),
 			Name:        d.Get("name").(string),
 		}
 
-		err := client.PATCH(fmt.Sprintf("/v3/compliance/standard/%s", ID), req)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to update ComplianceStandard",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+		if err := client.PATCH(fmt.Sprintf("/v3/compliance/standard/%s", ID), req); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
 	// Handle associations.
 	if d.HasChanges("compliance_checks") {
 		hasChanged++
-		arrAddComplianceCheckIds, arrRemoveComplianceCheckIds, _, _ := hc.AssociationChanged(d, "compliance_checks")
+
+		// Get current state before making changes
+		resp := new(hc.ComplianceStandardResponse)
+		if err := client.GET(fmt.Sprintf("/v3/compliance/standard/%s", ID), resp); err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Create map of current compliance checks
+		currentChecks := make(map[int]bool)
+		for _, check := range resp.Data.ComplianceChecks {
+			currentChecks[check.ID] = true
+		}
+
+		// Use AssociationChanged helper to get changes
+		arrAddComplianceCheckIds, arrRemoveComplianceCheckIds, changed, err := hc.AssociationChanged(d, "compliance_checks")
+		if err != nil {
+			return diag.FromErr(fmt.Errorf("error determining compliance check changes: %w", err))
+		}
+
+		// Filter out checks that don't exist from removal list
+		var validRemoveChecks []int
+		for _, checkID := range arrRemoveComplianceCheckIds {
+			if currentChecks[checkID] {
+				validRemoveChecks = append(validRemoveChecks, checkID)
+			}
+		}
 
 		if len(arrAddComplianceCheckIds) > 0 {
 			_, err := client.POST(fmt.Sprintf("/v3/compliance/standard/%s/association", ID), hc.ComplianceStandardAssociationsAdd{
 				ComplianceCheckIds: &arrAddComplianceCheckIds,
 			})
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to add owners on ComplianceStandard",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-				})
-				return diags
+				return diag.FromErr(err)
 			}
 		}
 
-		if len(arrRemoveComplianceCheckIds) > 0 {
+		if len(validRemoveChecks) > 0 {
 			err := client.DELETE(fmt.Sprintf("/v3/compliance/standard/%s/association", ID), hc.ComplianceStandardAssociationsRemove{
-				ComplianceCheckIds: &arrRemoveComplianceCheckIds,
+				ComplianceCheckIds: validRemoveChecks,
 			})
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to remove owners on ComplianceStandard",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-				})
-				return diags
+				return diag.FromErr(err)
 			}
+		}
+
+		if changed {
+			hasChanged++
 		}
 	}
 
-	// Determine if the owners have changed.
-	if d.HasChanges("owner_user_groups",
-		"owner_users") {
+	// Handle owner changes using AssociationChanged helper
+	if d.HasChanges("owner_user_groups", "owner_users") {
 		hasChanged++
-		arrAddOwnerUserGroupIds, arrRemoveOwnerUserGroupIds, _, _ := hc.AssociationChanged(d, "owner_user_groups")
-		arrAddOwnerUserIds, arrRemoveOwnerUserIds, _, _ := hc.AssociationChanged(d, "owner_users")
+		arrAddOwnerUserGroupIds, arrRemoveOwnerUserGroupIds, _, err := hc.AssociationChanged(d, "owner_user_groups")
+		if err != nil {
+			return diag.FromErr(fmt.Errorf("error determining owner user group changes: %w", err))
+		}
 
-		if len(arrAddOwnerUserGroupIds) > 0 ||
-			len(arrAddOwnerUserIds) > 0 {
+		arrAddOwnerUserIds, arrRemoveOwnerUserIds, _, err := hc.AssociationChanged(d, "owner_users")
+		if err != nil {
+			return diag.FromErr(fmt.Errorf("error determining owner user changes: %w", err))
+		}
+
+		if len(arrAddOwnerUserGroupIds) > 0 || len(arrAddOwnerUserIds) > 0 {
 			_, err := client.POST(fmt.Sprintf("/v3/compliance/standard/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to add owners on ComplianceStandard",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-				})
-				return diags
+				return diag.FromErr(err)
 			}
 		}
 
-		if len(arrRemoveOwnerUserGroupIds) > 0 ||
-			len(arrRemoveOwnerUserIds) > 0 {
+		if len(arrRemoveOwnerUserGroupIds) > 0 || len(arrRemoveOwnerUserIds) > 0 {
 			err := client.DELETE(fmt.Sprintf("/v3/compliance/standard/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to remove owners on ComplianceStandard",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-				})
-				return diags
+				return diag.FromErr(err)
 			}
 		}
 	}
 
 	if hasChanged > 0 {
 		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Failed to set last_updated",
-				Detail:   err.Error(),
-			})
-			return diags
+			return diag.FromErr(err)
 		}
 	}
 
