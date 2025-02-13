@@ -54,6 +54,10 @@ func dataSourceFundingSource() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"id": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
 						"name": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -99,6 +103,7 @@ func dataSourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m 
 		data := make(map[string]interface{})
 		data["amount"] = item.Amount
 		data["description"] = item.Description
+		data["id"] = item.ID
 		data["name"] = item.Name
 		data["ou_id"] = item.OUID
 		data["start_datecode"] = item.StartDatecode
