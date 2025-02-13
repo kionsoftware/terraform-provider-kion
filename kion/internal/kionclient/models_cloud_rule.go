@@ -3,12 +3,13 @@ package kionclient
 // CloudRuleListResponse for: GET /api/v3/cloud-rule
 type CloudRuleListResponse struct {
 	Data []struct {
-		BuiltIn       bool   `json:"built_in"`
-		Description   string `json:"description"`
-		ID            int    `json:"id"`
-		Name          string `json:"name"`
-		PostWebhookID *int   `json:"post_webhook_id"`
-		PreWebhookID  *int   `json:"pre_webhook_id"`
+		BuiltIn           bool   `json:"built_in"`
+		ConcurrentCftSync bool   `json:"concurrent_cft_sync"`
+		Description       string `json:"description"`
+		ID                int    `json:"id"`
+		Name              string `json:"name"`
+		PostWebhookID     *int   `json:"post_webhook_id"`
+		PreWebhookID      *int   `json:"pre_webhook_id"`
 	} `json:"data"`
 	Status int `json:"status"`
 }
@@ -22,12 +23,13 @@ type CloudRuleResponse struct {
 		AzurePolicyDefinitions      []ObjectWithID `json:"azure_policy_definitions"`
 		AzureRoleDefinitions        []ObjectWithID `json:"azure_role_definitions"`
 		CloudRule                   struct {
-			BuiltIn       bool   `json:"built_in"`
-			Description   string `json:"description"`
-			ID            int    `json:"id"`
-			Name          string `json:"name"`
-			PostWebhookID *int   `json:"post_webhook_id"`
-			PreWebhookID  *int   `json:"pre_webhook_id"`
+			BuiltIn           bool   `json:"built_in"`
+			ConcurrentCftSync bool   `json:"concurrent_cft_sync"`
+			Description       string `json:"description"`
+			ID                int    `json:"id"`
+			Name              string `json:"name"`
+			PostWebhookID     *int   `json:"post_webhook_id"`
+			PreWebhookID      *int   `json:"pre_webhook_id"`
 		} `json:"cloud_rule"`
 		ComplianceStandards                 []ObjectWithID `json:"compliance_standards"`
 		GCPIAMRoles                         []ObjectWithID `json:"gcp_iam_roles"`
@@ -49,6 +51,7 @@ type CloudRuleCreate struct {
 	AzureRoleDefinitionIds        *[]int `json:"azure_role_definition_ids"`
 	CftIds                        *[]int `json:"cft_ids"`
 	ComplianceStandardIds         *[]int `json:"compliance_standard_ids"`
+	ConcurrentCftSync             bool   `json:"concurrent_cft_sync"`
 	Description                   string `json:"description"`
 	GcpIamRoleIds                 *[]int `json:"gcp_iam_role_ids"`
 	IamPolicyIds                  *[]int `json:"iam_policy_ids"`
@@ -66,10 +69,11 @@ type CloudRuleCreate struct {
 
 // CloudRuleUpdate for: PATCH /api/v3/cloud-rule/{id}
 type CloudRuleUpdate struct {
-	Description   string `json:"description"`
-	Name          string `json:"name"`
-	PostWebhookID *int   `json:"post_webhook_id"`
-	PreWebhookID  *int   `json:"pre_webhook_id"`
+	ConcurrentCftSync bool   `json:"concurrent_cft_sync"`
+	Description       string `json:"description"`
+	Name              string `json:"name"`
+	PostWebhookID     *int   `json:"post_webhook_id"`
+	PreWebhookID      *int   `json:"pre_webhook_id"`
 }
 
 // CloudRuleAssociationsAdd for: POST /api/v3/cloud-rule/{id}/association

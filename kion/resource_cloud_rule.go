@@ -229,6 +229,12 @@ func resourceCloudRule() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Description: "A map of labels to assign to the cloud rule. The labels must already exist in Kion.",
 			},
+			"concurrent_cft_sync": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Whether to run CFTs concurrently or not. If true, templates deploy in parallel (faster). If false, templates deploy sequentially (slower).",
+			},
 		},
 	}
 }
@@ -259,6 +265,7 @@ func resourceCloudRuleCreate(ctx context.Context, d *schema.ResourceData, m inte
 		AzureRoleDefinitionIds:        hc.FlattenGenericIDPointer(d, "azure_role_definitions"),
 		CftIds:                        &cftIds,
 		ComplianceStandardIds:         hc.FlattenGenericIDPointer(d, "compliance_standards"),
+		ConcurrentCftSync:             d.Get("concurrent_cft_sync").(bool),
 		Description:                   d.Get("description").(string),
 		GcpIamRoleIds:                 hc.FlattenGenericIDPointer(d, "gcp_iam_roles"),
 		IamPolicyIds:                  hc.FlattenGenericIDPointer(d, "aws_iam_policies"),
@@ -383,6 +390,7 @@ func resourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m interf
 	if hc.InflateObjectWithID(item.ServiceControlPolicies) != nil {
 		data["service_control_policies"] = hc.InflateObjectWithID(item.ServiceControlPolicies)
 	}
+	data["concurrent_cft_sync"] = item.CloudRule.ConcurrentCftSync
 
 	for k, v := range data {
 		if err := d.Set(k, v); err != nil {
@@ -431,14 +439,15 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 	// Leave out fields that are not allowed to be changed like
 	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
 	// schema instead.
-	if d.HasChanges("description", "name", "post_webhook_id", "pre_webhook_id") {
+	if d.HasChanges("description", "name", "post_webhook_id", "pre_webhook_id", "concurrent_cft_sync") {
 		hasChanged++
 		// Common attributes update
 		req := hc.CloudRuleUpdate{
-			Description:   d.Get("description").(string),
-			Name:          d.Get("name").(string),
-			PostWebhookID: hc.FlattenIntPointer(d, "post_webhook_id"),
-			PreWebhookID:  hc.FlattenIntPointer(d, "pre_webhook_id"),
+			ConcurrentCftSync: d.Get("concurrent_cft_sync").(bool),
+			Description:       d.Get("description").(string),
+			Name:              d.Get("name").(string),
+			PostWebhookID:     hc.FlattenIntPointer(d, "post_webhook_id"),
+			PreWebhookID:      hc.FlattenIntPointer(d, "pre_webhook_id"),
 		}
 		if err := client.PATCH(fmt.Sprintf("/v3/cloud-rule/%s", ID), req); err != nil {
 			return append(diags, diag.Diagnostic{

@@ -50,6 +50,10 @@ func dataSourceCloudRule() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"concurrent_cft_sync": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
 						"description": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -100,6 +104,7 @@ func dataSourceCloudRuleRead(ctx context.Context, d *schema.ResourceData, m inte
 	for _, item := range resp.Data {
 		data := make(map[string]interface{})
 		data["built_in"] = item.BuiltIn
+		data["concurrent_cft_sync"] = item.ConcurrentCftSync
 		data["description"] = item.Description
 		data["id"] = item.ID
 		data["name"] = item.Name
