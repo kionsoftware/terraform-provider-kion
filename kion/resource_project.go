@@ -2,7 +2,6 @@ package kion
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -225,44 +224,47 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to retrieve financial config",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), post),
+			Detail:   fmt.Sprintf("Error: %v", err),
 		})
 		return diags
 	}
 
 	// Can't cast directly to []interface{}
-	// Must cast each element to map[string]interface{} & assign each value from the map to the POST object.
+	// Must cast each element to map[string]interface{} & assign each value from the POST object.
 	if config.Data.BudgetMode {
 		projectCreateURLSuffix = "with-budget"
 
 		post.Budget = make([]hc.BudgetCreate, len(d.Get("budget").(*schema.Set).List()))
 
 		for i, genericValue := range d.Get("budget").(*schema.Set).List() {
-
 			// Cast each generic interface{} value to a map of key/value pairs
 			budgetMap := genericValue.(map[string]interface{})
 
 			// Unpack struct values & assign them to the POST object
 			post.Budget[i] = hc.BudgetCreate{
-				Amount:           budgetMap["amount"].(float64),
-				FundingSourceIDs: hc.FlattenIntArrayPointer(budgetMap["funding_source_ids"].(*schema.Set).List()),
-				StartDatecode:    budgetMap["start_datecode"].(string),
-				EndDatecode:      budgetMap["end_datecode"].(string),
+				Amount:        budgetMap["amount"].(float64),
+				StartDatecode: budgetMap["start_datecode"].(string),
+				EndDatecode:   budgetMap["end_datecode"].(string),
 			}
 
-			post.Budget[i].Data = make([]hc.BudgetDataCreate, len(budgetMap["data"].(*schema.Set).List()))
+			if v, ok := budgetMap["funding_source_ids"].(*schema.Set); ok {
+				ids := make([]int, 0, v.Len())
+				for _, id := range v.List() {
+					ids = append(ids, id.(int))
+				}
+				post.Budget[i].FundingSourceIDs = &ids
+			}
 
-			// fill out budget data as needed
-			for idx, genericValue2 := range budgetMap["data"].(*schema.Set).List() {
-
-				// Cast each generic interface{} value to a map of key/value pairs
-				budgetDataMap := genericValue2.(map[string]interface{})
-
-				post.Budget[i].Data[idx] = hc.BudgetDataCreate{
-					Datecode:        budgetDataMap["datecode"].(string),
-					Amount:          budgetDataMap["amount"].(float64),
-					FundingSourceID: budgetDataMap["funding_source_id"].(int),
-					Priority:        budgetDataMap["priority"].(int),
+			if v, ok := budgetMap["data"].(*schema.Set); ok && v.Len() > 0 {
+				post.Budget[i].Data = make([]hc.BudgetDataCreate, v.Len())
+				for idx, dataValue := range v.List() {
+					dataMap := dataValue.(map[string]interface{})
+					post.Budget[i].Data[idx] = hc.BudgetDataCreate{
+						Datecode:        dataMap["datecode"].(string),
+						Amount:          dataMap["amount"].(float64),
+						FundingSourceID: dataMap["funding_source_id"].(int),
+						Priority:        dataMap["priority"].(int),
+					}
 				}
 			}
 		}
@@ -270,7 +272,6 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 		post.ProjectFunding = make([]hc.ProjectFundingCreate, len(d.Get("project_funding").(*schema.Set).List()))
 
 		for i, genericValue := range d.Get("project_funding").(*schema.Set).List() {
-
 			// Cast each generic interface{} value to a map of key/value pairs
 			projectFundingMap := genericValue.(map[string]interface{})
 
@@ -290,14 +291,14 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to create Project",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), post),
+			Detail:   fmt.Sprintf("Error: %v", err),
 		})
 		return diags
 	} else if resp.RecordID == 0 {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to create Project",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), post),
+			Detail:   "Received item ID of 0",
 		})
 		return diags
 	}
@@ -312,15 +313,13 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to update Project labels",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+				Detail:   fmt.Sprintf("Error: %v", err),
 			})
 			return diags
 		}
 	}
 
-	resourceProjectRead(ctx, d, m)
-
-	return diags
+	return resourceProjectRead(ctx, d, m)
 }
 
 func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -334,7 +333,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to read Project",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			Detail:   fmt.Sprintf("Error: %v", err),
 		})
 		return diags
 	}
@@ -371,7 +370,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to read Project budgets",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			Detail:   fmt.Sprintf("Error: %v", err),
 		})
 		return diags
 	}
@@ -414,37 +413,26 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 	data["budget"] = budgets
 
 	for k, v := range data {
-		err := d.Set(k, v)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to read and set Project",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
+		if err := hc.SafeSet(d, k, v, "Unable to read Project"); err != nil {
+			diags = append(diags, err...)
 			return diags
 		}
 	}
 
 	// Fetch labels
 	labelData, err := hc.ReadResourceLabels(client, "project", ID)
-
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to read Project labels",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+			Detail:   fmt.Sprintf("Error: %v", err),
 		})
 		return diags
 	}
 
 	// Set labels
-	err = d.Set("labels", labelData)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to set labels for Project",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
+	if err := hc.SafeSet(d, "labels", labelData, "Unable to set labels for Project"); err != nil {
+		diags = append(diags, err...)
 	}
 
 	return diags
@@ -592,7 +580,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 				Amount           float64               `json:"amount"`
 				Data             []hc.BudgetDataCreate `json:"data,omitempty"`
 				EndDatecode      string                `json:"end_datecode"`
-				FundingSourceIDs []int                 `json:"funding_source_ids,omitempty"`
+				FundingSourceIDs *[]int                `json:"funding_source_ids,omitempty"`
 				ProjectID        int                   `json:"project_id"`
 				StartDatecode    string                `json:"start_datecode"`
 			}{
@@ -615,10 +603,11 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 			// Handle funding source IDs
 			if v, ok := budgetMap["funding_source_ids"].(*schema.Set); ok {
-				budgetReq.FundingSourceIDs = make([]int, 0)
+				ids := make([]int, 0, v.Len())
 				for _, id := range v.List() {
-					budgetReq.FundingSourceIDs = append(budgetReq.FundingSourceIDs, id.(int))
+					ids = append(ids, id.(int))
 				}
+				budgetReq.FundingSourceIDs = &ids
 			}
 
 			// Handle budget data if present
@@ -698,7 +687,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 				Amount           float64               `json:"amount"`
 				Data             []hc.BudgetDataCreate `json:"data,omitempty"`
 				EndDatecode      string                `json:"end_datecode"`
-				FundingSourceIDs []int                 `json:"funding_source_ids,omitempty"`
+				FundingSourceIDs *[]int                `json:"funding_source_ids,omitempty"`
 				ProjectID        int                   `json:"project_id"`
 				StartDatecode    string                `json:"start_datecode"`
 			}{
@@ -721,10 +710,11 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 			// Handle funding source IDs
 			if v, ok := budgetMap["funding_source_ids"].(*schema.Set); ok {
-				budgetReq.FundingSourceIDs = make([]int, 0)
+				ids := make([]int, 0, v.Len())
 				for _, id := range v.List() {
-					budgetReq.FundingSourceIDs = append(budgetReq.FundingSourceIDs, id.(int))
+					ids = append(ids, id.(int))
 				}
+				budgetReq.FundingSourceIDs = &ids
 			}
 
 			// Handle budget data if present
