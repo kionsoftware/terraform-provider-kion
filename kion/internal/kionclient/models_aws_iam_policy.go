@@ -17,6 +17,25 @@ type IAMPolicyUpdate struct {
 	Policy      string `json:"policy"`
 }
 
+// IAMPolicyResponse for: GET /api/v3/iam-policy/{id}
+type IAMPolicyResponse struct {
+	Data struct {
+		IamPolicy struct {
+			AwsIamPath          string `json:"aws_iam_path"`
+			AwsManagedPolicy    bool   `json:"aws_managed_policy"`
+			Description         string `json:"description"`
+			ID                  int    `json:"id"`
+			Name                string `json:"name"`
+			PathSuffix          string `json:"path_suffix"`
+			Policy              string `json:"policy"`
+			SystemManagedPolicy bool   `json:"system_managed_policy"`
+		} `json:"iam_policy"`
+		OwnerUserGroups []ObjectWithID `json:"owner_user_groups"`
+		OwnerUsers      []ObjectWithID `json:"owner_users"`
+	} `json:"data"`
+	Status int `json:"status"`
+}
+
 // IAMPolicyV4ListResponse for: GET /api/v4/iam-policy
 type IAMPolicyV4ListResponse struct {
 	Data struct {
