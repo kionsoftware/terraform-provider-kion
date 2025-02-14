@@ -53,7 +53,7 @@ func resourceFundingSource() *schema.Resource {
 			},
 			"ou_id": {
 				Type:     schema.TypeInt,
-				Required: true,
+				Optional: true,
 			},
 			"owner_users": {
 				Elem: &schema.Resource{
