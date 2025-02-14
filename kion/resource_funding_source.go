@@ -154,7 +154,6 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 	data["ou_id"] = item.OUID
 	data["start_datecode"] = item.StartDatecode
 	data["end_datecode"] = item.EndDatecode
-	data["permission_scheme_id"] = item.PermissionSchemeID
 
 	for k, v := range data {
 		if err := d.Set(k, v); err != nil {
