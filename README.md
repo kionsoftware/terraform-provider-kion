@@ -28,7 +28,7 @@ terraform {
   required_providers {
     kion = {
       source  = "kionsoftware/kion"
-      version = "0.3.16"
+      version = "0.3.20"
     }
   }
 }

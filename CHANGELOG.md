@@ -13,6 +13,39 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.20] - 2024-02-20
+
+### Added
+
+* Added support for custom variables with new resources `kion_custom_variable` and `kion_custom_variable_override` and corresponding data sources
+* Added v4 API support for IAM policy list operations with enhanced filtering capabilities (query, policy_type, pagination)
+* Added concurrent CloudFormation template sync option to cloud rules via `concurrent_cft_sync` parameter to control parallel/sequential template deployment
+* Added funding source ID field to funding source data source output for better resource referencing
+* Added support for non-allocation mode in funding sources by making `ou_id` optional
+
+### Changed
+
+* Enhanced account management with improved import functionality and validation:
+  * Simplified account import process with multiple import methods
+  * Added better validation for account moves between projects
+  * Improved error messages and logging for account operations
+* Improved project budget management:
+  * Added proper state tracking for budget changes
+  * Enhanced validation for budget periods and date formats
+  * Implemented proper ordering of budget operations
+* Refactored AWS IAM policy handling:
+  * Maintained v3 endpoint compatibility for single resource operations
+  * Added v4 API support for enhanced filtering and pagination
+* Standardized error handling across resources using consistent error wrapping patterns
+
+### Fixed
+
+* Fixed compliance check removal in compliance standards to properly handle "compliance check not found" errors
+* Fixed project budget updates to properly apply changes and prevent overlapping periods
+* Fixed permission scheme handling in funding sources to prevent unnecessary updates
+* Fixed account cache operations and removed unused testing functions
+* Improved handling of budget period modifications to prevent conflicts during splits or updates
+
 ## [0.3.19] - 2024-09-26
 
 ## What's Changed
