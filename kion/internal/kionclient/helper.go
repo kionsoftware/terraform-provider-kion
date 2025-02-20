@@ -2,6 +2,7 @@ package kionclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -550,6 +551,144 @@ func ValidateAppRoleID(ctx context.Context, d *schema.ResourceDiff, meta interfa
 		return fmt.Errorf("changing the App Role 1 via this resource is not permitted")
 	}
 	return nil
+}
+
+// Custom Variable Types for Custom Variables
+const (
+	TypeString = "string"
+	TypeList   = "list"
+	TypeMap    = "map"
+)
+
+// NormalizeCvValue normalizes a custom variable value based on its type
+func NormalizeCvValue(v string, cvType string) (string, error) {
+	switch cvType {
+	case TypeString:
+		// For strings, wrap in the expected format
+		return fmt.Sprintf(`{"value":%q}`, v), nil
+
+	case TypeList, TypeMap:
+		// For lists and maps, try to parse as JSON first
+		var parsed interface{}
+		if err := json.Unmarshal([]byte(v), &parsed); err != nil {
+			return "", fmt.Errorf("invalid JSON for type %s: %v", cvType, err)
+		}
+		// Wrap in the expected format
+		wrapper := map[string]interface{}{
+			"value": parsed,
+		}
+		bytes, err := json.Marshal(wrapper)
+		if err != nil {
+			return "", err
+		}
+		return string(bytes), nil
+
+	default:
+		return "", fmt.Errorf("unsupported custom variable type: %s", cvType)
+	}
+}
+
+// PackCvValueIntoJsonStr converts the API response back to the appropriate format
+func PackCvValueIntoJsonStr(value interface{}, cvType string) (string, error) {
+	if value == nil {
+		return "", nil
+	}
+
+	switch cvType {
+	case TypeString:
+		switch v := value.(type) {
+		case string:
+			return v, nil
+		default:
+			return "", fmt.Errorf("expected string value, got %T", value)
+		}
+
+	case TypeList:
+		switch v := value.(type) {
+		case []interface{}:
+			bytes, err := json.Marshal(v)
+			if err != nil {
+				return "", fmt.Errorf("failed to marshal list value: %v", err)
+			}
+			return string(bytes), nil
+		case string:
+			// If it's already a JSON string, validate it's a list
+			var list []interface{}
+			if err := json.Unmarshal([]byte(v), &list); err != nil {
+				return "", fmt.Errorf("invalid list JSON: %v", err)
+			}
+			return v, nil
+		default:
+			return "", fmt.Errorf("expected list value, got %T", value)
+		}
+
+	case TypeMap:
+		switch v := value.(type) {
+		case map[string]interface{}:
+			bytes, err := json.Marshal(v)
+			if err != nil {
+				return "", fmt.Errorf("failed to marshal map value: %v", err)
+			}
+			return string(bytes), nil
+		case string:
+			// If it's already a JSON string, validate it's a map
+			var m map[string]interface{}
+			if err := json.Unmarshal([]byte(v), &m); err != nil {
+				return "", fmt.Errorf("invalid map JSON: %v", err)
+			}
+			return v, nil
+		default:
+			return "", fmt.Errorf("expected map value, got %T", value)
+		}
+
+	default:
+		return "", fmt.Errorf("unsupported custom variable type: %s", cvType)
+	}
+}
+
+// UnpackCvValueJsonStr converts the input value based on the custom variable type
+func UnpackCvValueJsonStr(input interface{}, cvType string) (interface{}, error) {
+	switch cvType {
+	case TypeString:
+		if str, ok := input.(string); ok {
+			// For strings, we need to send just the raw string
+			return str, nil
+		}
+		return nil, fmt.Errorf("expected string value for type '%s', got %T", TypeString, input)
+
+	case TypeList:
+		switch v := input.(type) {
+		case []interface{}:
+			return v, nil
+		case []string:
+			// Convert []string to []interface{}
+			result := make([]interface{}, len(v))
+			for i, s := range v {
+				result[i] = s
+			}
+			return result, nil
+		default:
+			return nil, fmt.Errorf("expected list value for type '%s', got %T", TypeList, input)
+		}
+
+	case TypeMap:
+		switch v := input.(type) {
+		case map[string]interface{}:
+			return v, nil
+		case map[string]string:
+			// Convert map[string]string to map[string]interface{}
+			result := make(map[string]interface{})
+			for k, v := range v {
+				result[k] = v
+			}
+			return result, nil
+		default:
+			return nil, fmt.Errorf("expected map value for type '%s', got %T", TypeMap, input)
+		}
+
+	default:
+		return nil, fmt.Errorf("unsupported custom variable type: %s", cvType)
+	}
 }
 
 // GetMoveProjectSettings retrieves move project settings from the schema.ResourceData

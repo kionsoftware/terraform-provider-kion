@@ -52,7 +52,7 @@ type ComplianceStandardAssociationsAdd struct {
 	ComplianceCheckIds *[]int `json:"compliance_check_ids"`
 }
 
-// ComplianceStandardAssociationsRemove for: DELETE /api/v3/compliance/standard/{id}/association
+// ComplianceStandardAssociationsRemove for: DELETE /v3/compliance/standard/{id}/association
 type ComplianceStandardAssociationsRemove struct {
-	ComplianceCheckIds *[]int `json:"compliance_check_ids"`
+	ComplianceCheckIds []int `json:"compliance_check_ids"`
 }

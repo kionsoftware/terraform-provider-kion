@@ -134,6 +134,7 @@ func resourceAwsIamPolicyRead(ctx context.Context, d *schema.ResourceData, m int
 	client := m.(*hc.Client)
 	ID := d.Id()
 
+	// Use v3 endpoint for single resource lookup
 	resp := new(hc.IAMPolicyResponse)
 	err := client.GET(fmt.Sprintf("/v3/iam-policy/%s", ID), resp)
 	if err != nil {
@@ -144,8 +145,8 @@ func resourceAwsIamPolicyRead(ctx context.Context, d *schema.ResourceData, m int
 		})
 		return diags
 	}
-	item := resp.Data
 
+	item := resp.Data
 	data := make(map[string]interface{})
 	data["aws_iam_path"] = item.IamPolicy.AwsIamPath
 	data["aws_managed_policy"] = item.IamPolicy.AwsManagedPolicy

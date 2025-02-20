@@ -2,7 +2,6 @@ package kion
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -133,7 +132,6 @@ func resourceComplianceCheck() *schema.Resource {
 }
 
 func resourceComplianceCheckCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
 	post := hc.ComplianceCheckCreate{
@@ -156,42 +154,23 @@ func resourceComplianceCheckCreate(ctx context.Context, d *schema.ResourceData, 
 
 	resp, err := client.POST("/v3/compliance/check", post)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create ComplianceCheck",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), post),
-		})
-		return diags
+		return diag.FromErr(err)
 	} else if resp.RecordID == 0 {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create ComplianceCheck",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), post),
-		})
-		return diags
+		return diag.FromErr(fmt.Errorf("received item ID of 0"))
 	}
 
 	d.SetId(strconv.Itoa(resp.RecordID))
 
-	resourceComplianceCheckRead(ctx, d, m)
-
-	return diags
+	return resourceComplianceCheckRead(ctx, d, m)
 }
 
 func resourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.ComplianceCheckWithOwnersResponse)
-	err := client.GET(fmt.Sprintf("/v3/compliance/check/%s", ID), resp)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read ComplianceCheck",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+	if err := client.GET(fmt.Sprintf("/v3/compliance/check/%s", ID), resp); err != nil {
+		return diag.FromErr(err)
 	}
 	item := resp.Data
 
@@ -225,41 +204,22 @@ func resourceComplianceCheckRead(ctx context.Context, d *schema.ResourceData, m 
 
 	for k, v := range data {
 		if err := d.Set(k, v); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to read and set ComplianceCheck",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+			return diag.FromErr(fmt.Errorf("error setting %s: %w", k, err))
 		}
 	}
 
-	return diags
+	return nil
 }
 
 func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
 	hasChanged := 0
 
-	// Determine if the attributes that are updatable are changed.
-	// Leave out fields that are not allowed to be changed like
-	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
-	// schema instead.
-	if d.HasChanges("azure_policy_id",
-		"body",
-		"cloud_provider_id",
-		"compliance_check_type_id",
-		"description",
-		"frequency_minutes",
-		"frequency_type_id",
-		"is_all_regions",
-		"is_auto_archived",
-		"name",
-		"regions",
-		"severity_type_id") {
+	if d.HasChanges("azure_policy_id", "body", "cloud_provider_id", "compliance_check_type_id",
+		"description", "frequency_minutes", "frequency_type_id", "is_all_regions",
+		"is_auto_archived", "name", "regions", "severity_type_id") {
 		hasChanged++
 		req := hc.ComplianceCheckUpdate{
 			AzurePolicyID:         hc.FlattenIntPointer(d, "azure_policy_id"),
@@ -276,65 +236,48 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 			SeverityTypeID:        hc.FlattenIntPointer(d, "severity_type_id"),
 		}
 
-		err := client.PATCH(fmt.Sprintf("/v3/compliance/check/%s", ID), req)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to update ComplianceCheck",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+		if err := client.PATCH(fmt.Sprintf("/v3/compliance/check/%s", ID), req); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
-	// Determine if the owners have changed.
-	if d.HasChanges("owner_user_groups",
-		"owner_users") {
+	// Handle owner changes using AssociationChanged helper
+	if d.HasChanges("owner_user_groups", "owner_users") {
 		hasChanged++
-		arrAddOwnerUserGroupIds, arrRemoveOwnerUserGroupIds, _, _ := hc.AssociationChanged(d, "owner_user_groups")
-		arrAddOwnerUserIds, arrRemoveOwnerUserIds, _, _ := hc.AssociationChanged(d, "owner_users")
+		arrAddOwnerUserGroupIds, arrRemoveOwnerUserGroupIds, _, err := hc.AssociationChanged(d, "owner_user_groups")
+		if err != nil {
+			return diag.FromErr(fmt.Errorf("error determining owner user group changes: %w", err))
+		}
 
-		if len(arrAddOwnerUserGroupIds) > 0 ||
-			len(arrAddOwnerUserIds) > 0 {
+		arrAddOwnerUserIds, arrRemoveOwnerUserIds, _, err := hc.AssociationChanged(d, "owner_users")
+		if err != nil {
+			return diag.FromErr(fmt.Errorf("error determining owner user changes: %w", err))
+		}
+
+		if len(arrAddOwnerUserGroupIds) > 0 || len(arrAddOwnerUserIds) > 0 {
 			_, err := client.POST(fmt.Sprintf("/v3/compliance/check/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrAddOwnerUserGroupIds,
 				OwnerUserIds:      &arrAddOwnerUserIds,
 			})
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to add owners on ComplianceCheck",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-				})
-				return diags
+				return diag.FromErr(err)
 			}
 		}
 
-		if len(arrRemoveOwnerUserGroupIds) > 0 ||
-			len(arrRemoveOwnerUserIds) > 0 {
+		if len(arrRemoveOwnerUserGroupIds) > 0 || len(arrRemoveOwnerUserIds) > 0 {
 			err := client.DELETE(fmt.Sprintf("/v3/compliance/check/%s/owner", ID), hc.ChangeOwners{
 				OwnerUserGroupIds: &arrRemoveOwnerUserGroupIds,
 				OwnerUserIds:      &arrRemoveOwnerUserIds,
 			})
 			if err != nil {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Unable to remove owners on ComplianceCheck",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-				})
-				return diags
+				return diag.FromErr(err)
 			}
 		}
 	}
 
 	if hasChanged > 0 {
 		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Failed to set last_updated",
-				Detail:   err.Error(),
-			})
-			return diags
+			return diag.FromErr(err)
 		}
 	}
 
@@ -342,23 +285,13 @@ func resourceComplianceCheckUpdate(ctx context.Context, d *schema.ResourceData, 
 }
 
 func resourceComplianceCheckDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := client.DELETE(fmt.Sprintf("/v3/compliance/check/%s", ID), nil)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to delete ComplianceCheck",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+	if err := client.DELETE(fmt.Sprintf("/v3/compliance/check/%s", ID), nil); err != nil {
+		return diag.FromErr(err)
 	}
 
-	// d.SetId("") is automatically called assuming delete returns no errors, but
-	// it is added here for explicitness.
 	d.SetId("")
-
-	return diags
+	return nil
 }

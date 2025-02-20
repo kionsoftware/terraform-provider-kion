@@ -2,7 +2,6 @@ package kion
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -53,7 +52,7 @@ func resourceFundingSource() *schema.Resource {
 			},
 			"ou_id": {
 				Type:     schema.TypeInt,
-				Required: true,
+				Optional: true,
 			},
 			"owner_users": {
 				Elem: &schema.Resource{
@@ -98,8 +97,12 @@ func resourceFundingSource() *schema.Resource {
 }
 
 func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
+
+	ouID := 0
+	if v := hc.OptionalInt(d, "ou_id"); v != nil {
+		ouID = *v
+	}
 
 	post := hc.FundingSourceCreate{
 		Amount:             d.Get("amount").(float64),
@@ -108,26 +111,16 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 		StartDatecode:      d.Get("start_datecode").(string),
 		EndDatecode:        d.Get("end_datecode").(string),
 		PermissionSchemeID: d.Get("permission_scheme_id").(int),
-		OUID:               d.Get("ou_id").(int),
+		OUID:               ouID,
 		OwnerUserIds:       hc.FlattenGenericIDPointer(d, "owner_users"),
 		OwnerUserGroupIds:  hc.FlattenGenericIDPointer(d, "owner_user_groups"),
 	}
 
 	resp, err := client.POST("/v3/funding-source", post)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create Funding Source",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), post),
-		})
-		return diags
+		return diag.FromErr(fmt.Errorf("unable to create Funding Source: %v", err))
 	} else if resp.RecordID == 0 {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create Funding Source",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", errors.New("received item ID of 0"), post),
-		})
-		return diags
+		return diag.FromErr(fmt.Errorf("received item ID of 0 when creating Funding Source"))
 	}
 
 	d.SetId(strconv.Itoa(resp.RecordID))
@@ -135,36 +128,22 @@ func resourceFundingSourceCreate(ctx context.Context, d *schema.ResourceData, m 
 	if labels, ok := d.GetOk("labels"); ok && labels != nil {
 		ID := d.Id()
 		err = hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
-
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to update Funding Source labels",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
+			return diag.FromErr(fmt.Errorf("unable to update Funding Source labels: %v", err))
 		}
 	}
 
-	resourceFundingSourceRead(ctx, d, m)
-
-	return diags
+	return resourceFundingSourceRead(ctx, d, m)
 }
 
 func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
 	resp := new(hc.FundingSourceResponse)
 	err := client.GET(fmt.Sprintf("/v3/funding-source/%s", ID), resp)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read Funding Source",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+		return diag.FromErr(fmt.Errorf("unable to read Funding Source: %v", err))
 	}
 	item := resp.Data
 
@@ -176,88 +155,69 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 	data["start_datecode"] = item.StartDatecode
 	data["end_datecode"] = item.EndDatecode
 
+	for k, v := range data {
+		if err := d.Set(k, v); err != nil {
+			return diag.FromErr(fmt.Errorf("error setting %s: %v", k, err))
+		}
+	}
+
 	permissionResp := new(hc.FSUserMappingListResponse)
 	err = client.GET(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), permissionResp)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read Funding Source permissions",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+		return diag.FromErr(fmt.Errorf("unable to read Funding Source permissions: %v", err))
 	}
 
 	for _, permissionItem := range permissionResp.Data {
 		if permissionItem.AppRoleId == 1 {
 			if permissionItem.UserGroupIds != nil {
-				data["owner_user_groups"] = hc.InflateArrayOfIDs(*permissionItem.UserGroupIds)
+				if err := d.Set("owner_user_groups", hc.InflateArrayOfIDs(*permissionItem.UserGroupIds)); err != nil {
+					return diag.FromErr(fmt.Errorf("error setting owner_user_groups: %v", err))
+				}
 			}
 			if permissionItem.UserIds != nil {
-				data["owner_users"] = hc.InflateArrayOfIDs(*permissionItem.UserIds)
+				if err := d.Set("owner_users", hc.InflateArrayOfIDs(*permissionItem.UserIds)); err != nil {
+					return diag.FromErr(fmt.Errorf("error setting owner_users: %v", err))
+				}
 			}
 		}
 	}
 
-	for k, v := range data {
-		if err := d.Set(k, v); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to read and set Funding Source",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-			})
-			return diags
-		}
-	}
-
-	// Fetch labels
+	// Fetch and set labels
 	labelData, err := hc.ReadResourceLabels(client, "funding-source", ID)
-
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read funding source labels",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+		return diag.FromErr(fmt.Errorf("unable to read funding source labels: %v", err))
 	}
 
-	// Set labels
-	err = d.Set("labels", labelData)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to set labels for funding source",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
+	if err := d.Set("labels", labelData); err != nil {
+		return diag.FromErr(fmt.Errorf("error setting labels: %v", err))
 	}
 
-	return diags
+	return diag.Diagnostics{}
 }
 
 func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
 	// Determine if the attributes that are updatable are changed.
 	if d.HasChanges("amount", "description", "end_datecode", "name", "ou_id", "start_datecode") {
+		ouID := 0
+		if v := hc.OptionalInt(d, "ou_id"); v != nil {
+			ouID = *v
+		}
+
 		req := hc.FundingSourceUpdate{
 			Amount:        d.Get("amount").(float64),
 			Description:   d.Get("description").(string),
 			Name:          d.Get("name").(string),
 			EndDatecode:   d.Get("end_datecode").(string),
 			StartDatecode: d.Get("start_datecode").(string),
+			OUID:          ouID,
 		}
 
 		err := client.PATCH(fmt.Sprintf("/v3/funding-source/%s", ID), req)
 		if err != nil {
-			return diag.Diagnostics{
-				{
-					Severity: diag.Error,
-					Summary:  "Unable to update Funding Source",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-				},
-			}
+			return diag.FromErr(fmt.Errorf("unable to update Funding Source: %v", err))
 		}
 	}
 
@@ -277,13 +237,7 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 			err := client.PATCH(fmt.Sprintf("/v3/funding-source/%s/permission-mapping", ID), patch)
 			if err != nil {
-				return diag.Diagnostics{
-					{
-						Severity: diag.Error,
-						Summary:  "Unable to change permission mapping on Funding Source",
-						Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-					},
-				}
+				return diag.FromErr(fmt.Errorf("unable to change permission mapping on Funding Source: %v", err))
 			}
 		}
 	}
@@ -292,49 +246,30 @@ func resourceFundingSourceUpdate(ctx context.Context, d *schema.ResourceData, m 
 	if d.HasChanges("labels") {
 		err := hc.PutAppLabelIDs(client, hc.FlattenAssociateLabels(d, "labels"), "funding-source", ID)
 		if err != nil {
-			return diag.Diagnostics{
-				{
-					Severity: diag.Error,
-					Summary:  "Unable to update funding source labels",
-					Detail:   fmt.Sprintf("Error: %v\nFunding source ID: %v", err.Error(), ID),
-				},
-			}
+			return diag.FromErr(fmt.Errorf("unable to update funding source labels: %v", err))
 		}
 	}
 
 	if d.HasChanges("amount", "description", "end_datecode", "name", "ou_id", "start_datecode", "owner_users", "owner_user_groups", "labels") {
 		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Failed to set last_updated",
-				Detail:   err.Error(),
-			})
-			return diags
+			return diag.FromErr(fmt.Errorf("error setting last_updated: %v", err))
 		}
 		return resourceFundingSourceRead(ctx, d, m)
 	}
 
-	return diags
+	return diag.Diagnostics{}
 }
 
 func resourceFundingSourceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
 	err := client.DELETE(fmt.Sprintf("/v3/funding-source/%s", ID), nil)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to delete Funding Source",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
-		})
-		return diags
+		return diag.FromErr(fmt.Errorf("unable to delete Funding Source: %v", err))
 	}
 
-	// d.SetId("") is automatically called assuming delete returns no errors, but
-	// it is added here for explicitness.
 	d.SetId("")
 
-	return diags
+	return diag.Diagnostics{}
 }

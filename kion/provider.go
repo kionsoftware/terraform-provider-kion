@@ -71,6 +71,8 @@ func Provider() *schema.Provider {
 			"kion_user":                              resourceUser(),
 			"kion_user_group":                        resourceUserGroup(),
 			"kion_webhook":                           resourceWebhook(),
+			"kion_custom_variable":                   resourceCustomVariable(),
+			"kion_custom_variable_override":          resourceCustomVariableOverride(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"kion_account":                           dataSourceAccount(),
@@ -98,6 +100,8 @@ func Provider() *schema.Provider {
 			"kion_user":                              dataSourceUser(),
 			"kion_user_group":                        dataSourceUserGroup(),
 			"kion_webhook":                           dataSourceWebhook(),
+			"kion_custom_variable":                   dataSourceCustomVariable(),
+			"kion_custom_variable_override":          dataSourceCustomVariableOverride(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

@@ -72,7 +72,7 @@ func (client *Client) doRequest(req *http.Request) ([]byte, int, error) {
 		return nil, res.StatusCode, NewRequestError(res.StatusCode, err)
 	}
 
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		return nil, res.StatusCode, NewRequestError(res.StatusCode, fmt.Errorf("url: %s, method: %s, status: %d, body: %s", req.URL.String(), req.Method, res.StatusCode, body))
 	}
 
@@ -192,6 +192,34 @@ func (client *Client) DeleteWithResponse(urlPath string, sendData, returnData in
 	if returnData != nil {
 		if err := json.Unmarshal(body, returnData); err != nil {
 			return NewRequestError(statusCode, fmt.Errorf("could not unmarshal response body: %v", string(body)))
+		}
+	}
+
+	return nil
+}
+
+// GETWithParams performs a GET request with query parameters
+func (client *Client) GETWithParams(path string, params map[string]string, v interface{}) error {
+	req, err := http.NewRequest("GET", client.HostURL+path, nil)
+	if err != nil {
+		return err
+	}
+
+	// Add query parameters
+	q := req.URL.Query()
+	for key, value := range params {
+		q.Add(key, value)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	body, _, err := client.doRequest(req)
+	if err != nil {
+		return err
+	}
+
+	if v != nil {
+		if err := json.Unmarshal(body, v); err != nil {
+			return fmt.Errorf("could not unmarshal response body: %v", string(body))
 		}
 	}
 
