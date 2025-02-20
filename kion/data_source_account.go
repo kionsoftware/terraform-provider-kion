@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
@@ -125,58 +126,51 @@ func dataSourceAccountRead(ctx context.Context, d *schema.ResourceData, m interf
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
+	tflog.Debug(ctx, "Reading accounts list")
+
 	resp := new(hc.AccountListResponse)
-	err := client.GET("/v3/account", resp)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read Account",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
-		})
-		return diags
+	if err := client.GET("/v3/account", resp); err != nil {
+		return append(diags, hc.HandleError(fmt.Errorf("failed to read accounts: %v", err))...)
 	}
 
 	f := hc.NewFilterable(d)
 
 	arr := make([]map[string]interface{}, 0)
 	for _, item := range resp.Data {
-		data := make(map[string]interface{})
-		data["account_alias"] = item.AccountAlias
-		data["account_number"] = item.AccountNumber
-		data["account_type_id"] = item.AccountTypeID
-		data["car_external_id"] = item.CARExternalID
-		data["created_at"] = item.CreatedAt
-		data["email"] = item.Email
-		data["id"] = item.ID
-		data["include_linked_account_spend"] = item.IncludeLinkedAccountSpend
-		data["linked_account_number"] = item.LinkedAccountNumber
-		data["linked_role"] = item.LinkedRole
-		data["name"] = item.Name
-		data["payer_id"] = item.PayerID
-		data["project_id"] = item.ProjectID
-		data["service_external_id"] = item.ServiceExternalID
-		data["skip_access_checking"] = item.SkipAccessChecking
-		data["start_datecode"] = item.StartDatecode
-		data["use_org_account_info"] = item.UseOrgAccountInfo
+		data := map[string]interface{}{
+			"account_alias":                item.AccountAlias,
+			"account_number":               item.AccountNumber,
+			"account_type_id":              item.AccountTypeID,
+			"car_external_id":              item.CARExternalID,
+			"created_at":                   item.CreatedAt,
+			"email":                        item.Email,
+			"id":                           item.ID,
+			"include_linked_account_spend": item.IncludeLinkedAccountSpend,
+			"linked_account_number":        item.LinkedAccountNumber,
+			"linked_role":                  item.LinkedRole,
+			"name":                         item.Name,
+			"payer_id":                     item.PayerID,
+			"project_id":                   item.ProjectID,
+			"service_external_id":          item.ServiceExternalID,
+			"skip_access_checking":         item.SkipAccessChecking,
+			"start_datecode":               item.StartDatecode,
+			"use_org_account_info":         item.UseOrgAccountInfo,
+		}
 
 		match, err := f.Match(data)
 		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to filter Account",
-				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "filter"),
-			})
-			return diags
-		} else if !match {
+			return append(diags, hc.HandleError(fmt.Errorf("failed to filter accounts: %v", err))...)
+		}
+		if !match {
 			continue
 		}
 
 		arr = append(arr, data)
 	}
 
-	diags = append(diags, hc.SafeSet(d, "list", arr, "Unable to read Account")...)
+	diags = append(diags, hc.SafeSet(d, "list", arr, "Failed to set accounts list")...)
 
-	// Always run.
+	// Always run
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return diags
