@@ -45,6 +45,7 @@ Read-Only:
 - `amount` (Number)
 - `description` (String)
 - `end_datecode` (String)
+- `id` (Number)
 - `name` (String)
 - `ou_id` (Number)
 - `start_datecode` (String)
