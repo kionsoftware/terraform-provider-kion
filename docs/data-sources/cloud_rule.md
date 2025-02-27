@@ -43,6 +43,7 @@ Optional:
 Read-Only:
 
 - `built_in` (Boolean)
+- `concurrent_cft_sync` (Boolean)
 - `description` (String)
 - `id` (Number)
 - `name` (String)

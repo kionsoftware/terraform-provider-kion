@@ -45,7 +45,6 @@ output "fs_id" {
 - `amount` (Number)
 - `end_datecode` (String)
 - `name` (String)
-- `ou_id` (Number)
 - `permission_scheme_id` (Number)
 - `start_datecode` (String)
 
@@ -54,6 +53,7 @@ output "fs_id" {
 - `description` (String)
 - `labels` (Map of String) A map of labels to assign to the funding source. The labels must already exist in Kion.
 - `last_updated` (String)
+- `ou_id` (Number)
 - `owner_user_groups` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_user_groups))
 - `owner_users` (Block Set) Must provide at least the owner_user_groups field or the owner_users field. (see [below for nested schema](#nestedblock--owner_users))
 

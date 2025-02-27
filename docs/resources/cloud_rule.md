@@ -48,6 +48,7 @@ output "rule_id" {
 - `azure_policy_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_policy_definitions))
 - `azure_role_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_role_definitions))
 - `compliance_standards` (Block Set) (see [below for nested schema](#nestedblock--compliance_standards))
+- `concurrent_cft_sync` (Boolean) Whether to run CFTs concurrently or not. If true, templates deploy in parallel (faster). If false, templates deploy sequentially (slower).
 - `description` (String)
 - `gcp_iam_roles` (Block Set) (see [below for nested schema](#nestedblock--gcp_iam_roles))
 - `internal_aws_amis` (Block Set) (see [below for nested schema](#nestedblock--internal_aws_amis))

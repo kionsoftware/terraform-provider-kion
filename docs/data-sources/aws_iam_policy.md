@@ -16,6 +16,33 @@ description: |-
 # Declare a data source to get all IAM policies.
 data "kion_aws_iam_policy" "p1" {}
 
+# Use v4 query parameter to search for policies by name
+data "kion_aws_iam_policy" "read_only" {
+  query = "ReadOnly"
+}
+
+# Use v4 policy_type filter to get only AWS managed policies
+data "kion_aws_iam_policy" "aws_managed" {
+  policy_type = "aws"
+}
+
+# Use v4 pagination
+data "kion_aws_iam_policy" "paginated" {
+  page      = 1
+  page_size = 50
+}
+
+# Combine v4 filtering with existing filter blocks
+data "kion_aws_iam_policy" "combined" {
+  query       = "Admin"
+  policy_type = "user"
+
+  filter {
+    name   = "owner_users.id"
+    values = ["20"]
+  }
+}
+
 # Output the list of all policies.
 output "policies" {
   value = data.kion_aws_iam_policy.p1.list
@@ -114,6 +141,10 @@ output "policy_access" {
 ### Optional
 
 - `filter` (Block List) (see [below for nested schema](#nestedblock--filter))
+- `page` (Number) Page number of results
+- `page_size` (Number) Number of results per page
+- `policy_type` (String) Policy type filter. Valid values are 'user', 'aws', or 'system'
+- `query` (String) Query string for IAM policy name matching
 
 ### Read-Only
 
