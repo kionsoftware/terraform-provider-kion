@@ -13,6 +13,15 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.21] - 2024-02-27
+
+## What's Changed
+
+### Added
+
+* Introduced support for Project Notes.
+* Added updated docs for IAM Policy, Cloud Rules and Funding Sources.
+
 ## [0.3.20] - 2024-02-20
 
 ### Added
