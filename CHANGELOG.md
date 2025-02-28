@@ -13,6 +13,37 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.21] - 2024-28-28
+
+### Added
+
+- New `kion_project_note` resource and data source for managing project notes
+- New filtering options for AWS IAM policies:
+  - `query` parameter for name matching
+  - `policy_type` filter for AWS managed policies
+  - Pagination support with `page` and `page_size`
+- Validation for `start_datecode` format in AWS accounts (must be YYYY-MM)
+
+### Changed
+
+- Improved account location detection to handle both project and cache locations
+- Updated documentation structure:
+  - Moved examples from README to dedicated examples directory
+  - Added organized list of available examples by resource type
+  - Updated AWS IAM policy examples to demonstrate data source usage
+
+### Fixed
+
+- Account reading logic to better handle accounts that move between projects and cache
+- Validation for date code formats in AWS accounts
+
+### Documentation
+
+- Added new examples for project notes
+- Updated AWS IAM policy documentation with new filtering options
+- Improved organization of examples by resource type
+- Added missing fields in various resource documentation
+
 ## [0.3.20] - 2024-02-20
 
 ### Added
