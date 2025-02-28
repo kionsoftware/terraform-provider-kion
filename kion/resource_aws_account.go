@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -200,7 +201,11 @@ func resourceAwsAccount() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "Date when the AWS account will starting submitting payments against a funding source (YYYY-MM).  Required if placing an account within a project.",
+				Description: "Date when the AWS account will starting submitting payments against a funding source (YYYY-MM). Required if placing an account within a project.",
+				ValidateFunc: validation.StringMatch(
+					regexp.MustCompile(`^\d{4}-\d{2}$`),
+					"start_datecode must be in the format YYYY-MM (e.g., '2024-03')",
+				),
 			},
 			"use_org_account_info": {
 				Type:        schema.TypeBool,
