@@ -41,32 +41,32 @@ data "kion_custom_variable" "owned_list_vars" {
 
 # Example outputs
 output "all_variables" {
-  value = data.kion_custom_variable.all.list
+  value = data.kion_custom_variable.all.custom_variables
 }
 
 output "environment_var" {
-  value = data.kion_custom_variable.by_name.list[0]
+  value = data.kion_custom_variable.by_name.custom_variables[0]
 }
 
 output "string_var_names" {
-  value = [for var in data.kion_custom_variable.string_vars.list : var.name]
+  value = [for v in data.kion_custom_variable.string_vars.custom_variables : v.custom_variable_name]
 }
 
 output "tag_related_vars" {
   value = [
-    for var in data.kion_custom_variable.tag_vars.list : {
-      name = var.name
-      type = var.type
+    for v in data.kion_custom_variable.tag_vars.custom_variables : {
+      name = v.custom_variable_name
+      type = v.custom_variable_type
     }
   ]
 }
 
 output "owned_list_var_details" {
   value = [
-    for var in data.kion_custom_variable.owned_list_vars.list : {
-      name        = var.name
-      description = var.description
-      default_value_list = var.default_value_list
+    for v in data.kion_custom_variable.owned_list_vars.custom_variables : {
+      name              = v.custom_variable_name
+      description       = v.custom_variable_description
+      default_value_list = v.custom_variable_default_value_list
     }
   ]
 }
