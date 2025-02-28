@@ -1,11 +1,11 @@
 ---
 layout: ""
-page_title: "Kion Provider"
+page_title: "Kion Terraform Provider"
 description: |-
-  The Kion provider allows you to interact with an installation of Kion.
+  The Kion Terraform Provider allows you to interact with an installation of Kion.
 ---
 
-# Kion Provider
+# Kion Terraform Provider
 
 The Kion Terraform Provider allows you to interact with an installation of Kion.
 
