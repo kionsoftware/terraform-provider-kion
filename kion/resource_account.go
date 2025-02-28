@@ -36,7 +36,14 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 		accountLocation = CacheLocation
 		locationChanged = true
 	} else {
-		accountLocation = getKionAccountLocation(d)
+		// If location is not explicitly set in state, try both locations
+		// This handles older state files that may not have location set
+		if loc, exists := d.GetOk("location"); exists {
+			accountLocation = loc.(string)
+		} else {
+			// Try project first, then fall back to cache if not found
+			accountLocation = ProjectLocation
+		}
 	}
 
 	tflog.Debug(ctx, "Reading account", map[string]interface{}{
@@ -47,26 +54,37 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 
 	// Fetch data from account or account-cache URL
 	var resp hc.MappableResponse
-	var accountUrl string
-	switch accountLocation {
-	case CacheLocation:
-		accountUrl = fmt.Sprintf("/v3/account-cache/%s", ID)
-		resp = new(hc.AccountCacheResponse)
-	case ProjectLocation:
-		fallthrough
-	default:
-		accountUrl = fmt.Sprintf("/v3/account/%s", ID)
+	var err error
+
+	if accountLocation == ProjectLocation {
+		// Try project account first
 		resp = new(hc.AccountResponse)
+		err = client.GET(fmt.Sprintf("/v3/account/%s", ID), resp)
+		if err != nil && !locationChanged {
+			// If project account lookup fails and location wasn't explicitly set,
+			// try cache account
+			resp = new(hc.AccountCacheResponse)
+			err = client.GET(fmt.Sprintf("/v3/account-cache/%s", ID), resp)
+			if err == nil {
+				accountLocation = CacheLocation
+			}
+		}
+	} else {
+		// Try cache account directly
+		resp = new(hc.AccountCacheResponse)
+		err = client.GET(fmt.Sprintf("/v3/account-cache/%s", ID), resp)
 	}
 
-	if err := client.GET(accountUrl, resp); err != nil {
+	if err != nil {
 		return append(diags, hc.HandleError(fmt.Errorf("unable to read account (ID: %s): %v", ID, err))...)
 	}
 
 	if locationChanged {
 		d.SetId(ID)
-		diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
 	}
+
+	// Always set the location based on where we found the account
+	diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
 
 	data := resp.ToMap(resource)
 	for k, v := range data {

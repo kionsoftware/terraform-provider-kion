@@ -82,7 +82,7 @@ output "kion_account_id" {
 - `move_project_settings` (Block Set, Max: 1) Parameters used when moving an account between Kion projects.  These settings are ignored unless moving an account. (see [below for nested schema](#nestedblock--move_project_settings))
 - `project_id` (Number) The ID of the Kion project to place this account within. If empty, the account will be placed within the account cache.
 - `skip_access_checking` (Boolean) True to skip periodic access checking on the account.
-- `start_datecode` (String) Date when the AWS account will starting submitting payments against a funding source (YYYY-MM).  Required if placing an account within a project.
+- `start_datecode` (String) Date when the AWS account will starting submitting payments against a funding source (YYYY-MM). Required if placing an account within a project.
 - `use_org_account_info` (Boolean) True to keep the account name and email address in Kion in sync with the account name and email address as set in AWS Organization.
 
 ### Read-Only
