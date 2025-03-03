@@ -41,6 +41,14 @@ func resourceAwsAccount() *schema.Resource {
 		DeleteContext: resourceAwsAccountDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				// Clean the ID before reading
+				ID := d.Id()
+				if strings.HasPrefix(ID, "account_id=") {
+					d.SetId(strings.TrimPrefix(ID, "account_id="))
+				} else if strings.HasPrefix(ID, "account_cache_id=") {
+					d.SetId(strings.TrimPrefix(ID, "account_cache_id="))
+				}
+
 				resourceAwsAccountRead(ctx, d, m)
 				return []*schema.ResourceData{d}, nil
 			},

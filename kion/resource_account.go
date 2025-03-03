@@ -27,6 +27,7 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 	// Handle special case for importing accounts with prefixes
 	var accountLocation string
 	locationChanged := false
+	originalID := ID
 	if strings.HasPrefix(ID, "account_id=") {
 		ID = strings.TrimPrefix(ID, "account_id=")
 		accountLocation = ProjectLocation
@@ -35,52 +36,54 @@ func resourceAccountRead(resource string, ctx context.Context, d *schema.Resourc
 		ID = strings.TrimPrefix(ID, "account_cache_id=")
 		accountLocation = CacheLocation
 		locationChanged = true
+	} else if loc, exists := d.GetOk("location"); exists {
+		// If location is explicitly set in state, use it
+		accountLocation = loc.(string)
 	} else {
-		// If location is not explicitly set in state, try both locations
-		// This handles older state files that may not have location set
-		if loc, exists := d.GetOk("location"); exists {
-			accountLocation = loc.(string)
-		} else {
-			// Try project first, then fall back to cache if not found
-			accountLocation = ProjectLocation
-		}
+		// Default to project first if no explicit location
+		accountLocation = ProjectLocation
 	}
 
+	// Always set the clean ID
+	d.SetId(ID)
+
 	tflog.Debug(ctx, "Reading account", map[string]interface{}{
-		"id":       ID,
-		"location": accountLocation,
-		"resource": resource,
+		"id":          ID,
+		"original_id": originalID,
+		"location":    accountLocation,
+		"resource":    resource,
 	})
 
 	// Fetch data from account or account-cache URL
 	var resp hc.MappableResponse
 	var err error
 
-	if accountLocation == ProjectLocation {
-		// Try project account first
+	// If location was explicitly set (either via import prefix or state), only try that location
+	if locationChanged || d.Get("location") != "" {
+		if accountLocation == ProjectLocation {
+			resp = new(hc.AccountResponse)
+			err = client.GET(fmt.Sprintf("/v3/account/%s", ID), resp)
+		} else {
+			resp = new(hc.AccountCacheResponse)
+			err = client.GET(fmt.Sprintf("/v3/account-cache/%s", ID), resp)
+		}
+		// Return error if we can't find it in the specified location
+		if err != nil {
+			return append(diags, hc.HandleError(fmt.Errorf("unable to read account from %s (ID: %s): %v", accountLocation, ID, err))...)
+		}
+	} else {
+		// If no explicit location, try project first then fall back to cache
 		resp = new(hc.AccountResponse)
 		err = client.GET(fmt.Sprintf("/v3/account/%s", ID), resp)
-		if err != nil && !locationChanged {
-			// If project account lookup fails and location wasn't explicitly set,
-			// try cache account
+		if err != nil {
 			resp = new(hc.AccountCacheResponse)
 			err = client.GET(fmt.Sprintf("/v3/account-cache/%s", ID), resp)
 			if err == nil {
 				accountLocation = CacheLocation
 			}
+		} else {
+			accountLocation = ProjectLocation
 		}
-	} else {
-		// Try cache account directly
-		resp = new(hc.AccountCacheResponse)
-		err = client.GET(fmt.Sprintf("/v3/account-cache/%s", ID), resp)
-	}
-
-	if err != nil {
-		return append(diags, hc.HandleError(fmt.Errorf("unable to read account (ID: %s): %v", ID, err))...)
-	}
-
-	if locationChanged {
-		d.SetId(ID)
 	}
 
 	// Always set the location based on where we found the account
