@@ -7,10 +7,13 @@ description: |-
   If account_number is provided, an existing account will be imported into Kion, otherwise a new AWS account will be created.  If project_id is provided the account will be added to the corresponding project, otherwise the account will be added to the account cache.
   Once added, an account can be moved between projects or in and out of the account cache by changing the project_id.  When moving accounts between projects, use move_project_settings to control how financials will be treated between the old and new project.
   When importing existing Kion accounts into terraform state, you can use one of these methods:
+  
   Default import (tries project first, then cache):
-  terraform import kionawsaccount.example 123Explicit project account import:
-  terraform import kionawsaccount.example account_id=123Explicit cache account import:
-  terraform import kionawsaccount.example accountcacheid=123
+  terraform import kion_aws_account.example 123
+  Explicit project account import:
+  terraform import kion_aws_account.example account_id=123
+  Explicit cache account import:
+  terraform import kion_aws_account.example account_cache_id=123
   NOTE: This resource requires Kion v3.8.4 or greater.
 ---
 
