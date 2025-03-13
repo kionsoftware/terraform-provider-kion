@@ -1,6 +1,6 @@
 # This Makefile is an easy way to run common operations.
 
-VERSION=0.3.21
+VERSION=0.3.22
 
 TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=github.com
