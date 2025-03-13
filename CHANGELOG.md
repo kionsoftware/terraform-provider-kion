@@ -13,6 +13,27 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.22] - 2024-03-13
+
+### Added
+
+- Enhanced account location detection with explicit location handling in state
+- Added support for preserving original account IDs during import operations
+- Improved logging with additional context for account operations
+
+### Changed
+
+- Refactored account location handling to prioritize explicitly set locations
+- Updated account import logic to better handle account_id and account_cache_id prefixes
+- Enhanced documentation structure and examples across all resources
+- Modernized provider configuration with clearer environment variable guidance
+
+### Fixed
+
+- Improved account lookup logic to prevent unnecessary API calls
+- Enhanced error handling for account operations with better context
+- Fixed account ID handling during import operations
+
 ## [0.3.21] - 2024-28-28
 
 ### Added
