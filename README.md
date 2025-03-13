@@ -1,137 +1,137 @@
-# terraform-provider-kion <!-- omit in toc -->
+# Kion Terraform Provider
 
-The Terraform provider for Kion allows you interact with the Kion API using the Terraform HCL language. Our provider supports creating, updating, reading, and deleting resources. You can also use it to query for resources using filters even if a resource is not created through Terraform.
+[![Terraform Registry](https://img.shields.io/badge/terraform-registry-blue.svg)](https://registry.terraform.io/providers/kionsoftware/kion/latest)
+[![Documentation](https://img.shields.io/badge/documentation-blue.svg)](https://registry.terraform.io/providers/kionsoftware/kion/latest/docs)
 
-- [Getting Started](#getting-started)
-  - [Importing Resource State](#importing-resource-state)
+The Kion Terraform Provider enables you to manage your Kion resources using HashiCorp's [Terraform](https://www.terraform.io) infrastructure as code tool. This provider supports creating, updating, reading, and deleting resources through Terraform, as well as querying existing resources using filters.
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Authentication](#authentication)
 - [Examples](#examples)
-- [Repository Maintainer: Push to Terraform Registry](#repository-maintainer-push-to-terraform-registry)
+- [Resource State Management](#resource-state-management)
+- [Contributing](#contributing)
 
-## Getting Started
-
-Below is sample code on how to create an IAM policy in Kion using Terraform.
-
-First, set your environment variables:
-
-```bash
-export KION_URL=https://kion.example.com
-export KION_APIKEY=API-KEY-HERE
-```
-
-Next, paste this code into a `main.tf` file:
+## Quick Start
 
 ```hcl
+# Configure the Kion Provider
 terraform {
   required_providers {
     kion = {
       source  = "kionsoftware/kion"
-      version = "0.3.21"
+      # Kion recommends pinning the provider to a specific version, though usually you want to use the latest one.
+      # version = "x.x.x"
     }
   }
 }
 
 provider "kion" {
-  # If these are commented out, they will be loaded from environment variables.
-  # url = "https://kion.example.com"
-  # apikey = "key here"
+  # If these are commented out, they will be loaded from environment variables.  To load them from the environment variables, be sure you're prefixing the exported environment variable correctly with TF_VAR
+  # kion_url    = "https://kion.example.com"
+  # kion_apikey = "key here"
 }
 
-# Create an IAM policy.
-resource "kion_aws_iam_policy" "p1" {
-  name         = "sample-resource"
-  description  = "Provides AdministratorAccess to all AWS Services"
-  aws_iam_path = ""
-  owner_users { id = 1 }
-  owner_user_groups { id = 1 }
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": "*",
-            "Resource": "*"
-        }
-    ]
-}
-EOF
-}
-
-# Output the ID of the resource created.
-output "policy_id" {
-  value = kion_aws_iam_policy.p1.id
+# Create an IAM policy
+resource "kion_aws_iam_policy" "example" {
+  name        = "example-policy"
+  description = "Example IAM Policy"
+  policy      = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Action    = "*"
+      Resource  = "*"
+    }]
+  })
 }
 ```
 
-Then, run these commands:
+## Installation
 
-```bash
-# Initialize the project.
-terraform init
+1. Install [Terraform](https://developer.hashicorp.com/terraform/downloads) (1.0+)
+2. Create a new directory for your Terraform configuration
+3. Create a `providers.tf` file with the following content:
 
-# Show the plan.
-terraform plan
+```hcl
+terraform {
+  required_providers {
+    kion = {
+      source    = "kionsoftware/kion"
+      # Recommended: Pin to a specific version
+      # version = "x.x.x"
+    }
+  }
+}
 
-# Apply the changes.
-terraform apply --auto-approve
+provider "kion" {
+  # If these are commented out, they will be loaded from environment variables.  To load them from the environment variables, be sure you're prefixing the exported environment variable correctly with TF_VAR
+  # kion_url    = "https://kion.example.com"
+  # kion_apikey = "key here"
+}
 ```
 
-You can now make changes to the `main.tf` file and then re-run the `apply` command to push the changes to Kion.
-
-### Importing Resource State
-
-This provider does support [importing state for resources](https://www.terraform.io/docs/cli/import/index.html). You will need to create the Terraform files and then you can run commands like this to generate the `terraform.tfstate` so you don't have to delete all your resources and then recreate them to work with Terraform:
+4. Initialize Terraform:
 
 ```bash
-# Initialize the project.
 terraform init
+```
 
-# Import the resource from your environment - this assumes you have a module called
-# 'aws-cloudformation-template' and you are importing into a resource you defined as 'AuditLogging'.
-# The '20' at the end is the ID of the resource in Kion.
-terraform import module.aws-cloudformation-template.kion_aws_cloudformation_template.AuditLogging 20
+## Authentication
 
-# Verify the state is correct - there shouldn't be any changes listed.
-terraform plan
+You can authenticate with Kion using either environment variables or provider configuration:
+
+### Environment Variables
+
+```bash
+export TF_VAR_kion_url="https://kion.example.com"
+export TF_VAR_kion_apikey="your-api-key"
+```
+
+### Provider Configuration
+
+```hcl
+provider "kion" {
+  kion_url    = "https://kion.example.com"
+  kion_apikey = "your-api-key"
+}
 ```
 
 ## Examples
 
-For examples of how to use each resource and data source, please see the [examples](examples) directory. The examples are organized by resource type and include:
+For a complete list of available resources and data sources, please refer to our [provider documentation](https://registry.terraform.io/providers/kionsoftware/kion/latest/docs).
 
-- Resources:
-  - AWS Accounts
-  - AWS CloudFormation Templates
-  - AWS IAM Policies
-  - Azure Accounts
-  - Azure ARM Templates
-  - Azure Roles
-  - Cloud Access Roles
-  - Cloud Rules
-  - Compliance Checks
-  - Compliance Standards
-  - Funding Sources
-  - GCP Accounts
-  - GCP IAM Roles
-  - Labels
-  - OUs
-  - Projects
-  - SAML Group Associations
-  - Service Control Policies
-  - User Groups
+## Resource State Management
 
-- Data Sources:
-  - AWS IAM Policies
-  - Labels
+The provider supports importing existing Kion resources into Terraform state. This allows you to manage existing resources without recreating them.
 
-## Repository Maintainer: Push to Terraform Registry
+To import a resource:
 
-To push a new version of this provider to the Terraform Registry:
-
-- In the main branch, update the Makefile with the correct version
-- Use the commands below to create a new tag (ensure you change the version number and description):
+1. Create the resource configuration in your Terraform files
+2. Import the resource state:
 
 ```bash
-git tag -a v0.2.0 -m "Add your description here"
-git push origin v0.2.0
+terraform import [resource_type].[resource_name] [resource_id]
+```
+
+Example:
+
+```bash
+terraform import kion_aws_cloudformation_template.audit_logging 20
+```
+
+For a complete list of available data sources, please refer to our [provider documentation](https://registry.terraform.io/providers/kionsoftware/kion/latest/docs).
+
+## Contributing
+
+For repository maintainers pushing to the Terraform Registry:
+
+1. Update the version in the Makefile
+2. Create and push a new tag:
+
+```bash
+git tag -a vX.Y.Z -m "Description of changes"
+git push origin vX.Y.Z
 ```

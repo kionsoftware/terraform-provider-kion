@@ -7,10 +7,13 @@ description: |-
   If account_number is provided, an existing account will be imported into Kion, otherwise a new AWS account will be created.  If project_id is provided the account will be added to the corresponding project, otherwise the account will be added to the account cache.
   Once added, an account can be moved between projects or in and out of the account cache by changing the project_id.  When moving accounts between projects, use move_project_settings to control how financials will be treated between the old and new project.
   When importing existing Kion accounts into terraform state, you can use one of these methods:
+  
   Default import (tries project first, then cache):
-  terraform import kionawsaccount.example 123Explicit project account import:
-  terraform import kionawsaccount.example account_id=123Explicit cache account import:
-  terraform import kionawsaccount.example accountcacheid=123
+  terraform import kion_aws_account.example 123
+  Explicit project account import:
+  terraform import kion_aws_account.example account_id=123
+  Explicit cache account import:
+  terraform import kion_aws_account.example account_cache_id=123
   NOTE: This resource requires Kion v3.8.4 or greater.
 ---
 
@@ -38,22 +41,75 @@ When importing existing Kion accounts into terraform state, you can use one of t
 ## Example Usage
 
 ```terraform
-# Create a new AWS account and place it in the account cache
-resource "kion_aws_account" "test2" {
-  name                    = "Terraform Created AWS Account - 2"
-  payer_id                = 1
-  commercial_account_name = "Test Account"
-  create_govcloud         = false
+# Create a new AWS account and place it in a project with all available options
+resource "kion_aws_account" "complete_example" {
+  # Required fields
+  name      = "Terraform Complete Example Account"
+  payer_id  = 1
 
+  # Optional fields for account creation/import
+  account_alias            = "tf-complete-example"
+  account_number          = "123456789012"  # Include to import existing account
+  account_type_id         = 1
+  commercial_account_name = "Complete Example Commercial"
+  create_govcloud         = true
+  email                   = "root@example.com"
+  gov_account_name        = "Complete Example GovCloud"
+  include_linked_account_spend = true
+  linked_role             = "OrganizationAccountAccessRole"
+  project_id              = 42
+  skip_access_checking    = false
+  start_datecode         = "2024-03"
+  use_org_account_info    = true
+
+  # AWS Organizational Unit configuration
   aws_organizational_unit {
-    name        = "test name"
-    org_unit_id = "123456"
+    name        = "Development"
+    org_unit_id = "ou-1234-5678abcd"
+  }
+
+  # Settings for moving account between projects
+  move_project_settings {
+    financials     = "move"
+    move_datecode  = 202403
+  }
+
+  # Labels for the account
+  labels = {
+    environment = "production"
+    team        = "platform"
+    cost_center = "12345"
   }
 }
 
-# Output the ID of the resource created.
-output "kion_account_id" {
-  value = kion_aws_account.test2.id
+# Example of importing an existing account into a project
+resource "kion_aws_account" "import_example" {
+  name           = "Terraform Import Example"
+  payer_id       = 1
+  account_number = "987654321098"
+  project_id     = 43
+  start_datecode = "2024-03"
+}
+
+# Example of creating an account in the account cache
+resource "kion_aws_account" "cache_example" {
+  name                    = "Terraform Cache Example"
+  payer_id                = 1
+  commercial_account_name = "Cache Account"
+  create_govcloud         = false
+}
+
+# Output examples
+output "complete_example_id" {
+  value = kion_aws_account.complete_example.id
+}
+
+output "complete_example_car_external_id" {
+  value = kion_aws_account.complete_example.car_external_id
+}
+
+output "complete_example_service_external_id" {
+  value = kion_aws_account.complete_example.service_external_id
 }
 ```
 
