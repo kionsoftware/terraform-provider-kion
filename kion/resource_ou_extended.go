@@ -13,6 +13,12 @@ func OUChanges(client *hc.Client, d *schema.ResourceData, diags diag.Diagnostics
 	// Handle OU move.
 	if d.HasChanges("parent_ou_id") {
 		hasChanged++
+
+		// Get the global OU mutex
+		mu := getOUMutex(0)
+		mu.Lock()
+		defer mu.Unlock()
+
 		arrParentOUID, _, _, err := hc.AssociationChangedInt(d, "parent_ou_id")
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{

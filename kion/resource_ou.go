@@ -5,12 +5,21 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
+
+// Use a single global mutex for all OU operations to prevent any concurrent OU creation
+var ouMutex sync.Mutex
+
+// getOUMutex returns the global OU mutex
+func getOUMutex(_ int) *sync.Mutex {
+	return &ouMutex
+}
 
 func resourceOU() *schema.Resource {
 	return &schema.Resource{
@@ -94,12 +103,20 @@ func resourceOUCreate(ctx context.Context, d *schema.ResourceData, m interface{}
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
+	// Get the parent OU ID
+	parentOUID := d.Get("parent_ou_id").(int)
+
+	// Lock the mutex for this parent OU
+	mu := getOUMutex(parentOUID)
+	mu.Lock()
+	defer mu.Unlock()
+
 	post := hc.OUCreate{
 		Description:        d.Get("description").(string),
 		Name:               d.Get("name").(string),
 		OwnerUserGroupIds:  hc.FlattenGenericIDPointer(d, "owner_user_groups"),
 		OwnerUserIds:       hc.FlattenGenericIDPointer(d, "owner_users"),
-		ParentOuID:         d.Get("parent_ou_id").(int),
+		ParentOuID:         parentOUID,
 		PermissionSchemeID: d.Get("permission_scheme_id").(int),
 	}
 
