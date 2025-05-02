@@ -13,6 +13,14 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.23] - 2024-05-02
+
+### Fixed
+
+- Resolved concurrent OU creation issue causing database constraint violations
+- Prevented "Duplicate entry" errors when creating multiple OUs in Terraform
+- Added mutex synchronization for OU hierarchy operations to maintain data integrity
+
 ## [0.3.22] - 2024-03-13
 
 ### Added
