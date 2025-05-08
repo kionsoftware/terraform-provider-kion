@@ -81,7 +81,7 @@ resource "kion_funding_source" "quarterly_budget" {
     id = 3  # Operations Team
   }
 
-  labels = {x
+  labels = {
     quarter     = "Q1"
     fiscal_year = "2024"
     type        = "operational"
