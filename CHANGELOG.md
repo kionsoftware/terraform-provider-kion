@@ -13,6 +13,12 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.24] - 2024-05-08
+
+### Fixed
+
+- Updated Funding Sources Example Documentation to use the correct permission_scheme_id
+
 ## [0.3.23] - 2024-05-02
 
 ### Fixed
