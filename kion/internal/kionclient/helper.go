@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -712,4 +713,106 @@ func GetMoveProjectSettings(d *schema.ResourceData) *AccountMove {
 		FinancialSetting: "move",
 		MoveDate:         0,
 	}
+}
+
+// ValidateSpendReportRequirements validates spend report field dependencies and requirements.
+// It checks for proper date range validation, scope/scope_id dependencies, and scheduled report requirements.
+// Returns a slice of diagnostic errors if any validation fails.
+func ValidateSpendReportRequirements(d *schema.ResourceData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Validate date range requirements
+	if dateRange := d.Get("date_range").(string); dateRange == "custom" {
+		startDate := d.Get("start_date").(string)
+		endDate := d.Get("end_date").(string)
+		
+		if startDate == "" {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "start_date is required when date_range is 'custom'",
+			})
+		}
+		
+		if endDate == "" {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "end_date is required when date_range is 'custom'",
+			})
+		}
+		
+		// If both dates are provided, validate that start_date comes before end_date
+		if startDate != "" && endDate != "" {
+			startTime, err1 := time.Parse("2006-01-02", startDate)
+			endTime, err2 := time.Parse("2006-01-02", endDate)
+			
+			if err1 == nil && err2 == nil && !startTime.Before(endTime) {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "start_date must be before end_date",
+				})
+			}
+		}
+	}
+
+	// Validate scope requirements
+	scope := d.Get("scope").(string)
+	scopeId := d.Get("scope_id").(int)
+	
+	if scope != "" && scopeId == 0 {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "scope_id is required when scope is set",
+		})
+	}
+	
+	if scope == "" && scopeId != 0 {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "scope is required when scope_id is set",
+		})
+	}
+
+	// Validate scheduled report requirements
+	if scheduled := d.Get("scheduled").(bool); scheduled {
+		if freqList := d.Get("scheduled_frequency").([]interface{}); len(freqList) == 0 {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "scheduled_frequency is required when scheduled is true",
+			})
+		}
+	}
+
+	return diags
+}
+
+// GetStringFromInterface safely extracts a string value from an interface{}
+// If the value is nil, it returns an empty string. Otherwise, it converts the value to a string.
+func GetStringFromInterface(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+	if str, ok := v.(string); ok {
+		return str
+	}
+	return fmt.Sprintf("%v", v)
+}
+
+// FindProjectExemptionByID searches for a project cloud access role exemption by ID in a list
+func FindProjectExemptionByID(exemptions []ProjectCloudAccessRoleExemptionV1, id int) *ProjectCloudAccessRoleExemptionV1 {
+	for _, exemption := range exemptions {
+		if exemption.ID == id {
+			return &exemption
+		}
+	}
+	return nil
+}
+
+// FindOUExemptionByID searches for an OU cloud access role exemption by ID in a list
+func FindOUExemptionByID(exemptions []OUCloudAccessRoleExemptionV1, id int) *OUCloudAccessRoleExemptionV1 {
+	for _, exemption := range exemptions {
+		if exemption.ID == id {
+			return &exemption
+		}
+	}
+	return nil
 }
