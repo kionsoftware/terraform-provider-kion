@@ -21,7 +21,7 @@ resource "kion_funding_source" "complete_example" {
   start_datecode      = "2024-01"
   end_datecode        = "2024-12"
   ou_id               = 1
-  permission_scheme_id = 1
+  permission_scheme_id = 4
 
   # Ownership configuration
   owner_users {
@@ -55,7 +55,7 @@ resource "kion_funding_source" "project_budget" {
   start_datecode      = "2024-01"
   end_datecode        = "2024-06"
   ou_id               = 2
-  permission_scheme_id = 2
+  permission_scheme_id = 4
 
   owner_users {
     id = 3  # Project Manager
@@ -75,7 +75,7 @@ resource "kion_funding_source" "quarterly_budget" {
   start_datecode      = "2024-01"
   end_datecode        = "2024-03"
   ou_id               = 3
-  permission_scheme_id = 1
+  permission_scheme_id = 4
 
   owner_user_groups {
     id = 3  # Operations Team
