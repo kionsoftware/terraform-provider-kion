@@ -69,3 +69,6 @@ terraform
 
 importer-script/functions/__pycache__
 importer-script/__pycache__
+CLAUDE.md
+.claude
+swagger.json
