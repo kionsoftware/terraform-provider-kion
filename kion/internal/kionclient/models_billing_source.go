@@ -4,7 +4,7 @@ package kionclient
 type BillingSourceListResponse struct {
 	Data struct {
 		Items []BillingSource `json:"items"`
-		Total int            `json:"total"`
+		Total int             `json:"total"`
 	} `json:"data"`
 	Status int `json:"status"`
 }

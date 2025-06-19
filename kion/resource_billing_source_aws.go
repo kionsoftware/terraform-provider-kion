@@ -52,7 +52,7 @@ func resourceBillingSourceAws() *schema.Resource {
 					"must be in YYYY-MM format",
 				),
 			},
-			
+
 			// Optional fields
 			"account_creation": {
 				Type:        schema.TypeBool,
@@ -75,10 +75,10 @@ func resourceBillingSourceAws() *schema.Resource {
 				Description: "The region of the S3 bucket holding billing reports (both CUR and DBR reports).",
 			},
 			"billing_report_type": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "cur",
-				Description: "The billing report type to use. Options: 'none' (no proprietary billing report), 'cur' (AWS Cost and Usage Report), 'dbrrt' (AWS Detailed Billing Report with Resources and Tags).",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "cur",
+				Description:  "The billing report type to use. Options: 'none' (no proprietary billing report), 'cur' (AWS Cost and Usage Report), 'dbrrt' (AWS Detailed Billing Report with Resources and Tags).",
 				ValidateFunc: validation.StringInSlice([]string{"none", "cur", "dbrrt"}, false),
 			},
 			"bucket_access_role": {
@@ -86,7 +86,7 @@ func resourceBillingSourceAws() *schema.Resource {
 				Optional:    true,
 				Description: "An alternate IAM role for accessing the billing buckets (optional).",
 			},
-			
+
 			// CUR-specific fields
 			"cur_bucket": {
 				Type:        schema.TypeString,
@@ -108,7 +108,7 @@ func resourceBillingSourceAws() *schema.Resource {
 				Optional:    true,
 				Description: "The report prefix for the Cost and Usage Reports. Required if billing_report_type is 'cur'.",
 			},
-			
+
 			// FOCUS billing fields
 			"focus_billing_bucket_account_number": {
 				Type:        schema.TypeString,
@@ -144,7 +144,7 @@ func resourceBillingSourceAws() *schema.Resource {
 				Optional:    true,
 				Description: "An alternate IAM role for accessing the FOCUS billing buckets (optional).",
 			},
-			
+
 			// Authentication fields
 			"key_id": {
 				Type:        schema.TypeString,
@@ -158,7 +158,7 @@ func resourceBillingSourceAws() *schema.Resource {
 				Sensitive:   true,
 				Description: "The AWS Secret Access Key used to access the billing S3 bucket.",
 			},
-			
+
 			// Other optional fields
 			"linked_role": {
 				Type:        schema.TypeString,
@@ -177,7 +177,7 @@ func resourceBillingSourceAws() *schema.Resource {
 				Default:     false,
 				Description: "When true, will skip validating the connection to the billing source during creation.",
 			},
-			
+
 			// Computed fields
 			"use_focus_reports": {
 				Type:        schema.TypeBool,
@@ -196,18 +196,18 @@ func resourceBillingSourceAws() *schema.Resource {
 func resourceBillingSourceAwsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
-	
+
 	// Validate conditional requirements
 	billingReportType := d.Get("billing_report_type").(string)
 	if billingReportType == "cur" {
 		// All CUR-specific required fields
 		requiredCurFields := map[string]string{
-			"cur_bucket": "The S3 bucket containing the Cost and Usage Reports",
+			"cur_bucket":        "The S3 bucket containing the Cost and Usage Reports",
 			"cur_bucket_region": "The region of the S3 bucket containing the Cost and Usage Reports",
-			"cur_name": "The name of the Cost and Usage Report",
-			"cur_prefix": "The report prefix for the Cost and Usage Reports",
+			"cur_name":          "The name of the Cost and Usage Report",
+			"cur_prefix":        "The report prefix for the Cost and Usage Reports",
 		}
-		
+
 		for field, description := range requiredCurFields {
 			if _, ok := d.GetOk(field); !ok {
 				diags = append(diags, diag.Diagnostic{
@@ -221,14 +221,14 @@ func resourceBillingSourceAwsCreate(ctx context.Context, d *schema.ResourceData,
 			return diags
 		}
 	}
-	
+
 	if billingReportType == "focus" {
 		// All FOCUS-specific required fields
 		requiredFocusFields := map[string]string{
 			"focus_billing_report_bucket": "The S3 bucket containing the FOCUS reports",
-			"focus_billing_report_name": "The name of the FOCUS billing report",
+			"focus_billing_report_name":   "The name of the FOCUS billing report",
 		}
-		
+
 		for field, description := range requiredFocusFields {
 			if _, ok := d.GetOk(field); !ok {
 				diags = append(diags, diag.Diagnostic{
@@ -242,7 +242,7 @@ func resourceBillingSourceAwsCreate(ctx context.Context, d *schema.ResourceData,
 			return diags
 		}
 	}
-	
+
 	if billingReportType == "dbrrt" {
 		// DBR (Detailed Billing Report) required field
 		if _, ok := d.GetOk("s3_bucket_name"); !ok {
@@ -254,7 +254,7 @@ func resourceBillingSourceAwsCreate(ctx context.Context, d *schema.ResourceData,
 			return diags
 		}
 	}
-	
+
 	// Build the create request
 	post := hc.AWSBillingSourceCreate{
 		Name:             d.Get("name").(string),
@@ -265,14 +265,14 @@ func resourceBillingSourceAwsCreate(ctx context.Context, d *schema.ResourceData,
 		LinkedRole:       d.Get("linked_role").(string),
 		SkipValidation:   d.Get("skip_validation").(bool),
 	}
-	
+
 	// Set billing bucket account number (defaults to aws_account_number if not specified)
 	if v, ok := d.GetOk("billing_bucket_account_number"); ok {
 		post.BillingBucketAccountNumber = v.(string)
 	} else {
 		post.BillingBucketAccountNumber = d.Get("aws_account_number").(string)
 	}
-	
+
 	// Set optional fields using helper functions
 	if region := hc.FlattenStringPointer(d, "billing_region"); region != nil {
 		post.BillingRegion = *region
@@ -283,7 +283,7 @@ func resourceBillingSourceAwsCreate(ctx context.Context, d *schema.ResourceData,
 	if bucketRole := hc.FlattenStringPointer(d, "bucket_access_role"); bucketRole != nil {
 		post.BucketAccessRole = *bucketRole
 	}
-	
+
 	// CUR-specific fields using helper functions
 	if curBucket := hc.FlattenStringPointer(d, "cur_bucket"); curBucket != nil {
 		post.CURBucket = *curBucket
@@ -297,7 +297,7 @@ func resourceBillingSourceAwsCreate(ctx context.Context, d *schema.ResourceData,
 	if curPrefix := hc.FlattenStringPointer(d, "cur_prefix"); curPrefix != nil {
 		post.CURPrefix = *curPrefix
 	}
-	
+
 	// FOCUS billing fields
 	if v, ok := d.GetOk("focus_billing_bucket_account_number"); ok {
 		post.FocusBillingBucketAccountNumber = v.(string)
@@ -317,7 +317,7 @@ func resourceBillingSourceAwsCreate(ctx context.Context, d *schema.ResourceData,
 	if v, ok := d.GetOk("focus_bucket_access_role"); ok {
 		post.FocusBucketAccessRole = v.(string)
 	}
-	
+
 	// Authentication fields
 	if v, ok := d.GetOk("key_id"); ok {
 		post.KeyID = v.(string)
@@ -325,12 +325,12 @@ func resourceBillingSourceAwsCreate(ctx context.Context, d *schema.ResourceData,
 	if v, ok := d.GetOk("key_secret"); ok {
 		post.KeySecret = v.(string)
 	}
-	
+
 	// Other optional fields
 	if v, ok := d.GetOk("mr_bucket"); ok {
 		post.MRBucket = v.(string)
 	}
-	
+
 	resp, err := client.POST("/v3/billing-source/aws", post)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -340,18 +340,18 @@ func resourceBillingSourceAwsCreate(ctx context.Context, d *schema.ResourceData,
 		})
 		return diags
 	}
-	
+
 	d.SetId(fmt.Sprintf("%d", resp.RecordID))
-	
+
 	resourceBillingSourceAwsRead(ctx, d, m)
-	
+
 	return diags
 }
 
 func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
-	
+
 	ID := d.Id()
 	billingSourceID, err := strconv.Atoi(ID)
 	if err != nil {
@@ -362,7 +362,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 		})
 		return diags
 	}
-	
+
 	// Get billing source by account number to find the ID
 	// Since there's no direct GET by ID endpoint, we need to use the account number
 	accountNumber := d.Get("aws_account_number").(string)
@@ -379,7 +379,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 			return diags
 		}
-		
+
 		// Find the billing source with matching ID
 		found := false
 		for _, bs := range resp.Data.Items {
@@ -396,13 +396,13 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 				}
 			}
 		}
-		
+
 		if !found {
 			d.SetId("")
 			return diags
 		}
 	}
-	
+
 	// Get billing source by account number
 	resp := new(hc.BillingSourceResponse)
 	err = client.GET(fmt.Sprintf("/v4/billing-source/by-child-account-number/%s", accountNumber), resp)
@@ -412,7 +412,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			d.SetId("")
 			return diags
 		}
-		
+
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to read AWS billing source",
@@ -420,9 +420,9 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 		})
 		return diags
 	}
-	
+
 	billingSource := resp.Data
-	
+
 	// Verify this is an AWS billing source
 	if billingSource.AWSPayer == nil {
 		diags = append(diags, diag.Diagnostic{
@@ -432,24 +432,24 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 		})
 		return diags
 	}
-	
+
 	// Set the resource data from the response
 	awsPayer := billingSource.AWSPayer
-	
+
 	// Set basic fields using SafeSet helper
 	diags = append(diags, hc.SafeSet(d, "name", awsPayer.Name, "Unable to set name")...)
 	diags = append(diags, hc.SafeSet(d, "aws_account_number", awsPayer.AccountNumber, "Unable to set aws_account_number")...)
 	diags = append(diags, hc.SafeSet(d, "account_creation", billingSource.AccountCreation, "Unable to set account_creation")...)
-	
+
 	// Set other fields from AWSPayer using SafeSet helper
 	if awsPayer.BillingBucketAccountNumber != "" {
 		diags = append(diags, hc.SafeSet(d, "billing_bucket_account_number", awsPayer.BillingBucketAccountNumber, "Unable to set billing_bucket_account_number")...)
 	}
-	
+
 	if awsPayer.BillingRegion != "" {
 		diags = append(diags, hc.SafeSet(d, "billing_region", awsPayer.BillingRegion, "Unable to set billing_region")...)
 	}
-	
+
 	if awsPayer.BillingReportType != "" {
 		if err := d.Set("billing_report_type", awsPayer.BillingReportType); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -459,7 +459,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	if awsPayer.BillingStartDate != "" {
 		if err := d.Set("billing_start_date", awsPayer.BillingStartDate); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -469,7 +469,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	if awsPayer.BucketAccessRole != "" {
 		if err := d.Set("bucket_access_role", awsPayer.BucketAccessRole); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -479,7 +479,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	// CUR fields
 	if awsPayer.BillingReportBucket != "" {
 		if err := d.Set("cur_bucket", awsPayer.BillingReportBucket); err != nil {
@@ -490,7 +490,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	if awsPayer.BillingReportBucketRegion != "" {
 		if err := d.Set("cur_bucket_region", awsPayer.BillingReportBucketRegion); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -500,7 +500,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	if awsPayer.BillingReportName != "" {
 		if err := d.Set("cur_name", awsPayer.BillingReportName); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -510,7 +510,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	if awsPayer.BillingReportPrefix != "" {
 		if err := d.Set("cur_prefix", awsPayer.BillingReportPrefix); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -520,7 +520,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	// FOCUS fields
 	if awsPayer.FOCUSBillingBucketAccountNumber != "" {
 		if err := d.Set("focus_billing_bucket_account_number", awsPayer.FOCUSBillingBucketAccountNumber); err != nil {
@@ -531,7 +531,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	if awsPayer.FOCUSBillingReportBucket != "" {
 		if err := d.Set("focus_billing_report_bucket", awsPayer.FOCUSBillingReportBucket); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -541,7 +541,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	if awsPayer.FOCUSBillingReportBucketRegion != "" {
 		if err := d.Set("focus_billing_report_bucket_region", awsPayer.FOCUSBillingReportBucketRegion); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -551,7 +551,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	if awsPayer.FOCUSBillingReportName != "" {
 		if err := d.Set("focus_billing_report_name", awsPayer.FOCUSBillingReportName); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -561,7 +561,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	if awsPayer.FOCUSBillingReportPrefix != "" {
 		if err := d.Set("focus_billing_report_prefix", awsPayer.FOCUSBillingReportPrefix); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -571,7 +571,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	if awsPayer.FOCUSBucketAccessRole != "" {
 		if err := d.Set("focus_bucket_access_role", awsPayer.FOCUSBucketAccessRole); err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -581,7 +581,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	// Other fields
 	if awsPayer.DetailedBillingBucket != "" {
 		if err := d.Set("mr_bucket", awsPayer.DetailedBillingBucket); err != nil {
@@ -592,7 +592,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			})
 		}
 	}
-	
+
 	// Computed fields
 	if err := d.Set("use_focus_reports", billingSource.UseFocusReports); err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -601,7 +601,7 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			Detail:   fmt.Sprintf("Error: %v", err.Error()),
 		})
 	}
-	
+
 	if err := d.Set("use_proprietary_reports", billingSource.UseProprietaryReports); err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -609,130 +609,130 @@ func resourceBillingSourceAwsRead(ctx context.Context, d *schema.ResourceData, m
 			Detail:   fmt.Sprintf("Error: %v", err.Error()),
 		})
 	}
-	
+
 	// Ensure the ID is set to the billing source ID
 	d.SetId(fmt.Sprintf("%d", billingSource.ID))
-	
+
 	return diags
 }
 
 func resourceBillingSourceAwsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	
+
 	// Check what has changed and build the update request
 	hasChanged := false
 	update := hc.AWSBillingSourceUpdate{}
-	
+
 	if d.HasChange("name") {
 		hasChanged = true
 		update.Name = d.Get("name").(string)
 	}
-	
+
 	if d.HasChange("account_creation") {
 		hasChanged = true
 		accountCreation := d.Get("account_creation").(bool)
 		update.AccountCreation = &accountCreation
 	}
-	
+
 	if d.HasChange("billing_bucket_account_number") {
 		hasChanged = true
 		update.BillingBucketAccountNumber = d.Get("billing_bucket_account_number").(string)
 	}
-	
+
 	if d.HasChange("billing_region") {
 		hasChanged = true
 		update.BillingRegion = d.Get("billing_region").(string)
 	}
-	
+
 	if d.HasChange("billing_report_type") {
 		hasChanged = true
 		update.BillingReportType = d.Get("billing_report_type").(string)
 	}
-	
+
 	if d.HasChange("billing_start_date") {
 		hasChanged = true
 		update.BillingStartDate = d.Get("billing_start_date").(string)
 	}
-	
+
 	if d.HasChange("bucket_access_role") {
 		hasChanged = true
 		update.BucketAccessRole = d.Get("bucket_access_role").(string)
 	}
-	
+
 	// CUR fields
 	if d.HasChange("cur_bucket") {
 		hasChanged = true
 		update.CURBucket = d.Get("cur_bucket").(string)
 	}
-	
+
 	if d.HasChange("cur_bucket_region") {
 		hasChanged = true
 		update.CURBucketRegion = d.Get("cur_bucket_region").(string)
 	}
-	
+
 	if d.HasChange("cur_name") {
 		hasChanged = true
 		update.CURName = d.Get("cur_name").(string)
 	}
-	
+
 	if d.HasChange("cur_prefix") {
 		hasChanged = true
 		update.CURPrefix = d.Get("cur_prefix").(string)
 	}
-	
+
 	// FOCUS fields
 	if d.HasChange("focus_billing_bucket_account_number") {
 		hasChanged = true
 		update.FocusBillingBucketAccountNumber = d.Get("focus_billing_bucket_account_number").(string)
 	}
-	
+
 	if d.HasChange("focus_billing_report_bucket") {
 		hasChanged = true
 		update.FocusBillingReportBucket = d.Get("focus_billing_report_bucket").(string)
 	}
-	
+
 	if d.HasChange("focus_billing_report_bucket_region") {
 		hasChanged = true
 		update.FocusBillingReportBucketRegion = d.Get("focus_billing_report_bucket_region").(string)
 	}
-	
+
 	if d.HasChange("focus_billing_report_name") {
 		hasChanged = true
 		update.FocusBillingReportName = d.Get("focus_billing_report_name").(string)
 	}
-	
+
 	if d.HasChange("focus_billing_report_prefix") {
 		hasChanged = true
 		update.FocusBillingReportPrefix = d.Get("focus_billing_report_prefix").(string)
 	}
-	
+
 	if d.HasChange("focus_bucket_access_role") {
 		hasChanged = true
 		update.FocusBucketAccessRole = d.Get("focus_bucket_access_role").(string)
 	}
-	
+
 	// Authentication fields
 	if d.HasChange("key_id") {
 		hasChanged = true
 		update.KeyID = d.Get("key_id").(string)
 	}
-	
+
 	if d.HasChange("key_secret") {
 		hasChanged = true
 		update.KeySecret = d.Get("key_secret").(string)
 	}
-	
+
 	// Other fields
 	if d.HasChange("linked_role") {
 		hasChanged = true
 		update.LinkedRole = d.Get("linked_role").(string)
 	}
-	
+
 	if d.HasChange("mr_bucket") {
 		hasChanged = true
 		update.MRBucket = d.Get("mr_bucket").(string)
 	}
-	
+
 	if hasChanged {
 		// Since there's no direct update endpoint for billing sources,
 		// we'll need to use a PATCH endpoint if available, or recreate
@@ -744,14 +744,14 @@ func resourceBillingSourceAwsUpdate(ctx context.Context, d *schema.ResourceData,
 		})
 		return diags
 	}
-	
+
 	return resourceBillingSourceAwsRead(ctx, d, m)
 }
 
 func resourceBillingSourceAwsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
-	
+
 	ID := d.Id()
 	billingSourceID, err := strconv.Atoi(ID)
 	if err != nil {
@@ -762,7 +762,7 @@ func resourceBillingSourceAwsDelete(ctx context.Context, d *schema.ResourceData,
 		})
 		return diags
 	}
-	
+
 	err = client.DELETE(fmt.Sprintf("/v3/billing-source/%d", billingSourceID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -772,10 +772,10 @@ func resourceBillingSourceAwsDelete(ctx context.Context, d *schema.ResourceData,
 		})
 		return diags
 	}
-	
+
 	// d.SetId("") is automatically called assuming delete returns no errors, but
 	// it is added here for explicitness.
 	d.SetId("")
-	
+
 	return diags
 }

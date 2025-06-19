@@ -102,10 +102,10 @@ func resourceSpendReport() *schema.Resource {
 				}, false),
 			},
 			"time_granularity_id": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Default:     1,
-				Description: "The time granularity ID (1 for monthly, 2 for daily, 3 for hourly).",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      1,
+				Description:  "The time granularity ID (1 for monthly, 2 for daily, 3 for hourly).",
 				ValidateFunc: validation.IntInSlice([]int{1, 2, 3}),
 			},
 			"ou_ids": {
@@ -349,18 +349,18 @@ func resourceSpendReportCreate(ctx context.Context, d *schema.ResourceData, m in
 
 	// Build the spend report object
 	spendReport := hc.SpendReportCreate{
-		CreatedBy:              createdBy,
-		ReportName:             d.Get("report_name").(string),
-		GlobalVisibility:       d.Get("global_visibility").(bool),
-		DateRange:              d.Get("date_range").(string),
-		Scope:                  d.Get("scope").(string),
-		ScopeId:                d.Get("scope_id").(int),
-		SpendType:              d.Get("spend_type").(string),
-		Dimension:              d.Get("dimension").(string),
-		TimeGranularityId:      d.Get("time_granularity_id").(int),
-		DeductCredits:          d.Get("deduct_credits").(bool),
-		DeductRefunds:          d.Get("deduct_refunds").(bool),
-		Scheduled:              d.Get("scheduled").(bool),
+		CreatedBy:         createdBy,
+		ReportName:        d.Get("report_name").(string),
+		GlobalVisibility:  d.Get("global_visibility").(bool),
+		DateRange:         d.Get("date_range").(string),
+		Scope:             d.Get("scope").(string),
+		ScopeId:           d.Get("scope_id").(int),
+		SpendType:         d.Get("spend_type").(string),
+		Dimension:         d.Get("dimension").(string),
+		TimeGranularityId: d.Get("time_granularity_id").(int),
+		DeductCredits:     d.Get("deduct_credits").(bool),
+		DeductRefunds:     d.Get("deduct_refunds").(bool),
+		Scheduled:         d.Get("scheduled").(bool),
 	}
 
 	// Set dates for custom date range
@@ -541,7 +541,9 @@ func resourceSpendReportCreate(ctx context.Context, d *schema.ResourceData, m in
 	d.SetId(strconv.Itoa(resp.Data.SavedReport.ID))
 
 	// Set last_updated
-	d.Set("last_updated", time.Now().Format(time.RFC850))
+	if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
+		return diag.FromErr(err)
+	}
 
 	resourceSpendReportRead(ctx, d, m)
 
@@ -617,40 +619,108 @@ func resourceSpendReportRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	// Set the resource data from the response
 	report := resp.Data.SavedReport
-	d.Set("report_name", report.ReportName)
-	d.Set("global_visibility", report.GlobalVisibility)
-	d.Set("date_range", report.DateRange)
-	d.Set("scope", report.Scope)
-	d.Set("scope_id", report.ScopeId)
-	d.Set("spend_type", report.SpendType)
-	d.Set("dimension", report.Dimension)
-	d.Set("time_granularity_id", report.TimeGranularityId)
-	d.Set("ou_ids", report.OUIds)
-	d.Set("ou_exclusive", report.OUExclusive)
-	d.Set("include_descendants", report.IncludeDescendants)
-	d.Set("project_ids", report.ProjectIds)
-	d.Set("project_exclusive", report.ProjectExclusive)
-	d.Set("billing_source_ids", report.BillingSourceIds)
-	d.Set("billing_source_exclusive", report.BillingSourceExclusive)
-	d.Set("funding_source_ids", report.FundingSourceIds)
-	d.Set("funding_source_exclusive", report.FundingSourceExclusive)
-	d.Set("cloud_provider_ids", report.CloudProviderIds)
-	d.Set("cloud_provider_exclusive", report.CloudProviderExclusive)
-	d.Set("account_ids", report.AccountIds)
-	d.Set("account_exclusive", report.AccountExclusive)
-	d.Set("region_ids", report.RegionIds)
-	d.Set("region_exclusive", report.RegionExclusive)
-	d.Set("service_ids", report.ServiceIds)
-	d.Set("service_exclusive", report.ServiceExclusive)
-	d.Set("deduct_credits", report.DeductCredits)
-	d.Set("deduct_refunds", report.DeductRefunds)
-	d.Set("scheduled", report.Scheduled)
-	d.Set("scheduled_email_subject", report.ScheduledEmailSubject)
-	d.Set("scheduled_email_message", report.ScheduledEmailMessage)
-	d.Set("scheduled_file_types", report.ScheduledFileTypes)
-	d.Set("scheduled_file_orientation", report.ScheduledFileOrientation)
-	d.Set("owner_user_ids", resp.Data.UserIds)
-	d.Set("owner_user_group_ids", resp.Data.UserGroupIds)
+	if err := d.Set("report_name", report.ReportName); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("global_visibility", report.GlobalVisibility); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("date_range", report.DateRange); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("scope", report.Scope); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("scope_id", report.ScopeId); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("spend_type", report.SpendType); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("dimension", report.Dimension); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("time_granularity_id", report.TimeGranularityId); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("ou_ids", report.OUIds); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("ou_exclusive", report.OUExclusive); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("include_descendants", report.IncludeDescendants); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("project_ids", report.ProjectIds); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("project_exclusive", report.ProjectExclusive); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("billing_source_ids", report.BillingSourceIds); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("billing_source_exclusive", report.BillingSourceExclusive); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("funding_source_ids", report.FundingSourceIds); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("funding_source_exclusive", report.FundingSourceExclusive); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("cloud_provider_ids", report.CloudProviderIds); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("cloud_provider_exclusive", report.CloudProviderExclusive); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("account_ids", report.AccountIds); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("account_exclusive", report.AccountExclusive); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("region_ids", report.RegionIds); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("region_exclusive", report.RegionExclusive); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("service_ids", report.ServiceIds); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("service_exclusive", report.ServiceExclusive); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("deduct_credits", report.DeductCredits); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("deduct_refunds", report.DeductRefunds); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("scheduled", report.Scheduled); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("scheduled_email_subject", report.ScheduledEmailSubject); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("scheduled_email_message", report.ScheduledEmailMessage); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("scheduled_file_types", report.ScheduledFileTypes); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("scheduled_file_orientation", report.ScheduledFileOrientation); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("owner_user_ids", resp.Data.UserIds); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("owner_user_group_ids", resp.Data.UserGroupIds); err != nil {
+		return diag.FromErr(err)
+	}
 
 	// Handle scheduled frequency
 	if report.SavedReportScheduledFrequency != nil {
@@ -710,7 +780,7 @@ func resourceSpendReportUpdate(ctx context.Context, d *schema.ResourceData, m in
 
 	// Copy all values from current state
 	report := currentResp.Data.SavedReport
-	
+
 	// Build the full saved report for the update (API requires all fields)
 	fullReport := hc.SpendReport{
 		ID:                report.ID,

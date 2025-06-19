@@ -725,26 +725,26 @@ func ValidateSpendReportRequirements(d *schema.ResourceData) diag.Diagnostics {
 	if dateRange := d.Get("date_range").(string); dateRange == "custom" {
 		startDate := d.Get("start_date").(string)
 		endDate := d.Get("end_date").(string)
-		
+
 		if startDate == "" {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "start_date is required when date_range is 'custom'",
 			})
 		}
-		
+
 		if endDate == "" {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "end_date is required when date_range is 'custom'",
 			})
 		}
-		
+
 		// If both dates are provided, validate that start_date comes before end_date
 		if startDate != "" && endDate != "" {
 			startTime, err1 := time.Parse("2006-01-02", startDate)
 			endTime, err2 := time.Parse("2006-01-02", endDate)
-			
+
 			if err1 == nil && err2 == nil && !startTime.Before(endTime) {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
@@ -757,14 +757,14 @@ func ValidateSpendReportRequirements(d *schema.ResourceData) diag.Diagnostics {
 	// Validate scope requirements
 	scope := d.Get("scope").(string)
 	scopeId := d.Get("scope_id").(int)
-	
+
 	if scope != "" && scopeId == 0 {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "scope_id is required when scope is set",
 		})
 	}
-	
+
 	if scope == "" && scopeId != 0 {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

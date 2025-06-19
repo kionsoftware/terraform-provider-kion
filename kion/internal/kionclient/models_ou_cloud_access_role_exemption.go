@@ -2,10 +2,10 @@ package kionclient
 
 // OUCloudAccessRoleExemption defines an exemption of an ou cloud access role for an ou
 type OUCloudAccessRoleExemption struct {
-	ID                   int    `json:"id"`
-	OUCloudAccessRoleID  int    `json:"ou_cloud_access_role_id"`
-	OUID                 int    `json:"ou_id"`
-	Reason               string `json:"reason"`
+	ID                  int    `json:"id"`
+	OUCloudAccessRoleID int    `json:"ou_cloud_access_role_id"`
+	OUID                int    `json:"ou_id"`
+	Reason              string `json:"reason"`
 }
 
 // OUCloudAccessRoleExemptionResponse is the response from GET /v3/ou-cloud-access-role-exemption/{id}
@@ -48,9 +48,9 @@ type OUCloudAccessRoleExemptionV1 struct {
 type OUCloudAccessRoleV1Response struct {
 	Status int `json:"status"`
 	Data   struct {
-		ToKeep             []interface{}                    `json:"to_keep"`
-		ToRemove           []interface{}                    `json:"to_remove"`
-		ProjectExemptions  interface{}                      `json:"project_exemptions"`
-		OUExemptions       []OUCloudAccessRoleExemptionV1  `json:"ou_exemptions"`
+		ToKeep            []interface{}                  `json:"to_keep"`
+		ToRemove          []interface{}                  `json:"to_remove"`
+		ProjectExemptions interface{}                    `json:"project_exemptions"`
+		OUExemptions      []OUCloudAccessRoleExemptionV1 `json:"ou_exemptions"`
 	} `json:"data"`
 }

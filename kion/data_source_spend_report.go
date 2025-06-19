@@ -218,7 +218,7 @@ func dataSourceSpendReportRead(ctx context.Context, d *schema.ResourceData, m in
 	client := m.(*hc.Client)
 
 	spendReportID := d.Get("id").(int)
-	
+
 	// Use the direct GET endpoint for a specific spend report
 	url := client.HostURL + "/v1/saved-report/" + strconv.Itoa(spendReportID)
 	req, err := http.NewRequest("GET", url, nil)

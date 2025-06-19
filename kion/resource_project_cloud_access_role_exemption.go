@@ -214,7 +214,7 @@ func resourceProjectCloudAccessRoleExemptionDelete(ctx context.Context, d *schem
 	// Give the API time to delete
 	projectID := d.Get("project_id").(int)
 	exemptionID, _ := strconv.Atoi(ID)
-	
+
 	deleteStateConf := &retry.StateChangeConf{
 		Pending: []string{"200"},
 		Target:  []string{"404"},
@@ -228,7 +228,7 @@ func resourceProjectCloudAccessRoleExemptionDelete(ctx context.Context, d *schem
 				}
 				return nil, "", err
 			}
-			
+
 			// Check if the exemption still exists
 			found := false
 			if resp.Data.ProjectExemptions != nil {
@@ -236,7 +236,7 @@ func resourceProjectCloudAccessRoleExemptionDelete(ctx context.Context, d *schem
 					found = true
 				}
 			}
-			
+
 			if !found {
 				return resp, "404", nil
 			}

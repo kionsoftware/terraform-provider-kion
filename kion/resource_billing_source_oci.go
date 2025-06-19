@@ -47,10 +47,10 @@ func resourceBillingSourceOci() *schema.Resource {
 
 			// Optional fields
 			"account_type_id": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Default:     26,
-				Description: "The account type ID for the OCI billing source. Valid values are: 26 (OCI Commercial), 27 (OCI Government), 28 (OCI Federal). Defaults to 26.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      26,
+				Description:  "The account type ID for the OCI billing source. Valid values are: 26 (OCI Commercial), 27 (OCI Government), 28 (OCI Federal). Defaults to 26.",
 				ValidateFunc: validation.IntInSlice([]int{26, 27, 28}),
 			},
 			"tenancy_ocid": {
@@ -120,7 +120,7 @@ func resourceBillingSourceOciCreate(ctx context.Context, d *schema.ResourceData,
 			providedAuthFields++
 		}
 	}
-	
+
 	if providedAuthFields > 0 && providedAuthFields < len(apiAuthFields) {
 		missingFields := []string{}
 		for _, field := range apiAuthFields {
@@ -328,9 +328,9 @@ func resourceBillingSourceOciDelete(ctx context.Context, d *schema.ResourceData,
 			}
 			return resp, "200", nil
 		},
-		Timeout:                2 * time.Minute,
-		Delay:                  10 * time.Second,
-		MinTimeout:             3 * time.Second,
+		Timeout:                   2 * time.Minute,
+		Delay:                     10 * time.Second,
+		MinTimeout:                3 * time.Second,
 		ContinuousTargetOccurence: 2,
 	}
 
@@ -361,7 +361,7 @@ func readOCIBillingSource(c *hc.Client, id string) (*hc.OCIBillingSource, error)
 	// Note: Some fields like AccountTypeID and IsParentTenancy are not returned in the GET response
 	// These fields are preserved from the Terraform state
 	return &hc.OCIBillingSource{
-		ID:                    uint(resp.OCIPayer.ID),
+		ID:                    resp.OCIPayer.ID,
 		Name:                  resp.OCIPayer.Name,
 		BillingStartDate:      resp.OCIPayer.BillingStartDate,
 		TenancyOCID:           resp.OCIPayer.TenancyOCID,

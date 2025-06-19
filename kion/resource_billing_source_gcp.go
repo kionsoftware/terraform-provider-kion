@@ -226,7 +226,7 @@ func resourceBillingSourceGcpRead(ctx context.Context, d *schema.ResourceData, m
 	diags = append(diags, hc.SafeSet(d, "name", billingSource.Name, "Unable to set name")...)
 	diags = append(diags, hc.SafeSet(d, "service_account_id", billingSource.ServiceAccountID, "Unable to set service_account_id")...)
 	diags = append(diags, hc.SafeSet(d, "gcp_id", billingSource.GCPID, "Unable to set gcp_id")...)
-	
+
 	if len(diags) > 0 {
 		return diags
 	}
@@ -238,7 +238,7 @@ func resourceBillingSourceGcpRead(ctx context.Context, d *schema.ResourceData, m
 	if err := d.Set("billing_start_date", billingSource.BillingStartDate); err != nil {
 		return diag.FromErr(err)
 	}
-	
+
 	// Set BigQuery export configuration
 	bigQueryExport := []map[string]interface{}{
 		{
@@ -260,7 +260,7 @@ func resourceBillingSourceGcpRead(ctx context.Context, d *schema.ResourceData, m
 			return diag.FromErr(err)
 		}
 	}
-	
+
 	if err := d.Set("is_reseller", billingSource.IsReseller); err != nil {
 		return diag.FromErr(err)
 	}
@@ -279,11 +279,11 @@ func resourceBillingSourceGcpUpdate(ctx context.Context, d *schema.ResourceData,
 	// If any changes are detected, we need to recreate the resource
 	if d.HasChanges("name", "service_account_id", "gcp_id", "billing_start_date", "big_query_export",
 		"account_type_id", "is_reseller", "use_focus", "use_proprietary") {
-		
+
 		tflog.Info(ctx, "GCP billing source does not support updates, resource must be recreated", map[string]interface{}{
 			"id": d.Id(),
 		})
-		
+
 		// Force recreation by returning an error
 		return diag.Errorf("GCP billing sources cannot be updated. The resource must be recreated.")
 	}

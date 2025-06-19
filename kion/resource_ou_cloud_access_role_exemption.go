@@ -214,7 +214,7 @@ func resourceOUCloudAccessRoleExemptionDelete(ctx context.Context, d *schema.Res
 	// Give the API time to delete
 	ouID := d.Get("ou_id").(int)
 	exemptionID, _ := strconv.Atoi(ID)
-	
+
 	deleteStateConf := &retry.StateChangeConf{
 		Pending: []string{"200"},
 		Target:  []string{"404"},
@@ -228,7 +228,7 @@ func resourceOUCloudAccessRoleExemptionDelete(ctx context.Context, d *schema.Res
 				}
 				return nil, "", err
 			}
-			
+
 			// Check if the exemption still exists
 			found := false
 			if resp.Data.OUExemptions != nil {
@@ -236,7 +236,7 @@ func resourceOUCloudAccessRoleExemptionDelete(ctx context.Context, d *schema.Res
 					found = true
 				}
 			}
-			
+
 			if !found {
 				return resp, "404", nil
 			}
