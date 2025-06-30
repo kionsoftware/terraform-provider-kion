@@ -29,7 +29,7 @@ func resourceProject() *schema.Resource {
 				budgets := v.(*schema.Set).List()
 				for i, budget := range budgets {
 					budgetMap := budget.(map[string]interface{})
-					
+
 					// Only validate if monthly data is provided
 					if dataSet, ok := budgetMap["data"].(*schema.Set); ok && dataSet.Len() > 0 {
 						var monthlyTotal float64
@@ -37,7 +37,7 @@ func resourceProject() *schema.Resource {
 							dataMap := dataValue.(map[string]interface{})
 							monthlyTotal += dataMap["amount"].(float64)
 						}
-						
+
 						declaredAmount := budgetMap["amount"].(float64)
 						if !hc.AlmostEqual(monthlyTotal, declaredAmount, 0.01) {
 							return fmt.Errorf(
@@ -297,7 +297,7 @@ func resourceProjectCreate(ctx context.Context, d *schema.ResourceData, m interf
 						Priority:        dataMap["priority"].(int),
 					}
 				}
-				
+
 				// Validate that monthly data totals match the declared budget amount
 				declaredAmount := budgetMap["amount"].(float64)
 				if !hc.AlmostEqual(monthlyTotal, declaredAmount, 0.01) {
@@ -459,7 +459,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 				budget.Data,
 				fsIDs,
 			)
-			
+
 			// Only include monthly data if it's not auto-generated
 			if !isAutoGen {
 				budgetData := make([]map[string]interface{}, len(budget.Data))
@@ -692,7 +692,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 						Priority:        dataMap["priority"].(int),
 					}
 				}
-				
+
 				// Validate that monthly data totals match the declared budget amount
 				declaredAmount := budgetMap["amount"].(float64)
 				if !hc.AlmostEqual(monthlyTotal, declaredAmount, 0.01) {
@@ -813,7 +813,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 						Priority:        dataMap["priority"].(int),
 					}
 				}
-				
+
 				// Validate that monthly data totals match the declared budget amount
 				declaredAmount := budgetMap["amount"].(float64)
 				if !hc.AlmostEqual(monthlyTotal, declaredAmount, 0.01) {
@@ -894,6 +894,172 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	return resourceProjectRead(ctx, d, m)
 }
 
+func handleBudgetUpdate(d *schema.ResourceData, client *hc.Client, projectID string) diag.Diagnostics {
+	var diags diag.Diagnostics
+	
+	// Get current budgets from Kion
+	resp := new(struct {
+		Data []struct {
+			Config struct {
+				ID            int    `json:"id"`
+				StartDatecode string `json:"start_datecode"`
+				EndDatecode   string `json:"end_datecode"`
+			} `json:"config"`
+		} `json:"data"`
+		Status int `json:"status"`
+	})
+	err := client.GET(fmt.Sprintf("/v3/project/%s/budget", projectID), resp)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to read Project budgets",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), projectID),
+		})
+		return diags
+	}
+
+	// Track existing budget IDs
+	existingBudgetIDs := make(map[int]bool)
+	for _, budget := range resp.Data {
+		existingBudgetIDs[budget.Config.ID] = true
+	}
+
+	// Convert project ID to int
+	projID, err := strconv.Atoi(projectID)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to parse Project ID",
+			Detail:   fmt.Sprintf("Error: %v\nProject ID: %v", err.Error(), projectID),
+		})
+		return diags
+	}
+
+	// Process budget updates and validate periods
+	type budgetPeriod struct {
+		startDate time.Time
+		endDate   time.Time
+		amount    float64
+	}
+	budgetPeriods := make([]budgetPeriod, 0)
+
+	// First pass: validate and update existing budgets
+	for _, genericValue := range d.Get("budget").(*schema.Set).List() {
+		budgetMap := genericValue.(map[string]interface{})
+		startDatecode := budgetMap["start_datecode"].(string)
+		endDatecode := budgetMap["end_datecode"].(string)
+
+		// Validate dates
+		startDate, endDate, dateDiags := validateBudgetDates(startDatecode, endDatecode)
+		if len(dateDiags) > 0 {
+			return dateDiags
+		}
+
+		// Check for overlapping periods
+		newPeriod := budgetPeriod{
+			startDate: startDate,
+			endDate:   endDate,
+			amount:    budgetMap["amount"].(float64),
+		}
+
+		for _, existing := range budgetPeriods {
+			if (newPeriod.startDate.Before(existing.endDate) || newPeriod.startDate.Equal(existing.endDate)) &&
+				(newPeriod.endDate.After(existing.startDate) || newPeriod.endDate.Equal(existing.startDate)) {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Overlapping budget periods",
+					Detail: fmt.Sprintf("Budget period %s to %s overlaps with existing period %s to %s",
+						startDatecode, endDatecode,
+						existing.startDate.Format("2006-01"), existing.endDate.Format("2006-01")),
+				})
+				return diags
+			}
+		}
+		budgetPeriods = append(budgetPeriods, newPeriod)
+
+		// Build budget request
+		budgetReq, reqDiags := buildBudgetRequest(budgetMap, projID)
+		if len(reqDiags) > 0 {
+			return reqDiags
+		}
+
+		// Find if this budget already exists
+		var existingBudgetID int
+		for _, budget := range resp.Data {
+			if budget.Config.StartDatecode == startDatecode &&
+				budget.Config.EndDatecode == endDatecode {
+				existingBudgetID = budget.Config.ID
+				delete(existingBudgetIDs, existingBudgetID)
+				break
+			}
+		}
+
+		// Update existing budget
+		if existingBudgetID != 0 {
+			err = client.PUT(fmt.Sprintf("/v3/budget/%d", existingBudgetID), budgetReq)
+			if err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Unable to update Project budget",
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), existingBudgetID),
+				})
+				return diags
+			}
+		}
+	}
+
+	// Delete removed budgets
+	for budgetID := range existingBudgetIDs {
+		err = client.DELETE(fmt.Sprintf("/v3/budget/%d", budgetID), nil)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to delete Project budget",
+				Detail:   fmt.Sprintf("Error: %v\nBudget: %v", err.Error(), budgetID),
+			})
+			return diags
+		}
+	}
+
+	// Create new budgets
+	for _, genericValue := range d.Get("budget").(*schema.Set).List() {
+		budgetMap := genericValue.(map[string]interface{})
+		startDatecode := budgetMap["start_datecode"].(string)
+		endDatecode := budgetMap["end_datecode"].(string)
+
+		// Skip if already exists
+		exists := false
+		for _, budget := range resp.Data {
+			if budget.Config.StartDatecode == startDatecode &&
+				budget.Config.EndDatecode == endDatecode {
+				exists = true
+				break
+			}
+		}
+		if exists {
+			continue
+		}
+
+		// Build and create new budget
+		budgetReq, reqDiags := buildBudgetRequest(budgetMap, projID)
+		if len(reqDiags) > 0 {
+			return reqDiags
+		}
+
+		_, err = client.POST("/v3/budget", budgetReq)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to create Project budget",
+				Detail:   fmt.Sprintf("Error: %v\nProject: %v", err.Error(), projectID),
+			})
+			return diags
+		}
+	}
+
+	return diags
+}
+
 func resourceProjectDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
@@ -915,4 +1081,3 @@ func resourceProjectDelete(ctx context.Context, d *schema.ResourceData, m interf
 
 	return diags
 }
-
