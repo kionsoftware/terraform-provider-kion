@@ -354,7 +354,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 				ID            int     `json:"id"`
 				StartDatecode string  `json:"start_datecode"`
 				EndDatecode   string  `json:"end_datecode"`
-				Amount        float64 `json:"amount"`
+				Amount        float64 `json:"amount,omitempty"` // This field is not present when using monthly data
 			} `json:"config"`
 			Data []struct {
 				Amount          float64 `json:"amount"`
@@ -379,7 +379,19 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 	budgets := make([]map[string]interface{}, 0)
 	for _, budget := range budgetResp.Data {
 		budgetMap := make(map[string]interface{})
-		budgetMap["amount"] = budget.Config.Amount
+		// Calculate total amount from budget data entries when present
+		// The API doesn't return an amount field when using monthly data entries
+		var totalAmount float64
+		if len(budget.Data) > 0 {
+			// Sum up all monthly amounts
+			for _, data := range budget.Data {
+				totalAmount += data.Amount
+			}
+		} else {
+			// Use the config amount if no monthly data
+			totalAmount = budget.Config.Amount
+		}
+		budgetMap["amount"] = totalAmount
 		budgetMap["start_datecode"] = budget.Config.StartDatecode
 		budgetMap["end_datecode"] = budget.Config.EndDatecode
 
