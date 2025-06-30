@@ -881,3 +881,8 @@ func AlmostEqual(a, b, tolerance float64) bool {
 	}
 	return diff <= tolerance
 }
+
+// RoundToTwoDecimals rounds a float64 to 2 decimal places to avoid floating-point precision issues
+func RoundToTwoDecimals(amount float64) float64 {
+	return float64(int(amount*100+0.5)) / 100
+}

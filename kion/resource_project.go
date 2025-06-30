@@ -434,7 +434,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 			totalAmount = budget.Config.Amount
 		}
 		// Round to avoid floating-point precision issues
-		budgetMap["amount"] = roundToTwoDecimals(totalAmount)
+		budgetMap["amount"] = hc.RoundToTwoDecimals(totalAmount)
 		budgetMap["start_datecode"] = budget.Config.StartDatecode
 		budgetMap["end_datecode"] = budget.Config.EndDatecode
 
@@ -916,7 +916,3 @@ func resourceProjectDelete(ctx context.Context, d *schema.ResourceData, m interf
 	return diags
 }
 
-// roundToTwoDecimals rounds a float64 to 2 decimal places to avoid floating-point precision issues
-func roundToTwoDecimals(amount float64) float64 {
-	return float64(int(amount*100+0.5)) / 100
-}
