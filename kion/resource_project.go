@@ -508,7 +508,7 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 // Helper functions for budget operations
 func validateBudgetDates(startDatecode, endDatecode string) (time.Time, time.Time, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	
+
 	startDate, err := time.Parse("2006-01", startDatecode)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -542,7 +542,7 @@ func validateBudgetDates(startDatecode, endDatecode string) (time.Time, time.Tim
 
 func buildBudgetRequest(budgetMap map[string]interface{}, projectID int) (interface{}, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	
+
 	budgetReq := struct {
 		Amount           float64               `json:"amount"`
 		Data             []hc.BudgetDataCreate `json:"data,omitempty"`
@@ -699,7 +699,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 func handleBudgetUpdate(d *schema.ResourceData, client *hc.Client, projectID string) diag.Diagnostics {
 	var diags diag.Diagnostics
-	
+
 	// Get current budgets from Kion
 	resp := new(struct {
 		Data []struct {
