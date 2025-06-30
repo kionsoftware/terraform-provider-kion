@@ -113,6 +113,43 @@ resource "kion_project" "development_project" {
   }
 }
 
+# Create a production project with different settings
+resource "kion_project" "production_project" {
+  name                 = "Production Infrastructure"
+  description          = "Production environment infrastructure and services"
+  ou_id                = 3
+  permission_scheme_id = 3
+  default_aws_region   = "us-west-2"
+  auto_pay             = false
+
+  # Production project owners
+  owner_user_ids {
+    id = 12 # Production Lead
+  }
+
+  owner_user_group_ids {
+    id = 6 # Operations Team
+  }
+
+  # Production-specific labels
+  labels = {
+    "Environment" = "Production"
+    "CostCenter"  = "IT-5678"
+    "Team"        = "Operations"
+    "Critical"    = "Yes"
+  }
+
+  # Annual budget
+  budget {
+    start_datecode = "2024-01"
+    end_datecode   = "2025-01"
+    amount         = 240000 # $240,000 annual budget
+
+    # Distribute across two funding sources
+    funding_source_ids = [3, 4]
+  }
+}
+
 # Output project information
 output "development_project_details" {
   value = {
@@ -121,4 +158,13 @@ output "development_project_details" {
     archived = kion_project.development_project.archived
   }
   description = "Development project details"
+}
+
+output "production_project_details" {
+  value = {
+    id       = kion_project.production_project.id
+    name     = kion_project.production_project.name
+    archived = kion_project.production_project.archived
+  }
+  description = "Production project details"
 }
