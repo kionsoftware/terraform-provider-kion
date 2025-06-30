@@ -13,6 +13,14 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.25] - 2025-06-30
+
+### Fixed
+
+- Fixed budget amount calculation for projects using monthly budget data entries
+- Resolved perpetual drift issue where Terraform would detect changes in budget amounts
+- Added proper handling for Kion API responses that omit the 'amount' field when using monthly data
+
 ## [0.3.24] - 2024-05-08
 
 ### Fixed
