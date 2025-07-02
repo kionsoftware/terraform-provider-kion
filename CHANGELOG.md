@@ -13,7 +13,7 @@ Deprecated
 Removed
 Fixed
 
-## [0.3.25] - 2025-06-30
+## [0.3.25] - 2025-07-02
 
 ### Fixed
 
