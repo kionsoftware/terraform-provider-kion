@@ -76,7 +76,7 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 			},
 			"aws_iam_role_name": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true, // Not allowed to be changed, forces new item if changed.
 			},
 			"azure_role_definitions": {
