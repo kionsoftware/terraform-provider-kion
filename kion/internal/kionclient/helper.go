@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -245,6 +244,7 @@ func FieldsChanged(iOld, iNew interface{}, fields []string) (map[string]interfac
 // OptionalBool retrieves a boolean value from schema.ResourceData by its field name and
 // returns a pointer to that value. If the field is not set or is not a boolean, it returns nil.
 func OptionalBool(d *schema.ResourceData, fieldname string) *bool {
+	//lint:ignore SA1019 GetOkExists is deprecated but still needed for optional bool fields
 	b, ok := d.GetOkExists(fieldname)
 	if !ok {
 		return nil
@@ -260,6 +260,7 @@ func OptionalBool(d *schema.ResourceData, fieldname string) *bool {
 // OptionalInt retrieves an integer value from schema.ResourceData by its field name and
 // returns a pointer to that value. If the field is not set or is not an integer, it returns nil.
 func OptionalInt(d *schema.ResourceData, fieldname string) *int {
+	//lint:ignore SA1019 GetOkExists is deprecated but still needed for optional int fields
 	v, ok := d.GetOkExists(fieldname)
 	if !ok {
 		return nil
@@ -275,6 +276,7 @@ func OptionalInt(d *schema.ResourceData, fieldname string) *int {
 // OptionalValue retrieves a value from schema.ResourceData by its field name and returns a pointer to that value.
 // The function uses type assertion to handle different types like int, bool, and string.
 func OptionalValue[T any](d *schema.ResourceData, fieldname string) *T {
+	//lint:ignore SA1019 GetOkExists is deprecated but still needed for optional generic fields
 	v, ok := d.GetOkExists(fieldname)
 	if !ok {
 		return nil
@@ -715,78 +717,179 @@ func GetMoveProjectSettings(d *schema.ResourceData) *AccountMove {
 	}
 }
 
-// ValidateSpendReportRequirements validates spend report field dependencies and requirements.
-// It checks for proper date range validation, scope/scope_id dependencies, and scheduled report requirements.
-// Returns a slice of diagnostic errors if any validation fails.
-func ValidateSpendReportRequirements(d *schema.ResourceData) diag.Diagnostics {
-	var diags diag.Diagnostics
+// CalculateMonthsBetween calculates the number of months between two datecodes.
+// Datecodes are expected to be in "YYYY-MM" format.
+// The end date is exclusive (e.g., 2025-01 to 2025-07 = 6 months).
+func CalculateMonthsBetween(startDatecode, endDatecode string) int {
+	// Parse datecodes (format: "YYYY-MM")
+	startParts := strings.Split(startDatecode, "-")
+	endParts := strings.Split(endDatecode, "-")
 
-	// Validate date range requirements
-	if dateRange := d.Get("date_range").(string); dateRange == "custom" {
-		startDate := d.Get("start_date").(string)
-		endDate := d.Get("end_date").(string)
+	startYear, _ := strconv.Atoi(startParts[0])
+	startMonth, _ := strconv.Atoi(startParts[1])
+	endYear, _ := strconv.Atoi(endParts[0])
+	endMonth, _ := strconv.Atoi(endParts[1])
 
-		if startDate == "" {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "start_date is required when date_range is 'custom'",
-			})
-		}
-
-		if endDate == "" {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "end_date is required when date_range is 'custom'",
-			})
-		}
-
-		// If both dates are provided, validate that start_date comes before end_date
-		if startDate != "" && endDate != "" {
-			startTime, err1 := time.Parse("2006-01-02", startDate)
-			endTime, err2 := time.Parse("2006-01-02", endDate)
-
-			if err1 == nil && err2 == nil && !startTime.Before(endTime) {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "start_date must be before end_date",
-				})
-			}
-		}
-	}
-
-	// Validate scope requirements
-	scope := d.Get("scope").(string)
-	scopeId := d.Get("scope_id").(int)
-
-	if scope != "" && scopeId == 0 {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "scope_id is required when scope is set",
-		})
-	}
-
-	if scope == "" && scopeId != 0 {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "scope is required when scope_id is set",
-		})
-	}
-
-	// Validate scheduled report requirements
-	if scheduled := d.Get("scheduled").(bool); scheduled {
-		if freqList := d.Get("scheduled_frequency").([]interface{}); len(freqList) == 0 {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "scheduled_frequency is required when scheduled is true",
-			})
-		}
-	}
-
-	return diags
+	// Calculate total months (end date is exclusive)
+	months := (endYear-startYear)*12 + (endMonth - startMonth)
+	return months
 }
 
-// GetStringFromInterface safely extracts a string value from an interface{}
-// If the value is nil, it returns an empty string. Otherwise, it converts the value to a string.
+// AddMonthsToDatecode adds a specified number of months to a datecode.
+// Datecodes are expected to be in "YYYY-MM" format.
+func AddMonthsToDatecode(datecode string, months int) string {
+	parts := strings.Split(datecode, "-")
+	year, _ := strconv.Atoi(parts[0])
+	month, _ := strconv.Atoi(parts[1])
+
+	month += months
+	for month > 12 {
+		month -= 12
+		year++
+	}
+
+	return fmt.Sprintf("%04d-%02d", year, month)
+}
+
+// IsAutoGeneratedBudgetData checks if budget data appears to be auto-generated by the API
+// rather than explicitly specified by the user. This helps prevent drift in Terraform state
+// when the API automatically creates monthly budget entries.
+func IsAutoGeneratedBudgetData(startDatecode, endDatecode string, totalAmount float64, budgetData []struct {
+	Amount          float64 `json:"amount"`
+	Datecode        string  `json:"datecode"`
+	FundingSourceID int     `json:"funding_source_id"`
+	Priority        int     `json:"priority"`
+}, fundingSourceIDs []int) bool {
+	months := CalculateMonthsBetween(startDatecode, endDatecode)
+	if months == 0 {
+		return false
+	}
+
+	// For single funding source
+	if len(fundingSourceIDs) == 1 {
+		if len(budgetData) != months {
+			return false
+		}
+
+		expectedMonthlyAmount := totalAmount / float64(months)
+		var sum float64
+
+		for i, data := range budgetData {
+			// Check if datecode matches expected sequence
+			expectedDatecode := AddMonthsToDatecode(startDatecode, i)
+			if data.Datecode != expectedDatecode {
+				return false
+			}
+
+			// Check funding source
+			if data.FundingSourceID != fundingSourceIDs[0] {
+				return false
+			}
+
+			// Check priority
+			if data.Priority != 1 {
+				return false
+			}
+
+			// Check amount - allow for rounding on last month
+			if i < len(budgetData)-1 {
+				if !AlmostEqual(data.Amount, expectedMonthlyAmount, 0.01) {
+					return false
+				}
+				sum += data.Amount
+			} else {
+				expectedLastAmount := totalAmount - sum
+				if !AlmostEqual(data.Amount, expectedLastAmount, 0.01) {
+					return false
+				}
+			}
+		}
+		return true
+	}
+
+	// For multiple funding sources
+	if len(fundingSourceIDs) > 1 {
+		expectedEntriesPerFunding := months
+		if len(budgetData) != expectedEntriesPerFunding*len(fundingSourceIDs) {
+			return false
+		}
+
+		// Group entries by datecode
+		entriesByDate := make(map[string][]struct {
+			Amount          float64
+			FundingSourceID int
+			Priority        int
+		})
+
+		for _, data := range budgetData {
+			entriesByDate[data.Datecode] = append(entriesByDate[data.Datecode], struct {
+				Amount          float64
+				FundingSourceID int
+				Priority        int
+			}{
+				Amount:          data.Amount,
+				FundingSourceID: data.FundingSourceID,
+				Priority:        data.Priority,
+			})
+		}
+
+		// Check each month
+		expectedMonthlyAmountPerSource := totalAmount / float64(months) / float64(len(fundingSourceIDs))
+
+		for i := 0; i < months; i++ {
+			datecode := AddMonthsToDatecode(startDatecode, i)
+			entries, ok := entriesByDate[datecode]
+			if !ok || len(entries) != len(fundingSourceIDs) {
+				return false
+			}
+
+			// Check that we have entries for all funding sources
+			foundSources := make(map[int]bool)
+			for _, entry := range entries {
+				foundSources[entry.FundingSourceID] = true
+
+				// Check amount (with tolerance for rounding)
+				if i < months-1 {
+					if !AlmostEqual(entry.Amount, expectedMonthlyAmountPerSource, 0.01) {
+						return false
+					}
+				}
+
+				// Check priority is within expected range
+				if entry.Priority < 1 || entry.Priority > len(fundingSourceIDs) {
+					return false
+				}
+			}
+
+			// Ensure all funding sources are represented
+			for _, fsID := range fundingSourceIDs {
+				if !foundSources[fsID] {
+					return false
+				}
+			}
+		}
+
+		return true
+	}
+
+	return false
+}
+
+// AlmostEqual checks if two floating-point numbers are approximately equal within a tolerance.
+// This helps handle floating-point precision issues that can cause false drift detection.
+func AlmostEqual(a, b, tolerance float64) bool {
+	diff := a - b
+	if diff < 0 {
+		diff = -diff
+	}
+	return diff <= tolerance
+}
+
+// RoundToTwoDecimals rounds a float64 to 2 decimal places to avoid floating-point precision issues
+func RoundToTwoDecimals(amount float64) float64 {
+	return float64(int(amount*100+0.5)) / 100
+}
+
 func GetStringFromInterface(v interface{}) string {
 	if v == nil {
 		return ""
@@ -795,24 +898,4 @@ func GetStringFromInterface(v interface{}) string {
 		return str
 	}
 	return fmt.Sprintf("%v", v)
-}
-
-// FindProjectExemptionByID searches for a project cloud access role exemption by ID in a list
-func FindProjectExemptionByID(exemptions []ProjectCloudAccessRoleExemptionV1, id int) *ProjectCloudAccessRoleExemptionV1 {
-	for _, exemption := range exemptions {
-		if exemption.ID == id {
-			return &exemption
-		}
-	}
-	return nil
-}
-
-// FindOUExemptionByID searches for an OU cloud access role exemption by ID in a list
-func FindOUExemptionByID(exemptions []OUCloudAccessRoleExemptionV1, id int) *OUCloudAccessRoleExemptionV1 {
-	for _, exemption := range exemptions {
-		if exemption.ID == id {
-			return &exemption
-		}
-	}
-	return nil
 }

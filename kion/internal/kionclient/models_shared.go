@@ -1,12 +1,5 @@
 package kionclient
 
-import "time"
-
-// OptionalTime is a wrapper for time.Time that can be null
-type OptionalTime struct {
-	time.Time
-}
-
 // Creation .
 type Creation struct {
 	RecordID int `json:"record_id"`
