@@ -4,14 +4,14 @@ page_title: "kion_billing_source_aws Resource - terraform-provider-kion"
 subcategory: ""
 description: |-
   Creates and manages an AWS commercial billing source.
-  AWS billing sources enable cost management and account management capabilities by connecting Kion to AWS billing data. This resource creates commercial AWS billing sources (account type 1). For GovCloud billing sources, use the kion_billing_source_aws_govcloud resource.
+  AWS billing sources enable cost management and account management capabilities by connecting Kion to AWS billing data. This resource creates commercial AWS billing sources (account type 1).
 ---
 
 # kion_billing_source_aws (Resource)
 
 Creates and manages an AWS commercial billing source.
 
-AWS billing sources enable cost management and account management capabilities by connecting Kion to AWS billing data. This resource creates commercial AWS billing sources (account type 1). For GovCloud billing sources, use the `kion_billing_source_aws_govcloud` resource.
+AWS billing sources enable cost management and account management capabilities by connecting Kion to AWS billing data. This resource creates commercial AWS billing sources (account type 1).
 
 ## Example Usage
 
@@ -22,7 +22,7 @@ resource "kion_billing_source_aws" "example" {
   aws_account_number = "123456789012"
   billing_start_date = "2024-01"
   account_creation   = true
-  
+
   # CUR configuration
   billing_report_type = "cur"
   cur_bucket          = "my-billing-reports-bucket"
@@ -36,8 +36,9 @@ resource "kion_billing_source_aws" "focus_example" {
   name               = "AWS with FOCUS Reports"
   aws_account_number = "987654321098"
   billing_start_date = "2024-01"
-  
+
   # FOCUS billing configuration
+  billing_report_type                 = "focus"
   focus_billing_bucket_account_number = "987654321098"
   focus_billing_report_bucket         = "my-focus-reports-bucket"
   focus_billing_report_bucket_region  = "us-east-1"
@@ -51,11 +52,11 @@ resource "kion_billing_source_aws" "role_based" {
   aws_account_number            = "111222333444"
   billing_bucket_account_number = "555666777888" # Different account holds the billing data
   billing_start_date            = "2024-01"
-  
+
   # Use IAM role instead of access keys
   bucket_access_role = "BillingReportAccessRole"
   linked_role        = "OrganizationAccountAccessRole"
-  
+
   # CUR configuration
   billing_report_type = "cur"
   cur_bucket          = "cross-account-billing-reports"
@@ -69,18 +70,18 @@ resource "kion_billing_source_aws" "key_based" {
   name               = "AWS with Access Keys"
   aws_account_number = "999888777666"
   billing_start_date = "2024-01"
-  
+
   # Authentication via access keys
   key_id     = var.aws_access_key_id
   key_secret = var.aws_secret_access_key
-  
+
   # Skip validation during creation
   skip_validation = true
-  
+
   # DBR configuration
-  billing_report_type = "dbrrt"
-  mr_bucket           = "detailed-billing-reports"
-  billing_region      = "us-west-2"
+  billing_report_type     = "dbrrt"
+  detailed_billing_bucket = "detailed-billing-reports"
+  billing_region          = "us-west-2"
 }
 ```
 
@@ -98,12 +99,13 @@ resource "kion_billing_source_aws" "key_based" {
 - `account_creation` (Boolean) When true, Kion is able to automatically create accounts in this billing source.
 - `billing_bucket_account_number` (String) The AWS account number of the S3 bucket holding the billing reports. Defaults to aws_account_number if not specified.
 - `billing_region` (String) The region of the S3 bucket holding billing reports (both CUR and DBR reports).
-- `billing_report_type` (String) The billing report type to use. Options: 'none' (no proprietary billing report), 'cur' (AWS Cost and Usage Report), 'dbrrt' (AWS Detailed Billing Report with Resources and Tags).
+- `billing_report_type` (String) The billing report type to use. Options: 'cur' (AWS Cost and Usage Report), 'dbrrt' (AWS Detailed Billing Report with Resources and Tags), 'focus' (FOCUS billing reports).
 - `bucket_access_role` (String) An alternate IAM role for accessing the billing buckets (optional).
 - `cur_bucket` (String) The name of the S3 bucket containing the Cost and Usage Reports. Required if billing_report_type is 'cur'.
 - `cur_bucket_region` (String) The region of the S3 bucket containing the Cost and Usage Reports. Required if billing_report_type is 'cur'.
 - `cur_name` (String) The name of the Cost and Usage Report. Required if billing_report_type is 'cur'.
 - `cur_prefix` (String) The report prefix for the Cost and Usage Reports. Required if billing_report_type is 'cur'.
+- `detailed_billing_bucket` (String) The name of the S3 bucket containing the detailed billing reports. Required if billing_report_type is 'dbrrt'.
 - `focus_billing_bucket_account_number` (String) The AWS account number of the S3 bucket holding the FOCUS reports.
 - `focus_billing_report_bucket` (String) The name of the S3 bucket containing the FOCUS reports.
 - `focus_billing_report_bucket_region` (String) The region of the S3 bucket containing the FOCUS reports.
@@ -113,7 +115,6 @@ resource "kion_billing_source_aws" "key_based" {
 - `key_id` (String, Sensitive) The AWS Access Key ID used to access the billing S3 bucket.
 - `key_secret` (String, Sensitive) The AWS Secret Access Key used to access the billing S3 bucket.
 - `linked_role` (String) The name of an existing IAM role that has full administrator permissions. This role will be prefilled as the linked role when creating or importing new accounts under this billing source.
-- `mr_bucket` (String) The name of the S3 bucket containing the monthly reports (detailed billing reports). Required if billing_report_type is 'dbrrt'.
 - `skip_validation` (Boolean) When true, will skip validating the connection to the billing source during creation.
 
 ### Read-Only

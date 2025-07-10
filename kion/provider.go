@@ -51,7 +51,6 @@ func Provider() *schema.Provider {
 			"kion_azure_policy":                      resourceAzurePolicy(),
 			"kion_azure_role":                        resourceAzureRole(),
 			"kion_billing_source_aws":                resourceBillingSourceAws(),
-			"kion_billing_source_aws_govcloud":       resourceBillingSourceAwsGovcloud(),
 			"kion_billing_source_gcp":                resourceBillingSourceGcp(),
 			"kion_billing_source_oci":                resourceBillingSourceOci(),
 			"kion_cloud_rule":                        resourceCloudRule(),

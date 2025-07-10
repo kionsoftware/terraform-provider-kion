@@ -125,7 +125,6 @@ output "gcp_admin_role_id" {
 
 ### Required
 
-- `aws_iam_role_name` (String)
 - `name` (String)
 - `ou_id` (Number)
 
@@ -134,6 +133,7 @@ output "gcp_admin_role_id" {
 - `aws_iam_path` (String)
 - `aws_iam_permissions_boundary` (Number)
 - `aws_iam_policies` (Block Set) (see [below for nested schema](#nestedblock--aws_iam_policies))
+- `aws_iam_role_name` (String)
 - `azure_role_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_role_definitions))
 - `gcp_iam_roles` (Block Set) (see [below for nested schema](#nestedblock--gcp_iam_roles))
 - `last_updated` (String)

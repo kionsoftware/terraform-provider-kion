@@ -11,7 +11,7 @@ type ProjectCloudAccessRoleResponse struct {
 		ProjectCloudAccessRole    struct {
 			ApplyToAllAccounts  bool   `json:"apply_to_all_accounts"`
 			AwsIamPath          string `json:"aws_iam_path"`
-			AwsIamRoleName      string `json:"aws_iam_role_name"`
+			AwsIamRoleName      *string `json:"aws_iam_role_name,omitempty"`
 			FutureAccounts      bool   `json:"future_accounts"`
 			ID                  int    `json:"id"`
 			LongTermAccessKeys  bool   `json:"long_term_access_keys"`
@@ -33,7 +33,7 @@ type ProjectCloudAccessRoleCreate struct {
 	AwsIamPath                string `json:"aws_iam_path"`
 	AwsIamPermissionsBoundary *int   `json:"aws_iam_permissions_boundary"`
 	AwsIamPolicies            *[]int `json:"aws_iam_policies"`
-	AwsIamRoleName            string `json:"aws_iam_role_name"`
+	AwsIamRoleName            *string `json:"aws_iam_role_name,omitempty"`
 	AzureRoleDefinitions      *[]int `json:"azure_role_definitions"`
 	FutureAccounts            bool   `json:"future_accounts"`
 	GCPIamRoles               *[]int `json:"gcp_iam_roles"`

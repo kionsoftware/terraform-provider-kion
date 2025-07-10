@@ -28,6 +28,9 @@ func resourceBillingSourceOci() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: func(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+			return validateBillingSourceOciFields(diff)
+		},
 		Schema: map[string]*schema.Schema{
 			// Required fields
 			"name": {
@@ -108,33 +111,7 @@ func resourceBillingSourceOci() *schema.Resource {
 }
 
 func resourceBillingSourceOciCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	c := m.(*hc.Client)
-
-	// Validate conditional requirements
-	// If any API authentication field is provided, all should be provided
-	apiAuthFields := []string{"user_ocid", "fingerprint", "private_key"}
-	providedAuthFields := 0
-	for _, field := range apiAuthFields {
-		if _, ok := d.GetOk(field); ok {
-			providedAuthFields++
-		}
-	}
-
-	if providedAuthFields > 0 && providedAuthFields < len(apiAuthFields) {
-		missingFields := []string{}
-		for _, field := range apiAuthFields {
-			if _, ok := d.GetOk(field); !ok {
-				missingFields = append(missingFields, field)
-			}
-		}
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Incomplete API authentication configuration",
-			Detail:   fmt.Sprintf("When providing OCI API authentication, all of the following fields must be provided: user_ocid, fingerprint, private_key. Missing fields: %v", missingFields),
-		})
-		return diags
-	}
 
 	// Build the request payload
 	payload := hc.OCIBillingSourceCreate{
@@ -207,45 +184,30 @@ func resourceBillingSourceOciRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	// Update the resource data
-	if err := d.Set("name", billingSource.Name); err != nil {
-		return diag.FromErr(err)
-	}
+	// Update the resource data using SafeSet helper
+	diags = append(diags, hc.SafeSet(d, "name", billingSource.Name, "Unable to set name")...)
+	
 	// AccountTypeID is not returned in GET, so we preserve it from state
 	// Only set it if it's not already set (e.g., during import)
 	if billingSource.AccountTypeID != 0 {
-		if err := d.Set("account_type_id", billingSource.AccountTypeID); err != nil {
-			return diag.FromErr(err)
-		}
+		diags = append(diags, hc.SafeSet(d, "account_type_id", billingSource.AccountTypeID, "Unable to set account_type_id")...)
 	}
-	if err := d.Set("billing_start_date", billingSource.BillingStartDate); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("tenancy_ocid", billingSource.TenancyOCID); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("user_ocid", billingSource.UserOCID); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("fingerprint", billingSource.Fingerprint); err != nil {
-		return diag.FromErr(err)
-	}
+	
+	diags = append(diags, hc.SafeSet(d, "billing_start_date", billingSource.BillingStartDate, "Unable to set billing_start_date")...)
+	diags = append(diags, hc.SafeSet(d, "tenancy_ocid", billingSource.TenancyOCID, "Unable to set tenancy_ocid")...)
+	diags = append(diags, hc.SafeSet(d, "user_ocid", billingSource.UserOCID, "Unable to set user_ocid")...)
+	diags = append(diags, hc.SafeSet(d, "fingerprint", billingSource.Fingerprint, "Unable to set fingerprint")...)
+	
 	// Note: We don't set private_key back as it's sensitive and not returned by the API
-	if err := d.Set("region", billingSource.Region); err != nil {
-		return diag.FromErr(err)
-	}
+	diags = append(diags, hc.SafeSet(d, "region", billingSource.Region, "Unable to set region")...)
+	
 	// IsParentTenancy is not returned in GET, so we preserve it from state
 	if billingSource.IsParentTenancy {
-		if err := d.Set("is_parent_tenancy", billingSource.IsParentTenancy); err != nil {
-			return diag.FromErr(err)
-		}
+		diags = append(diags, hc.SafeSet(d, "is_parent_tenancy", billingSource.IsParentTenancy, "Unable to set is_parent_tenancy")...)
 	}
-	if err := d.Set("use_focus_reports", billingSource.UseFOCUSReports); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("use_proprietary_reports", billingSource.UseProprietaryReports); err != nil {
-		return diag.FromErr(err)
-	}
+	
+	diags = append(diags, hc.SafeSet(d, "use_focus_reports", billingSource.UseFOCUSReports, "Unable to set use_focus_reports")...)
+	diags = append(diags, hc.SafeSet(d, "use_proprietary_reports", billingSource.UseProprietaryReports, "Unable to set use_proprietary_reports")...)
 
 	return diags
 }
@@ -346,10 +308,31 @@ func resourceBillingSourceOciDelete(ctx context.Context, d *schema.ResourceData,
 
 // Helper function to read an OCI billing source
 func readOCIBillingSource(c *hc.Client, id string) (*hc.OCIBillingSource, error) {
-	var resp hc.BillingSource
-	err := c.GET(fmt.Sprintf("/v4/billing-source/%s", id), &resp)
+	// Get billing source by ID using the list endpoint since direct ID endpoint is inconsistent
+	billingSourceID, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse billing source ID: %v", err)
+	}
+
+	listResp := new(hc.BillingSourceListResponse)
+	err = c.GET("/v4/billing-source", listResp)
 	if err != nil {
 		return nil, err
+	}
+
+	// Find the billing source with matching ID
+	var resp hc.BillingSource
+	found := false
+	for _, bs := range listResp.Data.Items {
+		if bs.ID == uint(billingSourceID) {
+			resp = bs
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, fmt.Errorf("billing source %s not found", id)
 	}
 
 	// Check if this is an OCI billing source
@@ -380,4 +363,27 @@ func mustAtoi(s string) int {
 		panic(err)
 	}
 	return i
+}
+
+func validateBillingSourceOciFields(diff *schema.ResourceDiff) error {
+	// Validate that if any API authentication field is provided, all should be provided
+	apiAuthFields := []string{"user_ocid", "fingerprint", "private_key"}
+	providedAuthFields := 0
+	for _, field := range apiAuthFields {
+		if _, ok := diff.GetOk(field); ok {
+			providedAuthFields++
+		}
+	}
+
+	if providedAuthFields > 0 && providedAuthFields < len(apiAuthFields) {
+		missingFields := []string{}
+		for _, field := range apiAuthFields {
+			if _, ok := diff.GetOk(field); !ok {
+				missingFields = append(missingFields, field)
+			}
+		}
+		return fmt.Errorf("when providing OCI API authentication, all of the following fields must be provided: user_ocid, fingerprint, private_key. Missing fields: %v", missingFields)
+	}
+
+	return nil
 }

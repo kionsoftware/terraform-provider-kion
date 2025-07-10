@@ -29,6 +29,9 @@ func resourceBillingSourceGcp() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: func(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+			return validateBillingSourceGcpFields(diff)
+		},
 		Schema: map[string]*schema.Schema{
 			// Required fields
 			"name": {
@@ -124,27 +127,7 @@ func resourceBillingSourceGcp() *schema.Resource {
 }
 
 func resourceBillingSourceGcpCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
 	c := m.(*hc.Client)
-
-	// Validate conditional requirements
-	if d.Get("use_focus").(bool) {
-		// When use_focus is true, focus_view_name should be provided
-		if v, ok := d.GetOk("big_query_export"); ok {
-			bqList := v.([]interface{})
-			if len(bqList) > 0 {
-				bq := bqList[0].(map[string]interface{})
-				if focusViewName, ok := bq["focus_view_name"].(string); !ok || focusViewName == "" {
-					diags = append(diags, diag.Diagnostic{
-						Severity: diag.Error,
-						Summary:  "Missing required field",
-						Detail:   "focus_view_name is required in big_query_export when use_focus is true. This specifies the name of the FOCUS view in BigQuery.",
-					})
-					return diags
-				}
-			}
-		}
-	}
 
 	// Build BigQuery export configuration
 	bigQueryExport := hc.GCPBigQueryExport{}
@@ -235,9 +218,7 @@ func resourceBillingSourceGcpRead(ctx context.Context, d *schema.ResourceData, m
 		// Keep the existing value from state
 		billingSource.BillingStartDate = d.Get("billing_start_date").(string)
 	}
-	if err := d.Set("billing_start_date", billingSource.BillingStartDate); err != nil {
-		return diag.FromErr(err)
-	}
+	diags = append(diags, hc.SafeSet(d, "billing_start_date", billingSource.BillingStartDate, "Unable to set billing_start_date")...)
 
 	// Set BigQuery export configuration
 	bigQueryExport := []map[string]interface{}{
@@ -249,27 +230,17 @@ func resourceBillingSourceGcpRead(ctx context.Context, d *schema.ResourceData, m
 			"focus_view_name": billingSource.BigQueryExport.FOCUSViewName,
 		},
 	}
-	if err := d.Set("big_query_export", bigQueryExport); err != nil {
-		return diag.FromErr(err)
-	}
+	diags = append(diags, hc.SafeSet(d, "big_query_export", bigQueryExport, "Unable to set big_query_export")...)
 
 	// AccountTypeID is not returned in GET, so we preserve it from state
 	// Only set it if it's not already set (e.g., during import)
 	if billingSource.AccountTypeID != 0 {
-		if err := d.Set("account_type_id", billingSource.AccountTypeID); err != nil {
-			return diag.FromErr(err)
-		}
+		diags = append(diags, hc.SafeSet(d, "account_type_id", billingSource.AccountTypeID, "Unable to set account_type_id")...)
 	}
 
-	if err := d.Set("is_reseller", billingSource.IsReseller); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("use_focus", billingSource.UseFOCUSReports); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("use_proprietary", billingSource.UseProprietaryReports); err != nil {
-		return diag.FromErr(err)
-	}
+	diags = append(diags, hc.SafeSet(d, "is_reseller", billingSource.IsReseller, "Unable to set is_reseller")...)
+	diags = append(diags, hc.SafeSet(d, "use_focus", billingSource.UseFOCUSReports, "Unable to set use_focus")...)
+	diags = append(diags, hc.SafeSet(d, "use_proprietary", billingSource.UseProprietaryReports, "Unable to set use_proprietary")...)
 
 	return diags
 }
@@ -342,10 +313,31 @@ func resourceBillingSourceGcpDelete(ctx context.Context, d *schema.ResourceData,
 
 // Helper function to read a GCP billing source
 func readGCPBillingSource(c *hc.Client, id string) (*hc.GCPBillingSource, error) {
-	var resp hc.BillingSource
-	err := c.GET(fmt.Sprintf("/v4/billing-source/%s", id), &resp)
+	// Get billing source by ID using the list endpoint since direct ID endpoint is inconsistent
+	billingSourceID, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse billing source ID: %v", err)
+	}
+
+	listResp := new(hc.BillingSourceListResponse)
+	err = c.GET("/v4/billing-source", listResp)
 	if err != nil {
 		return nil, err
+	}
+
+	// Find the billing source with matching ID
+	var resp hc.BillingSource
+	found := false
+	for _, bs := range listResp.Data.Items {
+		if bs.ID == uint(billingSourceID) {
+			resp = bs
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, fmt.Errorf("billing source %s not found", id)
 	}
 
 	// Check if this is a GCP billing source
@@ -367,4 +359,21 @@ func readGCPBillingSource(c *hc.Client, id string) (*hc.GCPBillingSource, error)
 		UseFOCUSReports:       resp.UseFocusReports,
 		UseProprietaryReports: resp.UseProprietaryReports,
 	}, nil
+}
+
+func validateBillingSourceGcpFields(diff *schema.ResourceDiff) error {
+	// Validate that focus_view_name is provided when use_focus is true
+	if diff.Get("use_focus").(bool) {
+		if v, ok := diff.GetOk("big_query_export"); ok {
+			bqList := v.([]interface{})
+			if len(bqList) > 0 {
+				bq := bqList[0].(map[string]interface{})
+				if focusViewName, ok := bq["focus_view_name"].(string); !ok || focusViewName == "" {
+					return fmt.Errorf("focus_view_name is required in big_query_export when use_focus is true")
+				}
+			}
+		}
+	}
+
+	return nil
 }
