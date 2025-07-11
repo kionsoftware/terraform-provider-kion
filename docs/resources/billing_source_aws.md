@@ -5,6 +5,7 @@ subcategory: ""
 description: |-
   Creates and manages an AWS commercial billing source.
   AWS billing sources enable cost management and account management capabilities by connecting Kion to AWS billing data. This resource creates commercial AWS billing sources (account type 1).
+  WARNING: Updates to this resource use a private API endpoint (/v1/payer) that may change without notice. Use at your own risk.
 ---
 
 # kion_billing_source_aws (Resource)
@@ -12,6 +13,8 @@ description: |-
 Creates and manages an AWS commercial billing source.
 
 AWS billing sources enable cost management and account management capabilities by connecting Kion to AWS billing data. This resource creates commercial AWS billing sources (account type 1).
+
+**WARNING**: Updates to this resource use a private API endpoint (/v1/payer) that may change without notice. Use at your own risk.
 
 ## Example Usage
 

@@ -5,6 +5,7 @@ subcategory: ""
 description: |-
   Creates and manages a GCP (Google Cloud Platform) billing source in Kion.
   GCP billing sources are used to import billing data from Google Cloud Platform projects into Kion for cost management and reporting purposes. The billing data is exported from BigQuery where Google Cloud exports billing information.
+  WARNING: Updates to this resource use a private API endpoint that may change without notice. Use at your own risk.
 ---
 
 # kion_billing_source_gcp (Resource)
@@ -12,6 +13,8 @@ description: |-
 Creates and manages a GCP (Google Cloud Platform) billing source in Kion.
 
 GCP billing sources are used to import billing data from Google Cloud Platform projects into Kion for cost management and reporting purposes. The billing data is exported from BigQuery where Google Cloud exports billing information.
+
+**WARNING**: Updates to this resource use a private API endpoint that may change without notice. Use at your own risk.
 
 ## Example Usage
 
