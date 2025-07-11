@@ -1,110 +1,176 @@
-# Create AWS cloud access role for development project
-resource "kion_project_cloud_access_role" "dev_aws_role" {
-  name                   = "dev-aws-admin"
-  project_id             = 10
-  aws_iam_role_name      = "DevAWSAdmin"
-  aws_iam_path           = "/kion/dev/"
+# Basic Project Cloud Access Role Example
+resource "kion_project_cloud_access_role" "example" {
+  name       = "example-project-car"
+  project_id = 1
+  
+  # Basic access permissions
   web_access             = true
   short_term_access_keys = true
   long_term_access_keys  = false
-
-  # Apply to all current and future accounts
+  
+  # Apply to all accounts
   apply_to_all_accounts = true
-  future_accounts       = true
-
-  # AWS IAM policies
-  aws_iam_policies {
-    id = 100  # Developer access policy
-  }
-  aws_iam_policies {
-    id = 101  # CloudWatch access policy
-  }
-
-  aws_iam_permissions_boundary = 200  # Developer boundary
-
-  # Assign to development team
+  
+  # Assign to users and groups
   users {
-    id = 15  # Lead Developer
+    id = 1
   }
   user_groups {
-    id = 25  # Development Team
+    id = 1
   }
 }
 
-# Create Azure cloud access role for production project
-resource "kion_project_cloud_access_role" "prod_azure_role" {
-  name                   = "prod-azure-admin"
-  project_id             = 11
-  aws_iam_role_name      = "ProdAzureAdmin"  # Required even for Azure roles
+# AWS-focused Project Cloud Access Role
+resource "kion_project_cloud_access_role" "aws_admin" {
+  name              = "aws-admin-role"
+  project_id        = 1
+  aws_iam_role_name = "AdminRole"  # Only needed if this role will be used for AWS accounts
+  aws_iam_path      = "/kion/"
+  
+  # AWS access types
   web_access             = true
-
+  short_term_access_keys = true
+  long_term_access_keys  = false
+  
   # Apply to specific accounts
   accounts {
-    id = 50  # Production Azure subscription
+    id = 1
   }
   accounts {
-    id = 51  # DR Azure subscription
+    id = 2
   }
+  
+  # Include future accounts
+  future_accounts = true
+  
+  # AWS IAM policies
+  aws_iam_policies {
+    id = 1
+  }
+  aws_iam_policies {
+    id = 2
+  }
+  
+  # AWS permissions boundary
+  aws_iam_permissions_boundary = 1
+  
+  # Assign to users and groups
+  users {
+    id = 1
+  }
+  user_groups {
+    id = 1
+  }
+}
 
+# Azure-focused Project Cloud Access Role
+resource "kion_project_cloud_access_role" "azure_admin" {
+  name       = "azure-admin-role"
+  project_id = 2
+  web_access = true
+  
+  # Apply to specific accounts
+  accounts {
+    id = 3
+  }
+  accounts {
+    id = 4
+  }
+  
   # Azure role definitions
   azure_role_definitions {
-    id = 300  # Azure Administrator
+    id = 1
   }
   azure_role_definitions {
-    id = 301  # Azure Security Admin
+    id = 2
   }
-
-  # Assign to production team
-  users {
-    id = 20  # Production Lead
-  }
+  
+  # Assign to groups
   user_groups {
-    id = 30  # Production Team
+    id = 2
   }
 }
 
-# Create GCP cloud access role for analytics project
-resource "kion_project_cloud_access_role" "analytics_gcp_role" {
-  name                   = "analytics-gcp-admin"
-  project_id             = 12
-  aws_iam_role_name      = "AnalyticsGCPAdmin"  # Required even for GCP roles
-  web_access             = true
-
-  # Apply to specific accounts and future accounts
-  accounts {
-    id = 70  # Analytics GCP project
-  }
-  future_accounts = true
-
+# GCP-focused Project Cloud Access Role
+resource "kion_project_cloud_access_role" "gcp_admin" {
+  name       = "gcp-admin-role"
+  project_id = 3
+  web_access = true
+  
+  # Apply to all accounts and future accounts
+  apply_to_all_accounts = true
+  future_accounts       = true
+  
   # GCP IAM roles
   gcp_iam_roles {
-    id = 400  # BigQuery Admin
+    id = 1
   }
   gcp_iam_roles {
-    id = 401  # Storage Admin
+    id = 2
   }
-
-  # Assign to analytics team
+  
+  # Assign to users and groups
   users {
-    id = 25  # Analytics Lead
+    id = 2
   }
   user_groups {
-    id = 35  # Analytics Team
+    id = 2
   }
 }
 
-# Output role information
-output "dev_aws_role_id" {
-  value       = kion_project_cloud_access_role.dev_aws_role.id
-  description = "Development AWS role ID"
+# Multi-cloud Project Cloud Access Role
+resource "kion_project_cloud_access_role" "multi_cloud" {
+  name              = "multi-cloud-role"
+  project_id        = 4
+  aws_iam_role_name = "CrossAccountRole"  # Only needed because this role includes AWS permissions
+  
+  # Access types
+  web_access             = true
+  short_term_access_keys = true
+  long_term_access_keys  = false
+  
+  # Apply to all accounts
+  apply_to_all_accounts = true
+  future_accounts       = true
+  
+  # AWS permissions
+  aws_iam_policies {
+    id = 1
+  }
+  
+  # Azure permissions
+  azure_role_definitions {
+    id = 1
+  }
+  
+  # GCP permissions
+  gcp_iam_roles {
+    id = 1
+  }
+  
+  # Assign to users
+  users {
+    id = 1
+  }
 }
 
-output "prod_azure_role_id" {
-  value       = kion_project_cloud_access_role.prod_azure_role.id
-  description = "Production Azure role ID"
+# Outputs
+output "example_id" {
+  value = kion_project_cloud_access_role.example.id
 }
 
-output "analytics_gcp_role_id" {
-  value       = kion_project_cloud_access_role.analytics_gcp_role.id
-  description = "Analytics GCP role ID"
+output "aws_admin_id" {
+  value = kion_project_cloud_access_role.aws_admin.id
+}
+
+output "azure_admin_id" {
+  value = kion_project_cloud_access_role.azure_admin.id
+}
+
+output "gcp_admin_id" {
+  value = kion_project_cloud_access_role.gcp_admin.id
+}
+
+output "multi_cloud_id" {
+  value = kion_project_cloud_access_role.multi_cloud.id
 }

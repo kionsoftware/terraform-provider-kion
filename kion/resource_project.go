@@ -41,7 +41,7 @@ func resourceProject() *schema.Resource {
 						declaredAmount := budgetMap["amount"].(float64)
 						if !hc.AlmostEqual(monthlyTotal, declaredAmount, 0.01) {
 							return fmt.Errorf(
-								"Budget #%d: The sum of monthly budget data amounts (%.2f) does not match the declared budget amount (%.2f). Please ensure they match.",
+								"budget #%d: the sum of monthly budget data amounts (%.2f) does not match the declared budget amount (%.2f)",
 								i+1, monthlyTotal, declaredAmount,
 							)
 						}

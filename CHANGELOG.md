@@ -13,6 +13,20 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.26] - 2025-07-11
+
+### Changed
+
+- Made `aws_iam_role_name` optional in `kion_ou_cloud_access_role` and `kion_project_cloud_access_role` resources
+- Cloud access roles can now be created without specifying an AWS IAM role name
+- Updated API models to use optional string pointers with proper nil handling
+
+### Fixed
+
+- Fixed linting warnings for deprecated `GetOkExists` usage by adding appropriate ignore comments
+- Fixed error message formatting to follow Go conventions (lowercase, no punctuation)
+- Added proper `omitempty` JSON tags for optional fields
+
 ## [0.3.25] - 2025-07-02
 
 ### Fixed

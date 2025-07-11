@@ -76,7 +76,7 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 			},
 			"aws_iam_role_name": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true, // Not allowed to be changed, forces new item if changed.
 			},
 			"azure_role_definitions": {
@@ -167,7 +167,7 @@ func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.Resourc
 		AwsIamPath:                d.Get("aws_iam_path").(string),
 		AwsIamPermissionsBoundary: hc.FlattenIntPointer(d, "aws_iam_permissions_boundary"),
 		AwsIamPolicies:            hc.FlattenGenericIDPointer(d, "aws_iam_policies"),
-		AwsIamRoleName:            d.Get("aws_iam_role_name").(string),
+		AwsIamRoleName:            hc.FlattenStringPointer(d, "aws_iam_role_name"),
 		AzureRoleDefinitions:      hc.FlattenGenericIDPointer(d, "azure_role_definitions"),
 		FutureAccounts:            d.Get("future_accounts").(bool),
 		GCPIamRoles:               hc.FlattenGenericIDPointer(d, "gcp_iam_roles"),
@@ -227,9 +227,14 @@ func resourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.ResourceD
 	item := resp.Data
 
 	data := map[string]interface{}{
-		"apply_to_all_accounts":        item.ProjectCloudAccessRole.ApplyToAllAccounts,
-		"aws_iam_path":                 item.ProjectCloudAccessRole.AwsIamPath,
-		"aws_iam_role_name":            item.ProjectCloudAccessRole.AwsIamRoleName,
+		"apply_to_all_accounts": item.ProjectCloudAccessRole.ApplyToAllAccounts,
+		"aws_iam_path":          item.ProjectCloudAccessRole.AwsIamPath,
+		"aws_iam_role_name": func() string {
+			if item.ProjectCloudAccessRole.AwsIamRoleName != nil {
+				return *item.ProjectCloudAccessRole.AwsIamRoleName
+			}
+			return ""
+		}(),
 		"aws_iam_permissions_boundary": hc.InflateSingleObjectWithID(item.AwsIamPermissionsBoundary),
 		"long_term_access_keys":        item.ProjectCloudAccessRole.LongTermAccessKeys,
 		"name":                         item.ProjectCloudAccessRole.Name,
