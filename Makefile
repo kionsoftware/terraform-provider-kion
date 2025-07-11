@@ -39,7 +39,7 @@ endif
 
 default: build
 
-build:
+build: fmt
 	go build -o ${BINARY}
 
 build-dev:
@@ -63,7 +63,7 @@ install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 
-install-dev: build-dev
+install-dev: fmt build-dev
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 
@@ -73,6 +73,9 @@ test:
 
 testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
+
+fmt:
+	gofmt -s -w .
 
 vet:
 	go vet $(TEST)
