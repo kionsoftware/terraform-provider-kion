@@ -1,105 +1,146 @@
-# Create a cloud access role on an OU.
-resource "kion_ou_cloud_access_role" "carou1" {
-  name                   = "sample-car"
-  ou_id                  = 3
-  aws_iam_role_name      = "sample-car"
-  web_access             = true
-  short_term_access_keys = true
-  long_term_access_keys  = true
-  aws_iam_policies { id = 628 }
-  #aws_iam_permissions_boundary = 1
-  users { id = 1 }
-  user_groups { id = 1 }
-}
-
-# Output the ID of the resource created.
-output "ou_car_id" {
-  value = kion_ou_cloud_access_role.carou1.id
-}
-
-# Create cloud access roles for different cloud providers
-resource "kion_ou_cloud_access_role" "aws_admin_role" {
-  name                   = "aws-admin-role"
-  ou_id                  = 3
-  aws_iam_role_name      = "KionAWSAdminRole"
-  aws_iam_path           = "/kion/admin/"
+# Basic OU Cloud Access Role Example
+resource "kion_ou_cloud_access_role" "example" {
+  name   = "example-ou-car"
+  ou_id  = 1
+  
+  # Basic access permissions
   web_access             = true
   short_term_access_keys = true
   long_term_access_keys  = false
-
-  # Attach multiple AWS IAM policies
-  aws_iam_policies {
-    id = 100  # AdminAccess policy
-  }
-  aws_iam_policies {
-    id = 101  # SecurityAudit policy
-  }
-
-  # Set permissions boundary
-  aws_iam_permissions_boundary = 200
-
-  # Assign to specific users
+  
+  # Assign to users and groups
   users {
-    id = 15  # Senior AWS Admin
+    id = 1
   }
-
-  # Assign to groups
   user_groups {
-    id = 25  # AWS Administrators
+    id = 1
   }
 }
 
-# Create a role with Azure permissions
-resource "kion_ou_cloud_access_role" "azure_admin_role" {
-  name              = "azure-admin-role"
-  ou_id             = 3
-  aws_iam_role_name = "KionAzureAdminRole"  # Required even for Azure roles
-  web_access        = true
+# AWS-focused OU Cloud Access Role
+resource "kion_ou_cloud_access_role" "aws_admin" {
+  name              = "aws-admin-role"
+  ou_id             = 1
+  aws_iam_role_name = "AdminRole"  # Only needed if this role will be used for AWS accounts
+  aws_iam_path      = "/kion/"
+  
+  # AWS access types
+  web_access             = true
+  short_term_access_keys = true
+  long_term_access_keys  = false
+  
+  # AWS IAM policies
+  aws_iam_policies {
+    id = 1
+  }
+  aws_iam_policies {
+    id = 2
+  }
+  
+  # AWS permissions boundary
+  aws_iam_permissions_boundary = 1
+  
+  # Assign to users and groups
+  users {
+    id = 1
+  }
+  user_groups {
+    id = 1
+  }
+}
 
+# Azure-focused OU Cloud Access Role
+resource "kion_ou_cloud_access_role" "azure_admin" {
+  name       = "azure-admin-role"
+  ou_id      = 1
+  web_access = true
+  
   # Azure role definitions
   azure_role_definitions {
-    id = 300  # Azure Administrator
+    id = 1
   }
-
-  # Assign to specific groups
+  azure_role_definitions {
+    id = 2
+  }
+  
+  # Assign to groups
   user_groups {
-    id = 26  # Azure Administrators
+    id = 2
   }
 }
 
-# Create a role with GCP permissions
-resource "kion_ou_cloud_access_role" "gcp_admin_role" {
-  name              = "gcp-admin-role"
-  ou_id             = 3
-  aws_iam_role_name = "KionGCPAdminRole"  # Required even for GCP roles
-  web_access        = true
-
+# GCP-focused OU Cloud Access Role
+resource "kion_ou_cloud_access_role" "gcp_admin" {
+  name       = "gcp-admin-role"
+  ou_id      = 1
+  web_access = true
+  
   # GCP IAM roles
   gcp_iam_roles {
-    id = 400  # GCP Administrator
+    id = 1
   }
-
-  # Assign to both users and groups
+  gcp_iam_roles {
+    id = 2
+  }
+  
+  # Assign to users and groups
   users {
-    id = 16  # GCP Admin
+    id = 2
   }
   user_groups {
-    id = 27  # GCP Administrators
+    id = 2
   }
 }
 
-# Output the role IDs
-output "aws_admin_role_id" {
-  value       = kion_ou_cloud_access_role.aws_admin_role.id
-  description = "The ID of the AWS admin role"
+# Multi-cloud OU Cloud Access Role
+resource "kion_ou_cloud_access_role" "multi_cloud" {
+  name              = "multi-cloud-role"
+  ou_id             = 1
+  aws_iam_role_name = "CrossAccountRole"  # Only needed because this role includes AWS permissions
+  
+  # Access types
+  web_access             = true
+  short_term_access_keys = true
+  long_term_access_keys  = false
+  
+  # AWS permissions
+  aws_iam_policies {
+    id = 1
+  }
+  
+  # Azure permissions
+  azure_role_definitions {
+    id = 1
+  }
+  
+  # GCP permissions
+  gcp_iam_roles {
+    id = 1
+  }
+  
+  # Assign to users
+  users {
+    id = 1
+  }
 }
 
-output "azure_admin_role_id" {
-  value       = kion_ou_cloud_access_role.azure_admin_role.id
-  description = "The ID of the Azure admin role"
+# Outputs
+output "example_id" {
+  value = kion_ou_cloud_access_role.example.id
 }
 
-output "gcp_admin_role_id" {
-  value       = kion_ou_cloud_access_role.gcp_admin_role.id
-  description = "The ID of the GCP admin role"
+output "aws_admin_id" {
+  value = kion_ou_cloud_access_role.aws_admin.id
+}
+
+output "azure_admin_id" {
+  value = kion_ou_cloud_access_role.azure_admin.id
+}
+
+output "gcp_admin_id" {
+  value = kion_ou_cloud_access_role.gcp_admin.id
+}
+
+output "multi_cloud_id" {
+  value = kion_ou_cloud_access_role.multi_cloud.id
 }
