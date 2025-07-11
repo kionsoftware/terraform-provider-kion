@@ -244,6 +244,7 @@ func FieldsChanged(iOld, iNew interface{}, fields []string) (map[string]interfac
 // OptionalBool retrieves a boolean value from schema.ResourceData by its field name and
 // returns a pointer to that value. If the field is not set or is not a boolean, it returns nil.
 func OptionalBool(d *schema.ResourceData, fieldname string) *bool {
+	//lint:ignore SA1019 GetOkExists is deprecated but still needed for optional bool fields
 	b, ok := d.GetOkExists(fieldname)
 	if !ok {
 		return nil
@@ -259,6 +260,7 @@ func OptionalBool(d *schema.ResourceData, fieldname string) *bool {
 // OptionalInt retrieves an integer value from schema.ResourceData by its field name and
 // returns a pointer to that value. If the field is not set or is not an integer, it returns nil.
 func OptionalInt(d *schema.ResourceData, fieldname string) *int {
+	//lint:ignore SA1019 GetOkExists is deprecated but still needed for optional int fields
 	v, ok := d.GetOkExists(fieldname)
 	if !ok {
 		return nil
@@ -274,6 +276,7 @@ func OptionalInt(d *schema.ResourceData, fieldname string) *int {
 // OptionalValue retrieves a value from schema.ResourceData by its field name and returns a pointer to that value.
 // The function uses type assertion to handle different types like int, bool, and string.
 func OptionalValue[T any](d *schema.ResourceData, fieldname string) *T {
+	//lint:ignore SA1019 GetOkExists is deprecated but still needed for optional generic fields
 	v, ok := d.GetOkExists(fieldname)
 	if !ok {
 		return nil
@@ -885,4 +888,14 @@ func AlmostEqual(a, b, tolerance float64) bool {
 // RoundToTwoDecimals rounds a float64 to 2 decimal places to avoid floating-point precision issues
 func RoundToTwoDecimals(amount float64) float64 {
 	return float64(int(amount*100+0.5)) / 100
+}
+
+func GetStringFromInterface(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+	if str, ok := v.(string); ok {
+		return str
+	}
+	return fmt.Sprintf("%v", v)
 }
