@@ -9,7 +9,7 @@ type OUCloudAccessRoleResponse struct {
 		GCPIamRoles               []ObjectWithID `json:"gcp_iam_roles"`
 		OUCloudAccessRole         struct {
 			AwsIamPath          string `json:"aws_iam_path"`
-			AwsIamRoleName      string `json:"aws_iam_role_name"`
+			AwsIamRoleName      *string `json:"aws_iam_role_name"`
 			ID                  int    `json:"id"`
 			LongTermAccessKeys  bool   `json:"long_term_access_keys"`
 			Name                string `json:"name"`
@@ -28,7 +28,7 @@ type OUCloudAccessRoleCreate struct {
 	AwsIamPath                string `json:"aws_iam_path"`
 	AwsIamPermissionsBoundary *int   `json:"aws_iam_permissions_boundary"`
 	AwsIamPolicies            *[]int `json:"aws_iam_policies"`
-	AwsIamRoleName            string `json:"aws_iam_role_name"`
+	AwsIamRoleName            *string `json:"aws_iam_role_name"`
 	AzureRoleDefinitions      *[]int `json:"azure_role_definitions"`
 	GCPIamRoles               *[]int `json:"gcp_iam_roles"`
 	LongTermAccessKeys        bool   `json:"long_term_access_keys"`
