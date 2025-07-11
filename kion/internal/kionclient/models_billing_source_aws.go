@@ -91,3 +91,43 @@ type BillingSourceData struct {
 	UseFocusReports       bool      `json:"use_focus_reports"`
 	UseProprietaryReports bool      `json:"use_proprietary_reports"`
 }
+
+// AWSBillingSourceV1Update represents the structure for updating billing sources via the v1 API
+// WARNING: This uses a private API endpoint (/v1/payer) that may change without notice
+type AWSBillingSourceV1Update struct {
+	ID                    int                      `json:"id"`
+	AccountTypeID         int                      `json:"account_type_id"`
+	UseFocusReports       bool                     `json:"use_focus_reports"`
+	UseProprietaryReports bool                     `json:"use_proprietary_reports"`
+	AccountCreation       bool                     `json:"account_creation"`
+	SkipValidation        bool                     `json:"skip_validation"`
+	AWSPayer              AWSBillingSourceV1Payer `json:"aws_payer"`
+}
+
+// AWSBillingSourceV1Payer represents the aws_payer structure for v1 API updates
+type AWSBillingSourceV1Payer struct {
+	ID                                    int    `json:"id"`
+	Name                                  string `json:"name"`
+	AccountNumber                         string `json:"account_number"`
+	KeyID                                 string `json:"key_id"`
+	KeySecret                             string `json:"key_secret"`
+	BillingRegion                         string `json:"billing_region"`
+	BillingReportPrefix                   string `json:"billing_report_prefix"`
+	BillingReportBucket                   string `json:"billing_report_bucket"`
+	BillingReportBucketRegion             string `json:"billing_report_bucket_region"`
+	BillingReportName                     string `json:"billing_report_name"`
+	BillingBucketAccountNumber            string `json:"billing_bucket_account_number"`
+	BucketAccessRole                      string `json:"bucket_access_role"`
+	DetailedBillingBucket                 string `json:"detailed_billing_bucket"`
+	FocusBillingBucketAccountNumber       string `json:"focus_billing_bucket_account_number"`
+	FocusBucketAccessRole                 string `json:"focus_bucket_access_role"`
+	FocusBillingReportBucketRegion        string `json:"focus_billing_report_bucket_region"`
+	FocusBillingReportBucket              string `json:"focus_billing_report_bucket"`
+	FocusBillingReportPrefix              string `json:"focus_billing_report_prefix"`
+	FocusBillingReportName                string `json:"focus_billing_report_name"`
+	BillingStartDate                      int    `json:"billing_start_date"`
+	LinkedRole                            string `json:"linked_role"`
+	AutoEnrollSupport                     bool   `json:"auto_enroll_support"`
+	SupportType                           *int   `json:"support_type"`
+	BillingReportTypeID                   int    `json:"billing_report_type_id"`
+}

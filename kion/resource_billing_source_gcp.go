@@ -21,7 +21,8 @@ func resourceBillingSourceGcp() *schema.Resource {
 		Description: "Creates and manages a GCP (Google Cloud Platform) billing source in Kion.\n\n" +
 			"GCP billing sources are used to import billing data from Google Cloud Platform projects " +
 			"into Kion for cost management and reporting purposes. The billing data is exported from " +
-			"BigQuery where Google Cloud exports billing information.",
+			"BigQuery where Google Cloud exports billing information.\n\n" +
+			"**WARNING**: Updates to this resource use a private API endpoint that may change without notice. Use at your own risk.",
 		CreateContext: resourceBillingSourceGcpCreate,
 		ReadContext:   resourceBillingSourceGcpRead,
 		UpdateContext: resourceBillingSourceGcpUpdate,
@@ -246,20 +247,138 @@ func resourceBillingSourceGcpRead(ctx context.Context, d *schema.ResourceData, m
 }
 
 func resourceBillingSourceGcpUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	// GCP billing sources do not support updates via the API
-	// If any changes are detected, we need to recreate the resource
-	if d.HasChanges("name", "service_account_id", "gcp_id", "billing_start_date", "big_query_export",
-		"account_type_id", "is_reseller", "use_focus", "use_proprietary") {
+	var diags diag.Diagnostics
+	client := m.(*hc.Client)
 
-		tflog.Info(ctx, "GCP billing source does not support updates, resource must be recreated", map[string]interface{}{
-			"id": d.Id(),
+	// Add warning about using private API
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  "Using Private API Endpoint",
+		Detail:   "This resource uses a private API endpoint for updates. This endpoint may change without notice and should be used at your own risk.",
+	})
+
+	ID := d.Id()
+	billingSourceID, err := strconv.Atoi(ID)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to parse billing source ID",
+			Detail:   fmt.Sprintf("Error: %v", err.Error()),
 		})
-
-		// Force recreation by returning an error
-		return diag.Errorf("GCP billing sources cannot be updated. The resource must be recreated.")
+		return diags
 	}
 
-	// If no changes, just read the current state
+	// First, get the current billing source to populate required fields
+	// Use the list endpoint since direct ID endpoint doesn't exist
+	resp := new(hc.BillingSourceListResponse)
+	err = client.GET("/v4/billing-source", resp)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to list billing sources",
+			Detail:   fmt.Sprintf("Error: %v", err.Error()),
+		})
+		return diags
+	}
+
+	// Find the billing source with matching ID
+	var currentBillingSource hc.BillingSource
+	found := false
+	for _, source := range resp.Data.Items {
+		if int(source.ID) == billingSourceID {
+			currentBillingSource = source
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Billing source not found",
+			Detail:   fmt.Sprintf("Billing source with ID %d not found", billingSourceID),
+		})
+		return diags
+	}
+
+	if currentBillingSource.GCPPayer == nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Billing source is not a GCP billing source",
+			Detail:   fmt.Sprintf("Billing source ID %v is not configured as a GCP billing source", billingSourceID),
+		})
+		return diags
+	}
+
+	// Handle BigQuery export settings - extract from nested structure
+	bigQueryExport := hc.GCPBigQueryExportV1{
+		TableFormat:   "auto", // default
+		FOCUSViewName: "",     // default
+	}
+	
+	// Get BigQuery export settings from the schema
+	if bigQueryExportList, ok := d.GetOk("big_query_export"); ok {
+		bigQueryExportData := bigQueryExportList.([]interface{})[0].(map[string]interface{})
+		bigQueryExport.GCPProjectID = bigQueryExportData["gcp_project_id"].(string)
+		bigQueryExport.DatasetName = bigQueryExportData["dataset_name"].(string)
+		
+		if tableFormat, ok := bigQueryExportData["table_format"]; ok {
+			bigQueryExport.TableFormat = tableFormat.(string)
+		}
+		
+		if focusViewName, ok := bigQueryExportData["focus_view_name"]; ok {
+			bigQueryExport.FOCUSViewName = focusViewName.(string)
+		}
+		
+		// Handle table_name as optional field
+		if tableName, ok := bigQueryExportData["table_name"]; ok && tableName.(string) != "" {
+			tableNameStr := tableName.(string)
+			bigQueryExport.TableName = &tableNameStr
+		}
+	}
+
+	// Convert billing_start_date from YYYY-MM to YYYYMM format
+	billingStartDate := 0
+	if dateStr := d.Get("billing_start_date").(string); dateStr != "" {
+		// Convert "2022-01" to 202201
+		if len(dateStr) == 7 {
+			dateStr = dateStr[:4] + dateStr[5:]
+			if dateInt, err := strconv.Atoi(dateStr); err == nil {
+				billingStartDate = dateInt
+			}
+		}
+	}
+
+	// Build update request using v1 API structure
+	v1Update := hc.GCPBillingSourceV1Update{
+		ID:                    billingSourceID,
+		AccountTypeID:         15, // GCP Project account type
+		UseFocusReports:       d.Get("use_focus").(bool),
+		UseProprietaryReports: d.Get("use_proprietary").(bool),
+		AccountCreation:       false, // GCP billing sources don't support account creation
+		SkipValidation:        true,  // Based on your example request
+		GCPBillingAccountUpdate: hc.GCPBillingAccountV1Update{
+			Name:             d.Get("name").(string),
+			ServiceAccountID: d.Get("service_account_id").(int),
+			GCPID:            d.Get("gcp_id").(string),
+			BillingStartDate: billingStartDate,
+			IsReseller:       d.Get("is_reseller").(bool),
+			BigQueryExport:   bigQueryExport,
+		},
+	}
+
+	// Send the PUT request to the v1 API
+	err = client.PUT(fmt.Sprintf("/v1/billing-source/%d", billingSourceID), v1Update)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to update GCP billing source",
+			Detail:   fmt.Sprintf("Error: %v\nBilling Source ID: %v", err.Error(), billingSourceID),
+		})
+		return diags
+	}
+
+	// Read the updated resource
 	return resourceBillingSourceGcpRead(ctx, d, m)
 }
 

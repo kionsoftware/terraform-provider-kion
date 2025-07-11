@@ -17,7 +17,9 @@ func resourceBillingSourceAws() *schema.Resource {
 		Description: "Creates and manages an AWS commercial billing source.\n\n" +
 			"AWS billing sources enable cost management and account management capabilities " +
 			"by connecting Kion to AWS billing data. This resource creates commercial AWS " +
-			"billing sources (account type 1).",
+			"billing sources (account type 1).\n\n" +
+			"**WARNING**: Updates to this resource use a private API endpoint (/v1/payer) " +
+			"that may change without notice. Use at your own risk.",
 		CreateContext: resourceBillingSourceAwsCreate,
 		ReadContext:   resourceBillingSourceAwsRead,
 		UpdateContext: resourceBillingSourceAwsUpdate,
@@ -716,15 +718,158 @@ func resourceBillingSourceAwsUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	if hasChanged {
-		// Since there's no direct update endpoint for billing sources,
-		// we'll need to use a PATCH endpoint if available, or recreate
-		// For now, we'll return an error indicating updates are not supported
+		// Add warning about using private API
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "AWS billing source updates are not supported",
-			Detail:   "The Kion API does not provide an update endpoint for AWS billing sources. Please destroy and recreate the resource to make changes.",
+			Severity: diag.Warning,
+			Summary:  "Using Private API Endpoint",
+			Detail:   "This resource uses a private API endpoint (/v1/payer) for updates. This endpoint may change without notice and should be used at your own risk.",
 		})
-		return diags
+
+		client := m.(*hc.Client)
+		ID := d.Id()
+		billingSourceID, err := strconv.Atoi(ID)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to parse billing source ID",
+				Detail:   fmt.Sprintf("Error: %v", err.Error()),
+			})
+			return diags
+		}
+
+		// First, get the current billing source to populate required fields
+		// Use the list endpoint since direct ID endpoint doesn't exist
+		resp := new(hc.BillingSourceListResponse)
+		err = client.GET("/v4/billing-source", resp)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to list billing sources",
+				Detail:   fmt.Sprintf("Error: %v", err.Error()),
+			})
+			return diags
+		}
+
+		// Find the billing source with matching ID
+		var currentBillingSource hc.BillingSource
+		found := false
+		for _, source := range resp.Data.Items {
+			if int(source.ID) == billingSourceID {
+				currentBillingSource = source
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Billing source not found",
+				Detail:   fmt.Sprintf("Billing source with ID %d not found", billingSourceID),
+			})
+			return diags
+		}
+
+		if currentBillingSource.AWSPayer == nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Billing source is not an AWS billing source",
+				Detail:   fmt.Sprintf("Billing source ID %v is not configured as an AWS billing source", billingSourceID),
+			})
+			return diags
+		}
+
+		// Extract AWS payer data from interface{}
+		awsPayerInterface := *currentBillingSource.AWSPayer
+		awsPayerMap, ok := awsPayerInterface.(map[string]interface{})
+		if !ok {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to parse AWS payer data",
+				Detail:   fmt.Sprintf("AWS payer data is not in expected format for billing source ID %v", billingSourceID),
+			})
+			return diags
+		}
+
+		// Extract the payer ID from the map
+		payerID := 0
+		if id, ok := awsPayerMap["id"]; ok {
+			if idFloat, ok := id.(float64); ok {
+				payerID = int(idFloat)
+			} else if idInt, ok := id.(int); ok {
+				payerID = idInt
+			}
+		}
+
+		// Build update request using v1 API structure
+		v1Update := hc.AWSBillingSourceV1Update{
+			ID:                    billingSourceID,
+			AccountTypeID:         1, // AWS Commercial
+			UseFocusReports:       d.Get("billing_report_type").(string) == "focus",
+			UseProprietaryReports: d.Get("billing_report_type").(string) != "focus",
+			AccountCreation:       d.Get("account_creation").(bool),
+			SkipValidation:        false,
+			AWSPayer: hc.AWSBillingSourceV1Payer{
+				ID:                              payerID,
+				Name:                            d.Get("name").(string),
+				AccountNumber:                   d.Get("aws_account_number").(string),
+				KeyID:                           d.Get("key_id").(string),
+				KeySecret:                       d.Get("key_secret").(string),
+				BillingRegion:                   d.Get("billing_region").(string),
+				BillingReportPrefix:             d.Get("cur_prefix").(string),
+				BillingReportBucket:             d.Get("cur_bucket").(string),
+				BillingReportBucketRegion:       d.Get("cur_bucket_region").(string),
+				BillingReportName:               d.Get("cur_name").(string),
+				BillingBucketAccountNumber:      d.Get("billing_bucket_account_number").(string),
+				BucketAccessRole:                d.Get("bucket_access_role").(string),
+				DetailedBillingBucket:           d.Get("detailed_billing_bucket").(string),
+				FocusBillingBucketAccountNumber: d.Get("focus_billing_bucket_account_number").(string),
+				FocusBucketAccessRole:           d.Get("focus_bucket_access_role").(string),
+				FocusBillingReportBucketRegion:  d.Get("focus_billing_report_bucket_region").(string),
+				FocusBillingReportBucket:        d.Get("focus_billing_report_bucket").(string),
+				FocusBillingReportPrefix:        d.Get("focus_billing_report_prefix").(string),
+				FocusBillingReportName:          d.Get("focus_billing_report_name").(string),
+				LinkedRole:                      d.Get("linked_role").(string),
+				AutoEnrollSupport:               false,
+				SupportType:                     nil,
+			},
+		}
+
+		// Convert billing_start_date from YYYY-MM to YYYYMM format
+		if billingStartDate := d.Get("billing_start_date").(string); billingStartDate != "" {
+			// Convert "2024-07" to 202407
+			if len(billingStartDate) == 7 {
+				dateStr := billingStartDate[:4] + billingStartDate[5:]
+				if dateInt, err := strconv.Atoi(dateStr); err == nil {
+					v1Update.AWSPayer.BillingStartDate = dateInt
+				}
+			}
+		}
+
+		// Get the current billing_report_type_id from the existing data and keep it
+		// Don't change the billing_report_type_id as it may not match what's in the database
+		currentBillingReportTypeID := 1 // default to CUR
+		if reportTypeID, ok := awsPayerMap["billing_report_type_id"]; ok {
+			if reportTypeIDFloat, ok := reportTypeID.(float64); ok {
+				currentBillingReportTypeID = int(reportTypeIDFloat)
+			} else if reportTypeIDInt, ok := reportTypeID.(int); ok {
+				currentBillingReportTypeID = reportTypeIDInt
+			}
+		}
+		
+		// Keep the existing billing_report_type_id to avoid foreign key constraint errors
+		v1Update.AWSPayer.BillingReportTypeID = currentBillingReportTypeID
+
+		// Send the PUT request to the v1 API
+		err = client.PUT(fmt.Sprintf("/v1/payer/%d", billingSourceID), v1Update)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to update AWS billing source",
+				Detail:   fmt.Sprintf("Error: %v\nBilling Source ID: %v", err.Error(), billingSourceID),
+			})
+			return diags
+		}
 	}
 
 	return resourceBillingSourceAwsRead(ctx, d, m)

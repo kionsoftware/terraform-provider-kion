@@ -79,3 +79,34 @@ type GCPBillingSource struct {
 	UseFOCUSReports       bool              `json:"use_focus_reports"`
 	UseProprietaryReports bool              `json:"use_proprietary_reports"`
 }
+
+// GCPBillingSourceV1Update represents the structure for updating GCP billing sources via the v1 API
+// WARNING: This uses a private API endpoint that may change without notice
+type GCPBillingSourceV1Update struct {
+	ID                         int                               `json:"id"`
+	AccountTypeID              int                               `json:"account_type_id"`
+	UseFocusReports            bool                              `json:"use_focus_reports"`
+	UseProprietaryReports      bool                              `json:"use_proprietary_reports"`
+	AccountCreation            bool                              `json:"account_creation"`
+	SkipValidation             bool                              `json:"skip_validation"`
+	GCPBillingAccountUpdate    GCPBillingAccountV1Update        `json:"gcp_billing_account_update"`
+}
+
+// GCPBillingAccountV1Update represents the gcp_billing_account_update structure for v1 API updates
+type GCPBillingAccountV1Update struct {
+	Name             string                   `json:"name"`
+	ServiceAccountID int                      `json:"service_account_id"`
+	GCPID            string                   `json:"gcp_id"`
+	BillingStartDate int                      `json:"billing_start_date"`
+	IsReseller       bool                     `json:"is_reseller"`
+	BigQueryExport   GCPBigQueryExportV1      `json:"big_query_export"`
+}
+
+// GCPBigQueryExportV1 represents the big_query_export structure for v1 API updates
+type GCPBigQueryExportV1 struct {
+	GCPProjectID    string  `json:"gcp_project_id"`
+	DatasetName     string  `json:"dataset_name"`
+	TableName       *string `json:"table_name"`
+	TableFormat     string  `json:"table_format"`
+	FOCUSViewName   string  `json:"focus_view_name"`
+}
