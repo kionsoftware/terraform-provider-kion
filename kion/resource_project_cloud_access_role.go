@@ -227,9 +227,9 @@ func resourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.ResourceD
 	item := resp.Data
 
 	data := map[string]interface{}{
-		"apply_to_all_accounts":        item.ProjectCloudAccessRole.ApplyToAllAccounts,
-		"aws_iam_path":                 item.ProjectCloudAccessRole.AwsIamPath,
-		"aws_iam_role_name":            func() string {
+		"apply_to_all_accounts": item.ProjectCloudAccessRole.ApplyToAllAccounts,
+		"aws_iam_path":          item.ProjectCloudAccessRole.AwsIamPath,
+		"aws_iam_role_name": func() string {
 			if item.ProjectCloudAccessRole.AwsIamRoleName != nil {
 				return *item.ProjectCloudAccessRole.AwsIamRoleName
 			}

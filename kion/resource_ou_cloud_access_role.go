@@ -198,8 +198,8 @@ func resourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, 
 	item := resp.Data
 
 	data := map[string]interface{}{
-		"aws_iam_path":                 item.OUCloudAccessRole.AwsIamPath,
-		"aws_iam_role_name":            func() string {
+		"aws_iam_path": item.OUCloudAccessRole.AwsIamPath,
+		"aws_iam_role_name": func() string {
 			if item.OUCloudAccessRole.AwsIamRoleName != nil {
 				return *item.OUCloudAccessRole.AwsIamRoleName
 			}

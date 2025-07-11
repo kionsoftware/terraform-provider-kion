@@ -179,18 +179,18 @@ func dataSourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.Resourc
 	// Set all the computed fields using the same logic as the resource read function
 	diags = append(diags, hc.SafeSet(d, "apply_to_all_accounts", item.ProjectCloudAccessRole.ApplyToAllAccounts, "Failed to set apply_to_all_accounts")...)
 	diags = append(diags, hc.SafeSet(d, "aws_iam_path", item.ProjectCloudAccessRole.AwsIamPath, "Failed to set aws_iam_path")...)
-	
+
 	// Handle aws_iam_role_name (nullable string)
 	awsIamRoleName := ""
 	if item.ProjectCloudAccessRole.AwsIamRoleName != nil {
 		awsIamRoleName = *item.ProjectCloudAccessRole.AwsIamRoleName
 	}
 	diags = append(diags, hc.SafeSet(d, "aws_iam_role_name", awsIamRoleName, "Failed to set aws_iam_role_name")...)
-	
+
 	// Handle aws_iam_permissions_boundary (single object with ID)
 	awsIamPermissionsBoundary := hc.InflateSingleObjectWithID(item.AwsIamPermissionsBoundary)
 	diags = append(diags, hc.SafeSet(d, "aws_iam_permissions_boundary", awsIamPermissionsBoundary, "Failed to set aws_iam_permissions_boundary")...)
-	
+
 	diags = append(diags, hc.SafeSet(d, "long_term_access_keys", item.ProjectCloudAccessRole.LongTermAccessKeys, "Failed to set long_term_access_keys")...)
 	diags = append(diags, hc.SafeSet(d, "name", item.ProjectCloudAccessRole.Name, "Failed to set name")...)
 	diags = append(diags, hc.SafeSet(d, "project_id", item.ProjectCloudAccessRole.ProjectID, "Failed to set project_id")...)
