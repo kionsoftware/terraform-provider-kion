@@ -54,7 +54,7 @@ func resourceOUCloudAccessRole() *schema.Resource {
 			},
 			"aws_iam_role_name": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true, // Not allowed to be changed, forces new item if changed.
 			},
 			"azure_role_definitions": {
@@ -139,7 +139,7 @@ func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData
 		AwsIamPath:                d.Get("aws_iam_path").(string),
 		AwsIamPermissionsBoundary: hc.FlattenIntPointer(d, "aws_iam_permissions_boundary"),
 		AwsIamPolicies:            hc.FlattenGenericIDPointer(d, "aws_iam_policies"),
-		AwsIamRoleName:            d.Get("aws_iam_role_name").(string),
+		AwsIamRoleName:            hc.FlattenStringPointer(d, "aws_iam_role_name"),
 		AzureRoleDefinitions:      hc.FlattenGenericIDPointer(d, "azure_role_definitions"),
 		GCPIamRoles:               hc.FlattenGenericIDPointer(d, "gcp_iam_roles"),
 		LongTermAccessKeys:        d.Get("long_term_access_keys").(bool),
@@ -198,8 +198,13 @@ func resourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, 
 	item := resp.Data
 
 	data := map[string]interface{}{
-		"aws_iam_path":                 item.OUCloudAccessRole.AwsIamPath,
-		"aws_iam_role_name":            item.OUCloudAccessRole.AwsIamRoleName,
+		"aws_iam_path": item.OUCloudAccessRole.AwsIamPath,
+		"aws_iam_role_name": func() string {
+			if item.OUCloudAccessRole.AwsIamRoleName != nil {
+				return *item.OUCloudAccessRole.AwsIamRoleName
+			}
+			return ""
+		}(),
 		"aws_iam_permissions_boundary": hc.InflateSingleObjectWithID(item.AwsIamPermissionsBoundary),
 		"long_term_access_keys":        item.OUCloudAccessRole.LongTermAccessKeys,
 		"name":                         item.OUCloudAccessRole.Name,

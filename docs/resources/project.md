@@ -8,6 +8,8 @@ description: |-
 
 # kion_project (Resource)
 
+
+
 ## Example Usage
 
 ```terraform
@@ -210,7 +212,6 @@ output "production_project_details" {
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--budget"></a>
-
 ### Nested Schema for `budget`
 
 Required:
@@ -225,7 +226,6 @@ Optional:
 - `funding_source_ids` (Set of Number) Funding source IDs to use when data is not specified. This value is ignored is data is specified. If specified, the amount is distributed evenly across months and funding sources. Funding sources will be processed in order from first to last.
 
 <a id="nestedblock--budget--data"></a>
-
 ### Nested Schema for `budget.data`
 
 Required:
@@ -238,24 +238,25 @@ Optional:
 - `funding_source_id` (Number) ID of funding source for the budget entry.
 - `priority` (Number) Priority order of the budget entry. This is required if funding_source_id is specified
 
-<a id="nestedblock--owner_user_group_ids"></a>
 
+
+<a id="nestedblock--owner_user_group_ids"></a>
 ### Nested Schema for `owner_user_group_ids`
 
 Optional:
 
 - `id` (Number)
 
-<a id="nestedblock--owner_user_ids"></a>
 
+<a id="nestedblock--owner_user_ids"></a>
 ### Nested Schema for `owner_user_ids`
 
 Optional:
 
 - `id` (Number)
 
-<a id="nestedblock--project_funding"></a>
 
+<a id="nestedblock--project_funding"></a>
 ### Nested Schema for `project_funding`
 
 Optional:
