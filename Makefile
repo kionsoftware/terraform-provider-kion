@@ -80,3 +80,8 @@ fmt:
 vet:
 	go vet $(TEST)
 	staticcheck $(TEST)
+
+docs:
+	tfplugindocs 
+
+.PHONY: build build-dev release install install-dev test testacc fmt vet docs

@@ -439,9 +439,12 @@ func resourceProjectRead(ctx context.Context, d *schema.ResourceData, m interfac
 		budgetMap["end_datecode"] = budget.Config.EndDatecode
 
 		// Extract unique funding source IDs from budget data
+		// Exclude funding source ID 0 as it indicates no funding source is set
 		fundingSources := make(map[int]bool)
 		for _, data := range budget.Data {
-			fundingSources[data.FundingSourceID] = true
+			if data.FundingSourceID != 0 {
+				fundingSources[data.FundingSourceID] = true
+			}
 		}
 		fsIDs := make([]int, 0)
 		for fsID := range fundingSources {
