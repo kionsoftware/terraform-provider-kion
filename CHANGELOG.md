@@ -13,6 +13,14 @@ Deprecated
 Removed
 Fixed
 
+## [0.3.27] - 2025-08-07
+
+### Fixed
+
+- Fixed infinite loop in budget functionality when funding sources are optional
+- Budget resources now properly handle cases where no funding source is set (funding source ID 0)
+- Resolved state drift issues when budget funding sources are empty
+
 ## [0.3.26] - 2025-07-11
 
 ### Changed
