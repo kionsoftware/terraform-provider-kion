@@ -19,15 +19,22 @@ func dataSourceUser() *schema.Resource {
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"username": {
-							Description: "The username you wish to filter by.",
+						"name": {
+							Description: "The field name whose values you wish to filter by.",
 							Type:        schema.TypeString,
-							Optional:    true,
+							Required:    true,
 						},
-						"enabled": {
-							Description: "Filter by whether the user is enabled.",
+						"regex": {
+							Description: "Dictates if the values provided should be treated as regular expressions.",
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
+						},
+						"values": {
+							Description: "The values of the field name you specified.",
+							Type:        schema.TypeList,
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 					},
 				},

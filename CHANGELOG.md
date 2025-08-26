@@ -13,6 +13,12 @@ Deprecated
 Removed
 Fixed
 
+## Unreleased
+
+### Fixed
+
+- Make `kion_user` use the same filter {} structure as other data resources
+
 ## [0.3.26] - 2025-07-11
 
 ### Changed

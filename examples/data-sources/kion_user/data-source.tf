@@ -1,30 +1,38 @@
 # Find all enabled users
 data "kion_user" "active_users" {
   filter {
-    enabled = true
+    name   = "enabled"
+    values = [true]
   }
 }
 
 # Find specific user by username
 data "kion_user" "devops_lead" {
   filter {
-    username = "jsmith"
-    enabled  = true
+    name   = "username"
+    values = ["jsmith"]
+  }
+  filter {
+    name   = "enabled"
+    values = [true]
   }
 }
 
 # Find users by username pattern (multiple users)
 data "kion_user" "engineering_team" {
   filter {
-    username = "eng-"
-    enabled  = true
+    name   = "username"
+    values = ["eng-.*"]
+    regex  = true
+
   }
 }
 
 # Find disabled users
 data "kion_user" "inactive_users" {
   filter {
-    enabled = false
+    name   = "enabled"
+    values = [false]
   }
 }
 
@@ -51,3 +59,4 @@ output "inactive_user_summary" {
   }
   description = "Summary of inactive users"
 }
+
