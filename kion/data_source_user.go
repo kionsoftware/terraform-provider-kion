@@ -19,6 +19,7 @@ func dataSourceUser() *schema.Resource {
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						// Legacy specific filter fields (deprecated but supported for backwards compatibility)
 						"username": {
 							Description: "The username you wish to filter by.",
 							Type:        schema.TypeString,
@@ -28,6 +29,24 @@ func dataSourceUser() *schema.Resource {
 							Description: "Filter by whether the user is enabled.",
 							Type:        schema.TypeBool,
 							Optional:    true,
+						},
+						// New generic filter fields
+						"name": {
+							Description: "The field name whose values you wish to filter by.",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						"values": {
+							Description: "The values of the field name you specified.",
+							Type:        schema.TypeList,
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"regex": {
+							Description: "Dictates if the values provided should be treated as regular expressions.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
 						},
 					},
 				},
@@ -59,6 +78,7 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 	var userIDs []int
 	for _, item := range resp.Data {
 		data := map[string]interface{}{
+			"id":       item.ID,
 			"username": item.Username,
 			"enabled":  item.Enabled,
 		}

@@ -13,14 +13,14 @@ description: |-
 ## Example Usage
 
 ```terraform
-# Find all enabled users
+# Find all enabled users (legacy approach)
 data "kion_user" "active_users" {
   filter {
     enabled = true
   }
 }
 
-# Find specific user by username
+# Find specific user by username (legacy approach)
 data "kion_user" "devops_lead" {
   filter {
     username = "jsmith"
@@ -28,18 +28,37 @@ data "kion_user" "devops_lead" {
   }
 }
 
-# Find users by username pattern (multiple users)
+# Find users by username pattern using new generic filtering with regex
 data "kion_user" "engineering_team" {
   filter {
-    username = "eng-"
-    enabled  = true
+    name   = "username"
+    values = ["eng-.*", "dev-.*"]
+    regex  = true
   }
 }
 
-# Find disabled users
+# Find disabled users using new generic filtering
 data "kion_user" "inactive_users" {
   filter {
-    enabled = false
+    name   = "enabled"
+    values = ["false"]
+  }
+}
+
+# Find users by specific IDs using new generic filtering
+data "kion_user" "specific_users" {
+  filter {
+    name   = "id"
+    values = ["123", "456", "789"]
+  }
+}
+
+# Find users with multiple username patterns
+data "kion_user" "admin_users" {
+  filter {
+    name   = "username"
+    values = ["admin.*", "root.*", "super.*"]
+    regex  = true
   }
 }
 
@@ -57,6 +76,19 @@ output "devops_lead_id" {
 output "engineering_team_ids" {
   value       = data.kion_user.engineering_team.list
   description = "List of engineering team user IDs"
+}
+
+output "specific_users_count" {
+  value       = length(data.kion_user.specific_users.list)
+  description = "Count of specific users found by ID"
+}
+
+output "admin_users_summary" {
+  value = {
+    count = length(data.kion_user.admin_users.list)
+    ids   = data.kion_user.admin_users.list
+  }
+  description = "Summary of admin users found by regex pattern"
 }
 
 output "inactive_user_summary" {
@@ -86,4 +118,7 @@ output "inactive_user_summary" {
 Optional:
 
 - `enabled` (Boolean) Filter by whether the user is enabled.
+- `name` (String) The field name whose values you wish to filter by.
+- `regex` (Boolean) Dictates if the values provided should be treated as regular expressions.
 - `username` (String) The username you wish to filter by.
+- `values` (List of String) The values of the field name you specified.
