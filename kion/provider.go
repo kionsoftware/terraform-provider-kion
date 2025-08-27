@@ -53,6 +53,7 @@ func Provider() *schema.Provider {
 			"kion_cloud_rule":                        resourceCloudRule(),
 			"kion_compliance_check":                  resourceComplianceCheck(),
 			"kion_compliance_standard":               resourceComplianceStandard(),
+			"kion_custom_account":                    resourceCustomAccount(),
 			"kion_funding_source":                    resourceFundingSource(),
 			"kion_funding_source_permission_mapping": resourceFundingSourcePermissionsMapping(),
 			"kion_gcp_account":                       resourceGcpAccount(),
