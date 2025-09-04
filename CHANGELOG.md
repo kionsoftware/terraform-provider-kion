@@ -17,7 +17,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 ### Fixed
 
 - Fixed project import failure when Kion is in spend plan mode instead of budget mode
-
 ## [0.3.27] - 2025-08-27
 
 ### Added
