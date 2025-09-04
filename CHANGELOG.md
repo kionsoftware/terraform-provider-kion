@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+### Fixed
+
+- Fixed project import failure when Kion is in spend plan mode instead of budget mode
+- Added app-config budget_mode check before attempting to fetch project budgets
+- Improved error handling using `hc.SafeSet` helper function for last_updated field
 ### Added
 
 - New `kion_app_config` resource and data source for managing global Kion application configuration
