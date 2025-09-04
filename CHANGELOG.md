@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+## [0.3.28] - 2025-09-04
+
 ### Added
 
 - New `kion_app_config` resource and data source for managing global Kion application configuration
