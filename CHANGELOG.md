@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 - Support for configuring budget, cost savings, API key, AWS, SMTP, and permission settings
 - Import support for bringing existing app-config under Terraform management
 
+### Fixed
+
+- Fixed project import failure when Kion is in spend plan mode instead of budget mode
+
 ## [0.3.27] - 2025-08-27
 
 ### Added
