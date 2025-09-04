@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+### Added
+
+- New `kion_app_config` resource and data source for managing global Kion application configuration
+- Support for configuring budget, cost savings, API key, AWS, SMTP, and permission settings
+- Import support for bringing existing app-config under Terraform management
+
 ## [0.3.27] - 2025-08-27
 
 ### Added
