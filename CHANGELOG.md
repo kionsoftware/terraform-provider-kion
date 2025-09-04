@@ -11,6 +11,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 - Fixed project import failure when Kion is in spend plan mode instead of budget mode
 - Added app-config budget_mode check before attempting to fetch project budgets
 - Improved error handling using `hc.SafeSet` helper function for last_updated field
+### Added
+
+- New `kion_app_config` resource and data source for managing global Kion application configuration
+- Support for configuring budget, cost savings, API key, AWS, SMTP, and permission settings
+- Import support for bringing existing app-config under Terraform management
 
 ## [0.3.27] - 2025-08-27
 
