@@ -43,6 +43,7 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
+			"kion_app_config":                        resourceAppConfig(),
 			"kion_aws_account":                       resourceAwsAccount(),
 			"kion_aws_cloudformation_template":       resourceAwsCloudformationTemplate(),
 			"kion_aws_iam_policy":                    resourceAwsIamPolicy(),
@@ -78,6 +79,7 @@ func Provider() *schema.Provider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"kion_account":                           dataSourceAccount(),
+			"kion_app_config":                        dataSourceAppConfig(),
 			"kion_aws_cloudformation_template":       dataSourceAwsCloudformationTemplate(),
 			"kion_aws_iam_policy":                    dataSourceAwsIamPolicy(),
 			"kion_azure_arm_template":                dataSourceAzureArmTemplate(),

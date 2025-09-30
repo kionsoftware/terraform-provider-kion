@@ -1,6 +1,6 @@
 # This Makefile is an easy way to run common operations.
 
-VERSION=0.3.27-dev
+VERSION=0.3.28
 
 TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=github.com
@@ -80,3 +80,8 @@ fmt:
 vet:
 	go vet $(TEST)
 	staticcheck $(TEST)
+
+docs:
+	tfplugindocs 
+
+.PHONY: build build-dev release install install-dev test testacc fmt vet docs
