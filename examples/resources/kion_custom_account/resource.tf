@@ -1,4 +1,3 @@
-# Create a custom account in a project with all available options
 resource "kion_custom_account" "complete_example" {
   # Required fields
   name           = "Terraform Complete Custom Account"
