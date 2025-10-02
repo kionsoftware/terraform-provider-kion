@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 ### Added
 
-- New `kion_custom_account` resource for managing custom (non-cloud provider) accounts in Kion\
+- New `kion_custom_account` resource for managing custom (non-cloud provider) accounts in Kion
 - New resource docs for `app_config`
 
 ## [0.3.28] - 2025-09-04
