@@ -145,6 +145,8 @@ func accountNumberAttr(resource string) string {
 		return "google_cloud_project_id"
 	case "kion_azure_account":
 		return "subscription_uuid"
+	case "kion_custom_account":
+		return "account_number"
 	case "kion_aws_account":
 		fallthrough
 	default:
@@ -322,8 +324,26 @@ type AccountMove struct {
 	MoveDate         int    `json:"move_datecode"`
 }
 
+// AccountNewCustomImport for: POST /api/v3/account?account-type=custom
+type AccountNewCustomImport struct {
+	AccountAlias  *string `json:"account_alias,omitempty"`
+	AccountNumber string  `json:"account_number"`
+	Name          string  `json:"account_name"`
+	PayerID       int     `json:"payer_id"`
+	ProjectID     int     `json:"project_id"`
+	StartDatecode string  `json:"start_datecode"`
+}
+
+// AccountCacheNewCustomImport for: POST /api/v3/account-cache?account-type=custom
+type AccountCacheNewCustomImport struct {
+	AccountAlias  *string `json:"account_alias,omitempty"`
+	AccountNumber string  `json:"account_number"`
+	Name          string  `json:"account_name"`
+	PayerID       int     `json:"payer_id"`
+}
+
 // Account Types
-type CSPAccountType int
+type CSPAccountType uint
 
 const (
 	// AWSStandard is a Standard AWS account
@@ -389,4 +409,10 @@ const (
 	AzureEATopSecretRG  CSPAccountType = 23
 	AzureMCATopSecret   CSPAccountType = 24
 	AzureMCATopSecretRG CSPAccountType = 25
+	OCICommercial       CSPAccountType = 26
+	OCIGov              CSPAccountType = 27
+	OCIFederal          CSPAccountType = 28
+
+	// CustomAccount is a custom account type, not associated with any cloud provider
+	CustomAccount CSPAccountType = 29
 )
