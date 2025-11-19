@@ -133,7 +133,6 @@ output "staging_project_created_at" {
 
 ### Required
 
-- `create_mode` (String) One of "create" or "import".  If "create", Kion will attempt to create a new Google Cloud Project.  If "import", Kion will import the existing Google Cloud Project as specified by google_cloud_project_id.
 - `name` (String) The name of the Google Cloud account within Kion.
 - `payer_id` (Number) The ID of the billing source containing billing data for this account.
 
@@ -141,6 +140,7 @@ output "staging_project_created_at" {
 
 - `account_alias` (String) Account alias is an optional short unique name that helps identify the account within Kion.
 - `account_type_id` (Number) An ID representing the account type within Kion.
+- `create_mode` (String) One of "create" or "import".  If "create", Kion will attempt to create a new Google Cloud Project.  If "import", Kion will import the existing Google Cloud Project as specified by google_cloud_project_id. This field is only used during resource creation and is not stored by Kion.
 - `google_cloud_parent_name` (String) The GCP resource identifier of the parent of this GCP Project.
 - `google_cloud_project_id` (String) The Google Cloud project ID.
 - `labels` (Map of String) A map of labels to assign to the account. The labels must already exist in Kion.
