@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+## [0.3.30] - 2025-11-19
+
+### Fixed
+
+- Fixed account field updates not being applied for Azure, Custom, and GCP accounts
+- Account name, alias, and other field changes now properly persist in Kion via PATCH requests
+- All account types (AWS, Azure, GCP, Custom) now use shared update logic for consistency
+
+### Changed
+
+- GCP `create_mode` field is now optional and computed, preventing unnecessary drift on existing accounts
+- Consolidated account update logic across all account types to eliminate code duplication
+
 ## [0.3.29] - 2025-09-30
 
 ### Added

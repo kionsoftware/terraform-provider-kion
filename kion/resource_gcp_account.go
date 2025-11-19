@@ -61,9 +61,11 @@ func resourceGcpAccount() *schema.Resource {
 			},
 			"create_mode": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
+				Computed:     true,
+				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"create", "import"}, false),
-				Description:  "One of \"create\" or \"import\".  If \"create\", Kion will attempt to create a new Google Cloud Project.  If \"import\", Kion will import the existing Google Cloud Project as specified by google_cloud_project_id.",
+				Description:  "One of \"create\" or \"import\".  If \"create\", Kion will attempt to create a new Google Cloud Project.  If \"import\", Kion will import the existing Google Cloud Project as specified by google_cloud_project_id. This field is only used during resource creation and is not stored by Kion.",
 			},
 			"created_at": {
 				Type:     schema.TypeString,
