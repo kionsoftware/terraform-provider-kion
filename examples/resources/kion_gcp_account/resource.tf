@@ -1,3 +1,6 @@
+# Note: create_mode is required when initially creating or importing a GCP account.
+# For existing accounts already in Terraform state, create_mode can be omitted to avoid drift.
+
 # Create a new GCP project with all available options
 resource "kion_gcp_account" "complete_example" {
   name                    = "Production GCP Project"
