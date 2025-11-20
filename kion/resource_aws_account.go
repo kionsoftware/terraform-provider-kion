@@ -589,7 +589,7 @@ func resourceAwsAccountUpdate(ctx context.Context, d *schema.ResourceData, m int
 		"linked_role", "name", "skip_access_checking",
 		"start_datecode", "use_org_account_info") {
 		hasChanged = true
-		diags = append(diags, handleAccountUpdate(ctx, d, client)...)
+		diags = append(diags, handleAccountFieldUpdate(ctx, d, client)...)
 		if diags.HasError() {
 			return diags
 		}
@@ -723,101 +723,5 @@ func handleProjectToProjectMove(ctx context.Context, d *schema.ResourceData, cli
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.RecordID))
-	return diags
-}
-
-func handleAccountUpdate(ctx context.Context, d *schema.ResourceData, client *hc.Client) diag.Diagnostics {
-	var diags diag.Diagnostics
-	ID := d.Id()
-	accountLocation := getKionAccountLocation(d)
-
-	var req interface{}
-	var accountUrl string
-	switch accountLocation {
-	case CacheLocation:
-		accountUrl = fmt.Sprintf("/v3/account-cache/%s", ID)
-		cacheReq := hc.AccountCacheUpdatable{}
-		if v, ok := d.GetOk("account_alias"); ok {
-			AccountAlias := v.(string)
-			cacheReq.AccountAlias = &AccountAlias
-		} else if d.HasChange("account_alias") {
-			emptyAlias := ""
-			cacheReq.AccountAlias = &emptyAlias
-		}
-		if v, ok := d.GetOk("email"); ok {
-			email := v.(string)
-			cacheReq.AccountEmail = email
-		}
-		if v, ok := d.GetOk("linked_role"); ok {
-			linkedRole := v.(string)
-			cacheReq.LinkedRole = linkedRole
-		}
-		if v, ok := d.GetOk("name"); ok {
-			name := v.(string)
-			cacheReq.Name = name
-		}
-		if v, ok := d.GetOk("include_linked_account_spend"); ok {
-			includeLinkedSpend := v.(bool)
-			cacheReq.IncludeLinkedAccountSpend = &includeLinkedSpend
-		}
-		if v, ok := d.GetOk("skip_access_checking"); ok {
-			skipAccess := v.(bool)
-			cacheReq.SkipAccessChecking = &skipAccess
-		}
-		req = cacheReq
-
-	case ProjectLocation:
-		fallthrough
-	default:
-		accountUrl = fmt.Sprintf("/v3/account/%s", ID)
-		accountReq := hc.AccountUpdatable{}
-		if v, ok := d.GetOk("account_alias"); ok {
-			AccountAlias := v.(string)
-			accountReq.AccountAlias = &AccountAlias
-		} else if d.HasChange("account_alias") {
-			emptyAlias := ""
-			accountReq.AccountAlias = &emptyAlias
-		}
-		if v, ok := d.GetOk("email"); ok {
-			email := v.(string)
-			accountReq.AccountEmail = email
-		}
-		if v, ok := d.GetOk("linked_role"); ok {
-			linkedRole := v.(string)
-			accountReq.LinkedRole = linkedRole
-		}
-		if v, ok := d.GetOk("name"); ok {
-			name := v.(string)
-			accountReq.Name = name
-		}
-		if v, ok := d.GetOk("start_datecode"); ok {
-			startDatecode := v.(string)
-			accountReq.StartDatecode = startDatecode
-		}
-		if v, ok := d.GetOk("include_linked_account_spend"); ok {
-			includeLinkedSpend := v.(bool)
-			accountReq.IncludeLinkedAccountSpend = &includeLinkedSpend
-		}
-		if v, ok := d.GetOk("skip_access_checking"); ok {
-			skipAccess := v.(bool)
-			accountReq.SkipAccessChecking = &skipAccess
-		}
-		if v, ok := d.GetOk("use_org_account_info"); ok {
-			useOrgInfo := v.(bool)
-			accountReq.UseOrgAccountInfo = &useOrgInfo
-		}
-		req = accountReq
-	}
-
-	tflog.Debug(ctx, "Updating AWS account", map[string]interface{}{
-		"account_id": ID,
-		"location":   accountLocation,
-		"url":        accountUrl,
-	})
-
-	if err := client.PATCH(accountUrl, req); err != nil {
-		return append(diags, hc.HandleError(fmt.Errorf("failed to update account: %v", err))...)
-	}
-
 	return diags
 }
