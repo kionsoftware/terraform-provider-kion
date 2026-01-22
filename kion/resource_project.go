@@ -6,8 +6,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	hc "github.com/kionsoftware/terraform-provider-kion/kion/internal/kionclient"
 )
 
@@ -79,9 +81,33 @@ func resourceProject() *schema.Resource {
 				Required: true,
 			},
 			"ou_id": {
-				Type:     schema.TypeInt,
-				Required: true,
-				ForceNew: true, // Not allowed to be changed, forces new item if changed.
+				Type:        schema.TypeInt,
+				Required:    true,
+				Description: "The ID of the OU to place this project within. Can be changed to move the project to a different OU using the move_ou_settings.",
+			},
+			"move_ou_settings": {
+				Type:        schema.TypeSet,
+				Optional:    true,
+				MaxItems:    1,
+				Description: "Parameters used when moving a project between OUs. These settings are required when changing the ou_id.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"cloud_rule_setting": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "convert",
+							ValidateFunc: validation.StringInSlice([]string{"convert", "remove"}, false),
+							Description:  "One of \"convert\" or \"remove\". If \"convert\", inherited cloud rules from the old OU are converted to local cloud rules on the project. If \"remove\", cloud rules are removed from the project.",
+						},
+						"financial_setting": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "move",
+							ValidateFunc: validation.StringInSlice([]string{"preserve", "move"}, false),
+							Description:  "One of \"preserve\" or \"move\". If \"preserve\", financial history stays with the original OU and a new project is created in the destination OU (WARNING: this changes the project ID). If \"move\", financial history transfers to the new OU and the project keeps its same ID (recommended). Default: \"move\".",
+						},
+					},
+				},
 			},
 			"owner_user_ids": {
 				Elem: &schema.Resource{
@@ -659,6 +685,16 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
+	// Handle OU changes (project move)
+	if d.HasChange("ou_id") {
+		hasChanged++
+		moveDiags := handleProjectOUMove(ctx, d, client, ID)
+		if moveDiags.HasError() {
+			return moveDiags
+		}
+		diags = append(diags, moveDiags...)
+	}
+
 	// Handle budget changes
 	if d.HasChange("budget") {
 		hasChanged++
@@ -884,12 +920,134 @@ func handleBudgetUpdate(d *schema.ResourceData, client *hc.Client, projectID str
 	return diags
 }
 
+// handleProjectOUMove handles moving a project to a different OU using the /v3/project/{id}/move endpoint.
+func handleProjectOUMove(ctx context.Context, d *schema.ResourceData, client *hc.Client, projectID string) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	oldOUID, newOUID := d.GetChange("ou_id")
+	oldOUIDInt := oldOUID.(int)
+	newOUIDInt := newOUID.(int)
+
+	tflog.Info(ctx, "Moving project to new OU", map[string]interface{}{
+		"project_id":   projectID,
+		"source_ou_id": oldOUIDInt,
+		"dest_ou_id":   newOUIDInt,
+	})
+
+	// Build the move command with default settings for the v3 public API
+	// Default to "move" for financial_setting to keep the same project ID,
+	// which is more intuitive for Terraform users who expect resource IDs to remain consistent.
+	moveCmd := hc.ProjectMoveCommand{
+		DestinationOUID:  newOUIDInt,
+		CloudRuleSetting: "convert",
+		FinancialSetting: "move",
+	}
+
+	// Get move settings if provided
+	if v, exists := d.GetOk("move_ou_settings"); exists {
+		moveSettings := v.(*schema.Set)
+		for _, item := range moveSettings.List() {
+			if moveSettingsMap, ok := item.(map[string]interface{}); ok {
+				if cloudRule, ok := moveSettingsMap["cloud_rule_setting"].(string); ok && cloudRule != "" {
+					moveCmd.CloudRuleSetting = cloudRule
+				}
+				if financial, ok := moveSettingsMap["financial_setting"].(string); ok && financial != "" {
+					moveCmd.FinancialSetting = financial
+				}
+			}
+		}
+	}
+
+	tflog.Debug(ctx, "Project move command", map[string]interface{}{
+		"project_id":         projectID,
+		"source_ou_id":       oldOUIDInt,
+		"destination_ou_id":  moveCmd.DestinationOUID,
+		"cloud_rule_setting": moveCmd.CloudRuleSetting,
+		"financial_setting":  moveCmd.FinancialSetting,
+	})
+
+	// Call the v3 public API move endpoint
+	_, err := client.POST(fmt.Sprintf("/v3/project/%s/move", projectID), moveCmd)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to move Project to new OU",
+			Detail:   fmt.Sprintf("Error: %v\nProject ID: %v\nSource OU: %v\nDestination OU: %v", err.Error(), projectID, oldOUIDInt, newOUIDInt),
+		})
+		return diags
+	}
+
+	tflog.Info(ctx, "Successfully moved project to new OU", map[string]interface{}{
+		"project_id":   projectID,
+		"source_ou_id": oldOUIDInt,
+		"dest_ou_id":   newOUIDInt,
+	})
+
+	return diags
+}
+
 func resourceProjectDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 	ID := d.Id()
 
-	err := client.DELETE(fmt.Sprintf("/v3/project/%s", ID), nil)
+	projectID, err := strconv.Atoi(ID)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to parse Project ID",
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	// Before deleting the project, move any attached accounts to the cache.
+	// This prevents the "Cannot delete a project with accounts attached" error.
+	tflog.Debug(ctx, "Checking for accounts attached to project before deletion", map[string]interface{}{
+		"project_id": projectID,
+	})
+
+	accountIDs, err := getAccountIDsForProject(client, projectID)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to fetch accounts for Project",
+			Detail:   fmt.Sprintf("Error: %v\nProject ID: %v", err.Error(), ID),
+		})
+		return diags
+	}
+
+	if len(accountIDs) > 0 {
+		tflog.Info(ctx, "Moving accounts to cache before project deletion", map[string]interface{}{
+			"project_id":    projectID,
+			"account_count": len(accountIDs),
+			"account_ids":   accountIDs,
+		})
+
+		for _, accountID := range accountIDs {
+			tflog.Debug(ctx, "Moving account to cache", map[string]interface{}{
+				"account_id": accountID,
+				"project_id": projectID,
+			})
+
+			_, err := convertProjectAccountToCacheAccount(client, accountID)
+			if err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Unable to move account to cache before project deletion",
+					Detail:   fmt.Sprintf("Error: %v\nAccount ID: %v\nProject ID: %v", err.Error(), accountID, ID),
+				})
+				return diags
+			}
+		}
+
+		tflog.Info(ctx, "Successfully moved all accounts to cache", map[string]interface{}{
+			"project_id":    projectID,
+			"account_count": len(accountIDs),
+		})
+	}
+
+	err = client.DELETE(fmt.Sprintf("/v3/project/%s", ID), nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -904,4 +1062,21 @@ func resourceProjectDelete(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId("")
 
 	return diags
+}
+
+// getAccountIDsForProject fetches all account IDs attached to a given project.
+func getAccountIDsForProject(client *hc.Client, projectID int) ([]int, error) {
+	resp := new(hc.AccountListResponse)
+	if err := client.GET("/v3/account", resp); err != nil {
+		return nil, fmt.Errorf("failed to fetch accounts: %v", err)
+	}
+
+	var accountIDs []int
+	for _, account := range resp.Data {
+		if account.ProjectID == uint(projectID) {
+			accountIDs = append(accountIDs, int(account.ID))
+		}
+	}
+
+	return accountIDs, nil
 }

@@ -168,3 +168,57 @@ output "production_project_details" {
   }
   description = "Production project details"
 }
+
+# =============================================================================
+# Moving a Project Between OUs
+# =============================================================================
+# Projects can be moved between OUs without being destroyed and recreated.
+# When you change the `ou_id`, the provider uses the Kion move API to relocate
+# the project while preserving its attached accounts.
+
+# Import an existing project to manage it with Terraform
+import {
+  to = kion_project.existing_project
+  id = "4"
+}
+
+# Project that can be moved between OUs
+# To move: simply change the ou_id value and apply
+resource "kion_project" "existing_project" {
+  name                 = "My Project"
+  ou_id                = 11 # Change this to move the project to a different OU
+  permission_scheme_id = 1
+
+  owner_user_group_ids {
+    id = 1
+  }
+
+  labels = {
+    "Department" = "Engineering"
+  }
+
+  # Optional: Settings that control how the move is performed
+  # If not specified, defaults are: cloud_rule_setting="convert", financial_setting="move"
+  move_ou_settings {
+    # "convert" = inherited cloud rules from old OU become local rules on the project
+    # "remove" = cloud rules are removed from the project
+    cloud_rule_setting = "convert"
+
+    # "move" = financial history transfers to the new OU (keeps same project ID) - RECOMMENDED
+    # "preserve" = financial history stays with the original OU (WARNING: creates new project ID)
+    financial_setting = "move"
+  }
+}
+
+# =============================================================================
+# Move Settings Reference
+# =============================================================================
+#
+# | Setting              | Value       | Description                                                |
+# |----------------------|-------------|------------------------------------------------------------|
+# | cloud_rule_setting   | "convert"   | Inherited cloud rules become local rules on the project    |
+# | cloud_rule_setting   | "remove"    | Cloud rules are removed from the project                   |
+# | financial_setting    | "move"      | Financial history moves with project (keeps same ID)       |
+# | financial_setting    | "preserve"  | Financial history stays in old OU (WARNING: new project ID)|
+#
+# Note: Any accounts attached to the project will automatically move with it.
