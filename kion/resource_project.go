@@ -920,20 +920,9 @@ func handleBudgetUpdate(d *schema.ResourceData, client *hc.Client, projectID str
 	return diags
 }
 
-// handleProjectOUMove handles moving a project to a different OU using the /v2/project/{id}/move endpoint.
+// handleProjectOUMove handles moving a project to a different OU using the /v3/project/{id}/move endpoint.
 func handleProjectOUMove(ctx context.Context, d *schema.ResourceData, client *hc.Client, projectID string) diag.Diagnostics {
 	var diags diag.Diagnostics
-
-	// Parse project ID for use in the request body
-	projectIDInt, err := strconv.Atoi(projectID)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to parse Project ID",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), projectID),
-		})
-		return diags
-	}
 
 	oldOUID, newOUID := d.GetChange("ou_id")
 	oldOUIDInt := oldOUID.(int)
@@ -945,16 +934,13 @@ func handleProjectOUMove(ctx context.Context, d *schema.ResourceData, client *hc
 		"dest_ou_id":   newOUIDInt,
 	})
 
-	// Build the move command with default settings
+	// Build the move command with default settings for the v3 public API
 	// Default to "move" for financial_setting to keep the same project ID,
 	// which is more intuitive for Terraform users who expect resource IDs to remain consistent.
 	moveCmd := hc.ProjectMoveCommand{
-		ProjectID:        projectIDInt,
-		SourceOUID:       oldOUIDInt,
 		DestinationOUID:  newOUIDInt,
 		CloudRuleSetting: "convert",
 		FinancialSetting: "move",
-		SpendPlanSetting: "keep",
 	}
 
 	// Get move settings if provided
@@ -974,14 +960,14 @@ func handleProjectOUMove(ctx context.Context, d *schema.ResourceData, client *hc
 
 	tflog.Debug(ctx, "Project move command", map[string]interface{}{
 		"project_id":         projectID,
-		"source_ou_id":       moveCmd.SourceOUID,
+		"source_ou_id":       oldOUIDInt,
 		"destination_ou_id":  moveCmd.DestinationOUID,
 		"cloud_rule_setting": moveCmd.CloudRuleSetting,
 		"financial_setting":  moveCmd.FinancialSetting,
 	})
 
-	// Call the move endpoint
-	_, err = client.POST(fmt.Sprintf("/v2/project/%s/move", projectID), moveCmd)
+	// Call the v3 public API move endpoint
+	_, err := client.POST(fmt.Sprintf("/v3/project/%s/move", projectID), moveCmd)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
