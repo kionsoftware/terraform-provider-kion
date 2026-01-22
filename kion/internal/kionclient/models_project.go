@@ -51,3 +51,13 @@ type ProjectUpdate struct {
 	Name               string `json:"name"`
 	PermissionSchemeID int    `json:"permission_scheme_id"`
 }
+
+// ProjectMoveCommand for: POST /api/v2/project/{id}/move
+type ProjectMoveCommand struct {
+	ProjectID        int    `json:"project_id"`
+	SourceOUID       int    `json:"source_ou_id"`
+	DestinationOUID  int    `json:"destination_ou_id"`
+	CloudRuleSetting string `json:"cloud_rule_setting"`
+	FinancialSetting string `json:"financial_setting"`
+	SpendPlanSetting string `json:"spend_plan_setting"`
+}
