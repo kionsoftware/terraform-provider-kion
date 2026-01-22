@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+## [0.3.31] - 2025-01-22
+
+### Added
+
+- New `move_ou_settings` block for `kion_project` resource to support moving projects between OUs
+- Support for `cloud_rule_setting` option: "convert" (default) or "remove" cloud rules during move
+- Support for `financial_setting` option: "move" (default) or "preserve" financials during move
+- Projects can now be moved between OUs by changing `ou_id` with configurable move behavior
+
+### Changed
+
+- Project OU changes now use the project move API instead of requiring resource recreation
+- Updated documentation and examples for project move functionality
+
 ## [0.3.30] - 2025-11-19
 
 ### Fixed
