@@ -73,21 +73,39 @@ func dataSourceLabelRead(ctx context.Context, d *schema.ResourceData, m interfac
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
-	resp := new(hc.LabelListResponse)
-	err := client.GET("/v3/label", resp)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read Labels",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
-		})
-		return diags
+	// Fetch all labels across all pages. The API returns 100 labels per
+	// page by default, so we must paginate to get the complete set.
+	var allItems []hc.Label
+	page := 1
+	pageSize := 100
+	for {
+		resp := new(hc.LabelListResponse)
+		params := map[string]string{
+			"page":  strconv.Itoa(page),
+			"count": strconv.Itoa(pageSize),
+		}
+		err := client.GETWithParams("/v3/label", params, resp)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to read Labels",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
+			})
+			return diags
+		}
+
+		allItems = append(allItems, resp.Data.Items...)
+
+		if len(allItems) >= resp.Data.Total || len(resp.Data.Items) == 0 {
+			break
+		}
+		page++
 	}
 
 	f := hc.NewFilterable(d)
 
 	arr := make([]map[string]interface{}, 0)
-	for _, item := range resp.Data.Items {
+	for _, item := range allItems {
 		data := make(map[string]interface{})
 
 		data["id"] = item.ID
