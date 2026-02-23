@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+## [0.3.32] - 2026-02-20
+
+### Fixed
+
+- Fixed `kion_label` data source returning incomplete results when more than 100 labels exist in Kion
+- The data source now paginates through all pages of the `/v3/label` API endpoint instead of only fetching the first page
+
 ## [0.3.31] - 2025-01-22
 
 ### Added
