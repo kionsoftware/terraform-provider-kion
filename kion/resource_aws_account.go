@@ -322,7 +322,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			// Move cached account to the requested project
 			projectId := d.Get("project_id").(int)
 			startDatecode := time.Now().Format("200601")
-			retries := 3
+			retries := 6
 			delay := 30 * time.Second
 
 			newId, err := retryConvertCacheAccountToProjectAccountForAWS(client, accountCacheId, projectId, startDatecode, retries, delay)
@@ -450,6 +450,20 @@ func waitForAccountCreation(client *hc.Client, ctx context.Context, accountCache
 	return err // Return the error, if any.
 }
 
+// retryableConvertErrors contains error substrings that indicate a transient
+// failure when converting a cached account to a project account.  These are
+// typically caused by AWS service activation delays on newly created accounts
+// where services like CloudFormation are not yet available.
+var retryableConvertErrors = []string{
+	"Rule is already in progress",
+	"OptInRequired",
+	"SubscriptionRequiredException",
+	"InvalidClientTokenId",
+	"ServiceUnavailable",
+	"ThrottlingException",
+	"InternalFailure",
+}
+
 func retryConvertCacheAccountToProjectAccountForAWS(client *hc.Client, accountCacheId, projectId int, startDatecode string, retries int, delay time.Duration) (int, error) {
 	var lastErr error
 	for i := 0; i < retries; i++ {
@@ -457,7 +471,7 @@ func retryConvertCacheAccountToProjectAccountForAWS(client *hc.Client, accountCa
 		if err == nil {
 			return id, nil
 		}
-		if strings.Contains(err.Error(), "Rule is already in progress") && i < retries-1 {
+		if isRetryableConvertError(err) && i < retries-1 {
 			time.Sleep(delay)
 			continue
 		}
@@ -465,6 +479,19 @@ func retryConvertCacheAccountToProjectAccountForAWS(client *hc.Client, accountCa
 		break
 	}
 	return 0, lastErr
+}
+
+// isRetryableConvertError returns true if the error message contains any of the
+// known transient error strings that can occur when converting a newly created
+// AWS account from the cache to a project.
+func isRetryableConvertError(err error) bool {
+	errMsg := err.Error()
+	for _, retryable := range retryableConvertErrors {
+		if strings.Contains(errMsg, retryable) {
+			return true
+		}
+	}
+	return false
 }
 
 // resourceAwsAccountRead attempts to read an AWS account from either the project accounts

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+## [0.3.33] - 2026-03-26
+
+### Fixed
+
+- Fixed `kion_aws_account` failing to move newly created accounts from cache to project due to AWS service activation delays
+- The provider now retries on transient AWS errors (`OptInRequired`, `SubscriptionRequiredException`, `InvalidClientTokenId`, `ServiceUnavailable`, `ThrottlingException`, `InternalFailure`) when converting a cached account to a project account
+- Increased retry attempts from 3 to 6 (up to ~3 minutes total) to accommodate AWS propagation delays on new accounts
+
 ## [0.3.32] - 2026-02-20
 
 ### Fixed
