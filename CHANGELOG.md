@@ -11,8 +11,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 ### Fixed
 
 - Fixed `kion_aws_account` failing to move newly created accounts from cache to project due to AWS service activation delays
-- The provider now retries on transient AWS errors (`OptInRequired`, `SubscriptionRequiredException`, `InvalidClientTokenId`, `ServiceUnavailable`, `ThrottlingException`, `InternalFailure`) when converting a cached account to a project account
-- Increased retry attempts from 3 to 6 (up to ~3 minutes total) to accommodate AWS propagation delays on new accounts
+- Account creation now verifies the account is accessible in AWS via `/v3/account-cache/{id}/status` before attempting to move it to a project
+- The cache-to-project conversion now retries on all errors until the create timeout expires, handling transient AWS errors like `OptInRequired` during new account provisioning
 
 ## [0.3.32] - 2026-02-20
 

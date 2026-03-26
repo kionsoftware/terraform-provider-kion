@@ -294,6 +294,13 @@ type AccountRevertResponse struct {
 	Message  string `json:"message"`
 }
 
+// AccountCacheStatusResponse represents the response from GET /v3/account-cache/{id}/status.
+// Data is true when the account is accessible and valid in the cloud provider.
+type AccountCacheStatusResponse struct {
+	Data   bool `json:"data"`
+	Status int  `json:"status"`
+}
+
 // AccountUpdatable for: PATCH /api/v3/account/{id}
 type AccountUpdatable struct {
 	AccountAlias              *string `json:"account_alias,omitempty"`

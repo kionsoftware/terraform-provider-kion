@@ -322,10 +322,8 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			// Move cached account to the requested project
 			projectId := d.Get("project_id").(int)
 			startDatecode := time.Now().Format("200601")
-			retries := 6
-			delay := 30 * time.Second
 
-			newId, err := retryConvertCacheAccountToProjectAccountForAWS(client, accountCacheId, projectId, startDatecode, retries, delay)
+			newId, err := retryConvertCacheAccountToProjectAccountForAWS(ctx, client, accountCacheId, projectId, startDatecode, d.Timeout(schema.TimeoutCreate))
 			if err != nil {
 				diags = append(diags, hc.HandleError(fmt.Errorf("unable to convert AWS cached account to project account: %v", err))...)
 				return diags
@@ -418,80 +416,90 @@ func populateOrgUnitFromResourceData(d *schema.ResourceData, postCacheData *hc.A
 	return nil
 }
 
-// waitForAccountCreation polls the creation status until the account is created or a timeout occurs.
+// waitForAccountCreation polls the creation status until the account is created
+// and accessible in AWS, or a timeout occurs.  It first waits for the account
+// number to be assigned, then verifies the account is accessible via the
+// /v3/account-cache/{id}/status endpoint before returning.
 func waitForAccountCreation(client *hc.Client, ctx context.Context, accountCacheId int, d *schema.ResourceData) error {
+	timeout := d.Timeout(schema.TimeoutCreate)
+
+	// Phase 1: Wait for the account number to be assigned.
 	createStateConf := &retry.StateChangeConf{
-		// Define the refresh function, which checks the account creation status.
 		Refresh: func() (interface{}, string, error) {
 			resp := new(hc.AccountResponse)
 			err := client.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
 			if err != nil {
-				// Directly return errors, including NotFound, allowing the SDK to handle retries for NotFound appropriately.
 				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d error", accountCacheId), map[string]interface{}{"error": err, "accountCacheId": accountCacheId})
 				return nil, "", err
 			}
 
-			// Check if the account number is still not available in the response.
 			if resp.Data.AccountNumber == "" {
 				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d missing account number", accountCacheId), map[string]interface{}{"accountCacheId": accountCacheId})
 				return resp, "MissingAccountNumber", nil
 			}
 
-			// Account creation is successful.
 			return resp, "AccountCreated", nil
 		},
 		Pending: []string{"MissingAccountNumber"},
 		Target:  []string{"AccountCreated"},
-		Timeout: d.Timeout(schema.TimeoutCreate),
+		Timeout: timeout,
 	}
 
-	// Use WaitForStateContext to respect the given context's deadline or cancellation.
 	_, err := createStateConf.WaitForStateContext(ctx)
-	return err // Return the error, if any.
+	if err != nil {
+		return err
+	}
+
+	// Phase 2: Wait for the account to be accessible in AWS.  A newly created
+	// account may have its account number assigned before AWS services like
+	// CloudFormation are fully activated.  This check ensures the account is
+	// reachable before we attempt to move it to a project.
+	statusStateConf := &retry.StateChangeConf{
+		Refresh: func() (interface{}, string, error) {
+			resp := new(hc.AccountCacheStatusResponse)
+			err := client.GET(fmt.Sprintf("/v3/account-cache/%d/status", accountCacheId), resp)
+			if err != nil {
+				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account accessibility: /v3/account-cache/%d/status error", accountCacheId), map[string]interface{}{"error": err, "accountCacheId": accountCacheId})
+				return nil, "", err
+			}
+
+			if !resp.Data {
+				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account accessibility: /v3/account-cache/%d/status not yet accessible", accountCacheId), map[string]interface{}{"accountCacheId": accountCacheId})
+				return resp, "NotReady", nil
+			}
+
+			tflog.Debug(ctx, fmt.Sprintf("New AWS account is accessible: /v3/account-cache/%d/status", accountCacheId), map[string]interface{}{"accountCacheId": accountCacheId})
+			return resp, "Ready", nil
+		},
+		Pending: []string{"NotReady"},
+		Target:  []string{"Ready"},
+		Timeout: timeout,
+	}
+
+	_, err = statusStateConf.WaitForStateContext(ctx)
+	return err
 }
 
-// retryableConvertErrors contains error substrings that indicate a transient
-// failure when converting a cached account to a project account.  These are
-// typically caused by AWS service activation delays on newly created accounts
-// where services like CloudFormation are not yet available.
-var retryableConvertErrors = []string{
-	"Rule is already in progress",
-	"OptInRequired",
-	"SubscriptionRequiredException",
-	"InvalidClientTokenId",
-	"ServiceUnavailable",
-	"ThrottlingException",
-	"InternalFailure",
-}
-
-func retryConvertCacheAccountToProjectAccountForAWS(client *hc.Client, accountCacheId, projectId int, startDatecode string, retries int, delay time.Duration) (int, error) {
-	var lastErr error
-	for i := 0; i < retries; i++ {
+// retryConvertCacheAccountToProjectAccountForAWS retries the cache-to-project
+// conversion until it succeeds or the timeout expires.  Since we just created
+// the account, any error is likely transient (AWS service activation delays,
+// Kion rules still processing, etc.) so all errors are retried.
+func retryConvertCacheAccountToProjectAccountForAWS(ctx context.Context, client *hc.Client, accountCacheId, projectId int, startDatecode string, timeout time.Duration) (int, error) {
+	var newId int
+	err := retry.RetryContext(ctx, timeout, func() *retry.RetryError {
 		id, err := convertCacheAccountToProjectAccount(client, accountCacheId, projectId, startDatecode)
-		if err == nil {
-			return id, nil
+		if err != nil {
+			tflog.Debug(ctx, "Error during cache-to-project conversion, will retry", map[string]interface{}{
+				"account_cache_id": accountCacheId,
+				"project_id":       projectId,
+				"error":            err.Error(),
+			})
+			return retry.RetryableError(err)
 		}
-		if isRetryableConvertError(err) && i < retries-1 {
-			time.Sleep(delay)
-			continue
-		}
-		lastErr = err
-		break
-	}
-	return 0, lastErr
-}
-
-// isRetryableConvertError returns true if the error message contains any of the
-// known transient error strings that can occur when converting a newly created
-// AWS account from the cache to a project.
-func isRetryableConvertError(err error) bool {
-	errMsg := err.Error()
-	for _, retryable := range retryableConvertErrors {
-		if strings.Contains(errMsg, retryable) {
-			return true
-		}
-	}
-	return false
+		newId = id
+		return nil
+	})
+	return newId, err
 }
 
 // resourceAwsAccountRead attempts to read an AWS account from either the project accounts
