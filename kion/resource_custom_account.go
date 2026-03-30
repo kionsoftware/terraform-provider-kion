@@ -199,13 +199,18 @@ func resourceCustomAccountDelete(ctx context.Context, d *schema.ResourceData, m 
 
 // Require startDatecode if adding to a new project
 func validateCustomAccountStartDatecode(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
-	// if start date is already set, nothing to do
-	if _, ok := d.GetOk("start_datecode"); ok {
+	// Use GetRawConfig to check if values are set in the configuration.
+	// GetOk returns false for computed/unknown values (e.g. formatdate()),
+	// which incorrectly triggers validation errors during the plan phase.
+	rawConfig := d.GetRawConfig()
+
+	// if start date is already set in config, nothing to do
+	if !rawConfig.GetAttr("start_datecode").IsNull() {
 		return nil
 	}
 
 	// if not adding to project, we don't care about start date
-	if _, ok := d.GetOk("project_id"); !ok {
+	if rawConfig.GetAttr("project_id").IsNull() {
 		return nil
 	}
 

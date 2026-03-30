@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 ### Fixed
 
+- Fixed `kion_custom_account` validation failing for `start_datecode` when using a computed value (e.g., `formatdate()`) (#143)
+- Replaced `GetOk()` with `GetRawConfig()` in `CustomizeDiff` validation, as `GetOk()` returns false for unknown/computed values during the plan phase
 - Fixed `kion_azure_policy` example in `examples/resources/kion_azure_policy/resource.tf` which produced a 400 from the Azure Policy Definition API (`Could not find member 'if' on object of type 'PolicyDefinitionProperties'`)
 - The example's `policy` JSON now wraps the rule in a `policyRule` object and includes the parameter schema inside the policy JSON, matching what Azure expects in the `properties` body
 - The example's top-level Terraform `parameters` attribute now uses the runtime-value format (`{ "paramName": { "value": ... } }`) instead of re-declaring the parameter schema
