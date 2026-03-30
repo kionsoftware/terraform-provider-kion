@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+## [0.3.33] - 2026-03-26
+
+### Fixed
+
+- Fixed `kion_aws_account` failing to move newly created accounts from cache to project due to AWS service activation delays
+- Account creation now verifies the account is accessible in AWS via `/v3/account-cache/{id}/status` before attempting to move it to a project
+- The cache-to-project conversion now retries on all errors until the create timeout expires, handling transient AWS errors like `OptInRequired` during new account provisioning
+
 ## [0.3.32] - 2026-02-20
 
 ### Fixed
