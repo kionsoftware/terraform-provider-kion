@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+## [0.3.34] - 2026-03-30
+
+### Fixed
+
+- Fixed `kion_custom_account` validation failing for `start_datecode` when using a computed value (e.g., `formatdate()`) (#143)
+- Replaced `GetOk()` with `GetRawConfig()` in `CustomizeDiff` validation, as `GetOk()` returns false for unknown/computed values during the plan phase
+
 ## [0.3.33] - 2026-03-26
 
 ### Fixed
