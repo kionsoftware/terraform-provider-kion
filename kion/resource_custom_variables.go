@@ -121,7 +121,7 @@ func resourceCustomVariableCreate(ctx context.Context, d *schema.ResourceData, m
 		return hc.HandleError(fmt.Errorf("default_value_%s must be set when type is %s", cvType, cvType))
 	}
 
-	cvValue, err := hc.UnpackCvValueJsonStr(defaultValue, cvType)
+	cvValue, err := hc.UnpackCvValueJSONStr(defaultValue, cvType)
 	if err != nil {
 		return hc.HandleError(fmt.Errorf("failed to process default_value: %v", err))
 	}
@@ -164,7 +164,7 @@ func resourceCustomVariableRead(ctx context.Context, d *schema.ResourceData, m i
 	item := resp.Data
 
 	cvType := item.Type
-	cvValueStr, err := hc.PackCvValueIntoJsonStr(item.DefaultValue, cvType)
+	cvValueStr, err := hc.PackCvValueIntoJSONStr(item.DefaultValue, cvType)
 	if err != nil {
 		return hc.HandleError(fmt.Errorf("failed to process default_value: %v", err))
 	}
@@ -240,7 +240,7 @@ func resourceCustomVariableUpdate(ctx context.Context, d *schema.ResourceData, m
 			return hc.HandleError(fmt.Errorf("default_value_%s must be set when type is %s", cvType, cvType))
 		}
 
-		cvValue, err := hc.UnpackCvValueJsonStr(defaultValue, cvType)
+		cvValue, err := hc.UnpackCvValueJSONStr(defaultValue, cvType)
 		if err != nil {
 			return hc.HandleError(fmt.Errorf("failed to process default_value: %v", err))
 		}

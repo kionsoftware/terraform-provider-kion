@@ -63,7 +63,7 @@ type FundingSourcePermissionMapping struct {
 
 type FSUserMappingListResponse struct {
 	Data []struct {
-		AppRoleId    int    `json:"app_role_id"`
+		AppRoleID    int    `json:"app_role_id"`
 		UserGroupIds *[]int `json:"user_groups_ids"`
 		UserIds      *[]int `json:"user_ids"`
 	}

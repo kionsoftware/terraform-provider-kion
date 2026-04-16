@@ -13,7 +13,7 @@ import (
 
 func dataServiceControlPolicy() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceService_control_policyRead,
+		ReadContext: dataSourceServiceControlPolicyRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -105,7 +105,7 @@ func dataServiceControlPolicy() *schema.Resource {
 	}
 }
 
-func dataSourceService_control_policyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceServiceControlPolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 

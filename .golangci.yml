@@ -1,80 +1,92 @@
+version: "2"
 run:
-  timeout: 5m
   issues-exit-code: 1
   tests: true
-output:
-  print-issued-lines: true
-  print-linter-name: true
-linters-settings:
-  dupl:
-    threshold: 150
-  errcheck:
-    check-type-assertions: false
-    check-blank: false
-  goconst:
-    min-len: 3
-    min-occurrences: 5
-  gocyclo:
-    min-complexity: 50
-  gofmt:
-    simplify: true
-  goimports:
-    local-prefixes: https://github.com/kionsoftware/terraform-provider-kion
-  # govet:
-  #   enable:
-  #     - shadow
-  lll:
-    line-length: 120
-    tab-width: 1
-  misspell:
-    locale: US
-    # ignore-words:
-    #   - cancelled
-  sloglint:
-    attr-only: true
-  unparam:
-    check-exported: false
-  staticcheck:
-    checks:
-      - all
-      - '-SA1019'
 linters:
-  disable-all: true
+  default: none
   enable:
     - asciicheck
-    # - dupl
-    - errcheck
     - bodyclose
+    - errcheck
     - goconst
     - gocyclo
-    - gofmt
-    # - goimports
-    - gosimple
     - govet
     - ineffassign
-    # - lll
     - misspell
     - sloglint
     - staticcheck
     - unconvert
     - unparam
     - unused
+  settings:
+    dupl:
+      threshold: 150
+    errcheck:
+      check-type-assertions: false
+      check-blank: false
+    goconst:
+      min-len: 3
+      min-occurrences: 5
+    gocyclo:
+      min-complexity: 50
+    lll:
+      line-length: 120
+      tab-width: 1
+    misspell:
+      locale: US
+    sloglint:
+      attr-only: true
+    staticcheck:
+      checks:
+        - all
+        - -SA1019
+    unparam:
+      check-exported: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - staticcheck
+        text: d.GetOkExists is deprecated
+    paths:
+      - importer-script/*
+      - docs
+      - examples
+      - provider-migration-script
+      - templates
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  # exclude:
   max-same-issues: 0
-  exclude-dirs:
-    - importer-script/*
-    - docs
-    - examples
-    - provider-migration-script
-    - templates
-  exclude-rules:
-    - linters:
-        - staticcheck
-      text: "d.GetOkExists is deprecated"
 severity:
-  default-severity: error
+  default: error
   rules:
     - linters:
         - gofmt
       severity: info
+formatters:
+  enable:
+    - gofmt
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+      local-prefixes:
+        - https://github.com/kionsoftware/terraform-provider-kion
+  exclusions:
+    generated: lax
+    paths:
+      - importer-script/*
+      - docs
+      - examples
+      - provider-migration-script
+      - templates
+      - third_party$
+      - builtin$
+      - examples$

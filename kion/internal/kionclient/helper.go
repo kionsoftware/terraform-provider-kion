@@ -591,8 +591,8 @@ func NormalizeCvValue(v string, cvType string) (string, error) {
 	}
 }
 
-// PackCvValueIntoJsonStr converts the API response back to the appropriate format
-func PackCvValueIntoJsonStr(value interface{}, cvType string) (string, error) {
+// PackCvValueIntoJSONStr converts the API response back to the appropriate format
+func PackCvValueIntoJSONStr(value interface{}, cvType string) (string, error) {
 	if value == nil {
 		return "", nil
 	}
@@ -649,8 +649,8 @@ func PackCvValueIntoJsonStr(value interface{}, cvType string) (string, error) {
 	}
 }
 
-// UnpackCvValueJsonStr converts the input value based on the custom variable type
-func UnpackCvValueJsonStr(input interface{}, cvType string) (interface{}, error) {
+// UnpackCvValueJSONStr converts the input value based on the custom variable type
+func UnpackCvValueJSONStr(input interface{}, cvType string) (interface{}, error) {
 	switch cvType {
 	case TypeString:
 		if str, ok := input.(string); ok {
