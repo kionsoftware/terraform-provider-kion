@@ -93,7 +93,7 @@ func resourceCustomVariableOverrideCreate(ctx context.Context, d *schema.Resourc
 		return hc.HandleError(fmt.Errorf("value_%s must be set when type is %s", cvResp.Data.Type, cvResp.Data.Type))
 	}
 
-	cvValue, err := hc.UnpackCvValueJsonStr(value, cvResp.Data.Type)
+	cvValue, err := hc.UnpackCvValueJSONStr(value, cvResp.Data.Type)
 	if err != nil {
 		return hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 	}
@@ -139,7 +139,7 @@ func resourceCustomVariableOverrideRead(ctx context.Context, d *schema.ResourceD
 
 	// Only process if there's an override value
 	if item.Override != nil && item.Override.Value != nil {
-		cvValueStr, err := hc.PackCvValueIntoJsonStr(item.Override.Value, cvResp.Data.Type)
+		cvValueStr, err := hc.PackCvValueIntoJSONStr(item.Override.Value, cvResp.Data.Type)
 		if err != nil {
 			return hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 		}
@@ -205,7 +205,7 @@ func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.Resourc
 			return hc.HandleError(fmt.Errorf("value_%s must be set when type is %s", cvResp.Data.Type, cvResp.Data.Type))
 		}
 
-		cvValue, err := hc.UnpackCvValueJsonStr(value, cvResp.Data.Type)
+		cvValue, err := hc.UnpackCvValueJSONStr(value, cvResp.Data.Type)
 		if err != nil {
 			return hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 		}

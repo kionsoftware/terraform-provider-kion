@@ -232,10 +232,10 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 		// Import an existing Azure subscription
 
 		var postAccountData interface{}
-		var accountUrl string
+		var accountURL string
 		switch accountLocation {
 		case CacheLocation:
-			accountUrl = "/v3/account-cache?account-type=azure"
+			accountURL = "/v3/account-cache?account-type=azure"
 			postAccountData = hc.AccountCacheNewAzureImport{
 				SubscriptionUUID:   d.Get("subscription_uuid").(string),
 				AccountAlias:       hc.OptionalValue[string](d, "account_alias"),
@@ -248,7 +248,7 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 		case ProjectLocation:
 			fallthrough
 		default:
-			accountUrl = "/v3/account?account-type=azure"
+			accountURL = "/v3/account?account-type=azure"
 			postAccountData = hc.AccountNewAzureImport{
 				SubscriptionUUID:   d.Get("subscription_uuid").(string),
 				AccountAlias:       hc.OptionalValue[string](d, "account_alias"),
@@ -262,9 +262,9 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 		}
 
 		if rb, err := json.Marshal(postAccountData); err == nil {
-			tflog.Debug(ctx, fmt.Sprintf("Importing exiting Azure account via POST %s", accountUrl), map[string]interface{}{"postData": string(rb)})
+			tflog.Debug(ctx, fmt.Sprintf("Importing exiting Azure account via POST %s", accountURL), map[string]interface{}{"postData": string(rb)})
 		}
-		resp, err := client.POST(accountUrl, postAccountData)
+		resp, err := client.POST(accountURL, postAccountData)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -351,26 +351,26 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 			return diags
 		}
 
-		accountCacheId := respCache.RecordID
+		accountCacheID := respCache.RecordID
 
 		// Wait for account to be created
 		createStateConf := &retry.StateChangeConf{
 			Refresh: func() (interface{}, string, error) {
 				resp := new(hc.AccountResponse)
-				err := client.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
+				err := client.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheID), resp)
 				if err != nil {
 					if resErr, ok := err.(*hc.RequestError); ok {
 						if resErr.StatusCode == http.StatusNotFound {
 							// StateChangeConf handles 404s differently than errors, so return nil instead of err
-							tflog.Trace(ctx, fmt.Sprintf("Checking new Azure account status: /v3/account-cache/%d not found", accountCacheId))
+							tflog.Trace(ctx, fmt.Sprintf("Checking new Azure account status: /v3/account-cache/%d not found", accountCacheID))
 							return nil, "NotFound", nil
 						}
 					}
-					tflog.Trace(ctx, fmt.Sprintf("Checking new Azure account status: /v3/account-cache/%d error", accountCacheId), map[string]interface{}{"error": err})
+					tflog.Trace(ctx, fmt.Sprintf("Checking new Azure account status: /v3/account-cache/%d error", accountCacheID), map[string]interface{}{"error": err})
 					return nil, "Error", err
 				}
 				if resp.Data.AccountNumber == "" {
-					tflog.Trace(ctx, fmt.Sprintf("Checking new Azure account status: /v3/account-cache/%d missing account number", accountCacheId))
+					tflog.Trace(ctx, fmt.Sprintf("Checking new Azure account status: /v3/account-cache/%d missing account number", accountCacheID))
 					return resp, "MissingSubscriptionId", nil
 				}
 				return resp, "AccountCreated", nil
@@ -396,26 +396,26 @@ func resourceAzureAccountCreate(ctx context.Context, d *schema.ResourceData, m i
 		switch accountLocation {
 		case ProjectLocation:
 			// Move cached account to the requested project
-			projectId := d.Get("project_id").(int)
+			projectID := d.Get("project_id").(int)
 			startDatecode := time.Now().Format("200601")
 
-			newId, err := convertCacheAccountToProjectAccount(client, accountCacheId, projectId, startDatecode)
+			newID, err := convertCacheAccountToProjectAccount(client, accountCacheID, projectID, startDatecode)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
 					Summary:  "Unable to convert Azure cached account to project account",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), accountCacheId),
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), accountCacheID),
 				})
 				diags = append(diags, resourceAzureAccountRead(ctx, d, m)...)
 				return diags
 			}
 
 			diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
-			d.SetId(strconv.Itoa(newId))
+			d.SetId(strconv.Itoa(newID))
 
 		case CacheLocation:
 			diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
-			d.SetId(strconv.Itoa(accountCacheId))
+			d.SetId(strconv.Itoa(accountCacheID))
 		}
 	}
 

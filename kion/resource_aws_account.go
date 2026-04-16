@@ -236,7 +236,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 	// Set initial location - this should match what customDiffComputedAccountLocation does
 	var accountLocation string
-	if projectId := d.Get("project_id").(int); projectId != 0 {
+	if projectID := d.Get("project_id").(int); projectID != 0 {
 		accountLocation = ProjectLocation
 	} else {
 		accountLocation = CacheLocation
@@ -250,21 +250,21 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 	if _, ok := d.GetOk("account_number"); ok {
 		// Import an existing AWS account
-		accountTypeId := int(hc.AWSStandard)
+		accountTypeID := int(hc.AWSStandard)
 		if v, ok := d.GetOk("account_type_id"); ok {
-			accountTypeId = v.(int)
+			accountTypeID = v.(int)
 		}
 
 		var postAccountData interface{}
-		var accountUrl string
+		var accountURL string
 		switch accountLocation {
 		case CacheLocation:
-			accountUrl = "/v3/account-cache?account-type=aws"
+			accountURL = "/v3/account-cache?account-type=aws"
 			postAccountData = hc.AccountCacheNewAWSImport{
 				AccountAlias:              hc.OptionalValue[string](d, "account_alias"),
 				AccountEmail:              d.Get("email").(string),
 				AccountNumber:             d.Get("account_number").(string),
-				AccountTypeID:             &accountTypeId,
+				AccountTypeID:             &accountTypeID,
 				IncludeLinkedAccountSpend: hc.OptionalValue[bool](d, "include_linked_account_spend"),
 				LinkedAccountNumber:       d.Get("linked_account_number").(string),
 				LinkedRole:                d.Get("linked_role").(string),
@@ -276,12 +276,12 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		case ProjectLocation:
 			fallthrough
 		default:
-			accountUrl = "/v3/account?account-type=aws"
+			accountURL = "/v3/account?account-type=aws"
 			postAccountData = hc.AccountNewAWSImport{
 				AccountAlias:              hc.OptionalValue[string](d, "account_alias"),
 				AccountEmail:              d.Get("email").(string),
 				AccountNumber:             d.Get("account_number").(string),
-				AccountTypeID:             &accountTypeId,
+				AccountTypeID:             &accountTypeID,
 				IncludeLinkedAccountSpend: hc.OptionalValue[bool](d, "include_linked_account_spend"),
 				LinkedAccountNumber:       d.Get("linked_account_number").(string),
 				LinkedRole:                d.Get("linked_role").(string),
@@ -296,13 +296,13 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 		// Log the request data
 		if rb, err := json.Marshal(postAccountData); err == nil {
-			tflog.Debug(ctx, fmt.Sprintf("Importing existing AWS account via POST %s", accountUrl), map[string]interface{}{
+			tflog.Debug(ctx, fmt.Sprintf("Importing existing AWS account via POST %s", accountURL), map[string]interface{}{
 				"postData": string(rb),
-				"url":      accountUrl,
+				"url":      accountURL,
 			})
 		}
 
-		resp, err := client.POST(accountUrl, postAccountData)
+		resp, err := client.POST(accountURL, postAccountData)
 		if err != nil {
 			diags = append(diags, hc.HandleError(fmt.Errorf("unable to import AWS Account: %v", err))...)
 			return diags
@@ -312,7 +312,7 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 
 	} else {
 		// Create new AWS account
-		diags, accountCacheId := createAwsAccount(ctx, client, d)
+		diags, accountCacheID := createAwsAccount(ctx, client, d)
 		if diags.HasError() {
 			return diags
 		}
@@ -320,20 +320,20 @@ func resourceAwsAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		switch accountLocation {
 		case ProjectLocation:
 			// Move cached account to the requested project
-			projectId := d.Get("project_id").(int)
+			projectID := d.Get("project_id").(int)
 			startDatecode := time.Now().Format("200601")
 
-			newId, err := retryConvertCacheAccountToProjectAccountForAWS(ctx, client, accountCacheId, projectId, startDatecode, d.Timeout(schema.TimeoutCreate))
+			newID, err := retryConvertCacheAccountToProjectAccountForAWS(ctx, client, accountCacheID, projectID, startDatecode, d.Timeout(schema.TimeoutCreate))
 			if err != nil {
 				diags = append(diags, hc.HandleError(fmt.Errorf("unable to convert AWS cached account to project account: %v", err))...)
 				return diags
 			}
 
-			d.SetId(fmt.Sprintf("%d", newId))
+			d.SetId(fmt.Sprintf("%d", newID))
 
 		case CacheLocation:
 			// Track the cached account
-			d.SetId(fmt.Sprintf("%d", accountCacheId))
+			d.SetId(fmt.Sprintf("%d", accountCacheID))
 		}
 	}
 
@@ -409,7 +409,7 @@ func populateOrgUnitFromResourceData(d *schema.ResourceData, postCacheData *hc.A
 			}
 			postCacheData.OrganizationalUnit = &hc.PayerOrganizationalUnit{
 				Name:      orgUnitMap["name"].(string),
-				OrgUnitId: orgUnitMap["org_unit_id"].(string),
+				OrgUnitID: orgUnitMap["org_unit_id"].(string),
 			}
 		}
 	}
@@ -420,21 +420,21 @@ func populateOrgUnitFromResourceData(d *schema.ResourceData, postCacheData *hc.A
 // and accessible in AWS, or a timeout occurs.  It first waits for the account
 // number to be assigned, then verifies the account is accessible via the
 // /v3/account-cache/{id}/status endpoint before returning.
-func waitForAccountCreation(client *hc.Client, ctx context.Context, accountCacheId int, d *schema.ResourceData) error {
+func waitForAccountCreation(client *hc.Client, ctx context.Context, accountCacheID int, d *schema.ResourceData) error {
 	timeout := d.Timeout(schema.TimeoutCreate)
 
 	// Phase 1: Wait for the account number to be assigned.
 	createStateConf := &retry.StateChangeConf{
 		Refresh: func() (interface{}, string, error) {
 			resp := new(hc.AccountResponse)
-			err := client.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
+			err := client.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheID), resp)
 			if err != nil {
-				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d error", accountCacheId), map[string]interface{}{"error": err, "accountCacheId": accountCacheId})
+				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d error", accountCacheID), map[string]interface{}{"error": err, "accountCacheID": accountCacheID})
 				return nil, "", err
 			}
 
 			if resp.Data.AccountNumber == "" {
-				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d missing account number", accountCacheId), map[string]interface{}{"accountCacheId": accountCacheId})
+				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account status: /v3/account-cache/%d missing account number", accountCacheID), map[string]interface{}{"accountCacheID": accountCacheID})
 				return resp, "MissingAccountNumber", nil
 			}
 
@@ -457,18 +457,18 @@ func waitForAccountCreation(client *hc.Client, ctx context.Context, accountCache
 	statusStateConf := &retry.StateChangeConf{
 		Refresh: func() (interface{}, string, error) {
 			resp := new(hc.AccountCacheStatusResponse)
-			err := client.GET(fmt.Sprintf("/v3/account-cache/%d/status", accountCacheId), resp)
+			err := client.GET(fmt.Sprintf("/v3/account-cache/%d/status", accountCacheID), resp)
 			if err != nil {
-				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account accessibility: /v3/account-cache/%d/status error", accountCacheId), map[string]interface{}{"error": err, "accountCacheId": accountCacheId})
+				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account accessibility: /v3/account-cache/%d/status error", accountCacheID), map[string]interface{}{"error": err, "accountCacheID": accountCacheID})
 				return nil, "", err
 			}
 
 			if !resp.Data {
-				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account accessibility: /v3/account-cache/%d/status not yet accessible", accountCacheId), map[string]interface{}{"accountCacheId": accountCacheId})
+				tflog.Trace(ctx, fmt.Sprintf("Checking new AWS account accessibility: /v3/account-cache/%d/status not yet accessible", accountCacheID), map[string]interface{}{"accountCacheID": accountCacheID})
 				return resp, "NotReady", nil
 			}
 
-			tflog.Debug(ctx, fmt.Sprintf("New AWS account is accessible: /v3/account-cache/%d/status", accountCacheId), map[string]interface{}{"accountCacheId": accountCacheId})
+			tflog.Debug(ctx, fmt.Sprintf("New AWS account is accessible: /v3/account-cache/%d/status", accountCacheID), map[string]interface{}{"accountCacheID": accountCacheID})
 			return resp, "Ready", nil
 		},
 		Pending: []string{"NotReady"},
@@ -484,22 +484,22 @@ func waitForAccountCreation(client *hc.Client, ctx context.Context, accountCache
 // conversion until it succeeds or the timeout expires.  Since we just created
 // the account, any error is likely transient (AWS service activation delays,
 // Kion rules still processing, etc.) so all errors are retried.
-func retryConvertCacheAccountToProjectAccountForAWS(ctx context.Context, client *hc.Client, accountCacheId, projectId int, startDatecode string, timeout time.Duration) (int, error) {
-	var newId int
+func retryConvertCacheAccountToProjectAccountForAWS(ctx context.Context, client *hc.Client, accountCacheID, projectID int, startDatecode string, timeout time.Duration) (int, error) {
+	var newID int
 	err := retry.RetryContext(ctx, timeout, func() *retry.RetryError {
-		id, err := convertCacheAccountToProjectAccount(client, accountCacheId, projectId, startDatecode)
+		id, err := convertCacheAccountToProjectAccount(client, accountCacheID, projectID, startDatecode)
 		if err != nil {
 			tflog.Debug(ctx, "Error during cache-to-project conversion, will retry", map[string]interface{}{
-				"account_cache_id": accountCacheId,
-				"project_id":       projectId,
+				"account_cache_id": accountCacheID,
+				"project_id":       projectID,
 				"error":            err.Error(),
 			})
 			return retry.RetryableError(err)
 		}
-		newId = id
+		newID = id
 		return nil
 	})
-	return newId, err
+	return newID, err
 }
 
 // resourceAwsAccountRead attempts to read an AWS account from either the project accounts
@@ -599,17 +599,17 @@ func resourceAwsAccountUpdate(ctx context.Context, d *schema.ResourceData, m int
 	// Handle account location changes
 	if d.HasChange("project_id") {
 		hasChanged = true
-		oldId, newId := d.GetChange("project_id")
-		oldProjectId := oldId.(int)
-		newProjectId := newId.(int)
+		oldID, newID := d.GetChange("project_id")
+		oldProjectID := oldID.(int)
+		newProjectID := newID.(int)
 
-		if oldProjectId == 0 && newProjectId != 0 {
+		if oldProjectID == 0 && newProjectID != 0 {
 			// Converting from cache to project
 			diags = append(diags, handleCacheToProjectConversion(ctx, d, client)...)
-		} else if oldProjectId != 0 && newProjectId == 0 {
+		} else if oldProjectID != 0 && newProjectID == 0 {
 			// Converting from project to cache
 			diags = append(diags, handleProjectToCacheConversion(ctx, d, client)...)
-		} else if oldProjectId != newProjectId {
+		} else if oldProjectID != newProjectID {
 			// Moving between projects
 			diags = append(diags, handleProjectToProjectMove(ctx, d, client)...)
 		}
@@ -679,46 +679,46 @@ func handleCacheToProjectConversion(ctx context.Context, d *schema.ResourceData,
 	var diags diag.Diagnostics
 	ID := strings.TrimPrefix(d.Id(), "account_cache_id=")
 
-	accountCacheId, err := strconv.Atoi(ID)
+	accountCacheID, err := strconv.Atoi(ID)
 	if err != nil {
 		return append(diags, hc.HandleError(fmt.Errorf("invalid account cache ID: %v", err))...)
 	}
 
-	projectId := d.Get("project_id").(int)
+	projectID := d.Get("project_id").(int)
 	startDatecode := d.Get("start_datecode").(string)
 
 	tflog.Debug(ctx, "Converting AWS account from cache to project", map[string]interface{}{
-		"account_cache_id": accountCacheId,
-		"project_id":       projectId,
+		"account_cache_id": accountCacheID,
+		"project_id":       projectID,
 		"start_datecode":   startDatecode,
 	})
 
-	newId, err := convertCacheAccountToProjectAccount(client, accountCacheId, projectId, startDatecode)
+	newID, err := convertCacheAccountToProjectAccount(client, accountCacheID, projectID, startDatecode)
 	if err != nil {
 		return append(diags, hc.HandleError(fmt.Errorf("failed to convert cache account to project: %v", err))...)
 	}
 
-	d.SetId(fmt.Sprintf("%d", newId))
+	d.SetId(fmt.Sprintf("%d", newID))
 	return diags
 }
 
 func handleProjectToCacheConversion(ctx context.Context, d *schema.ResourceData, client *hc.Client) diag.Diagnostics {
 	var diags diag.Diagnostics
-	accountId, err := strconv.Atoi(d.Id())
+	accountID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return append(diags, hc.HandleError(fmt.Errorf("invalid account ID: %v", err))...)
 	}
 
 	tflog.Debug(ctx, "Converting AWS account from project to cache", map[string]interface{}{
-		"account_id": accountId,
+		"account_id": accountID,
 	})
 
-	newId, err := convertProjectAccountToCacheAccount(client, accountId)
+	newID, err := convertProjectAccountToCacheAccount(client, accountID)
 	if err != nil {
 		return append(diags, hc.HandleError(fmt.Errorf("failed to convert project account to cache: %v", err))...)
 	}
 
-	d.SetId(fmt.Sprintf("%d", newId))
+	d.SetId(fmt.Sprintf("%d", newID))
 	return diags
 }
 

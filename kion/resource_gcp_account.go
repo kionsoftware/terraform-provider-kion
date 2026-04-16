@@ -168,10 +168,10 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		// Import an existing GCP project
 
 		var postAccountData interface{}
-		var accountUrl string
+		var accountURL string
 		switch accountLocation {
 		case CacheLocation:
-			accountUrl = "/v3/account-cache?account-type=google-cloud"
+			accountURL = "/v3/account-cache?account-type=google-cloud"
 			postAccountData = hc.AccountCacheNewGCPImport{
 				Name:                 d.Get("name").(string),
 				AccountAlias:         hc.OptionalValue[string](d, "account_alias"),
@@ -184,7 +184,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		case ProjectLocation:
 			fallthrough
 		default:
-			accountUrl = "/v3/account?account-type=google-cloud"
+			accountURL = "/v3/account?account-type=google-cloud"
 			postAccountData = hc.AccountNewGCPImport{
 				Name:                 d.Get("name").(string),
 				AccountAlias:         hc.OptionalValue[string](d, "account_alias"),
@@ -198,9 +198,9 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		}
 
 		if rb, err := json.Marshal(postAccountData); err == nil {
-			tflog.Debug(ctx, fmt.Sprintf("Importing exiting GCP Project via POST %s", accountUrl), map[string]interface{}{"postData": string(rb)})
+			tflog.Debug(ctx, fmt.Sprintf("Importing exiting GCP Project via POST %s", accountURL), map[string]interface{}{"postData": string(rb)})
 		}
-		resp, err := client.POST(accountUrl, postAccountData)
+		resp, err := client.POST(accountURL, postAccountData)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -250,7 +250,7 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 			return diags
 		}
 
-		accountCacheId := respCache.RecordID
+		accountCacheID := respCache.RecordID
 
 		// The API doesn't give any indication of when the GCP project has been created.
 		// Instead we'll poll a few times to see if the cached account gets deleted.
@@ -258,16 +258,16 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		createStateConf := &retry.StateChangeConf{
 			Refresh: func() (interface{}, string, error) {
 				resp := new(hc.AccountResponse)
-				err := client.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheId), resp)
+				err := client.GET(fmt.Sprintf("/v3/account-cache/%d", accountCacheID), resp)
 				if err != nil {
 					if resErr, ok := err.(*hc.RequestError); ok {
 						if resErr.StatusCode == http.StatusNotFound {
 							// StateChangeConf handles 404s differently than errors, so return nil instead of err
-							tflog.Trace(ctx, fmt.Sprintf("Checking new GCP account status: /v3/account-cache/%d not found", accountCacheId))
+							tflog.Trace(ctx, fmt.Sprintf("Checking new GCP account status: /v3/account-cache/%d not found", accountCacheID))
 							return nil, "NotFound", nil
 						}
 					}
-					tflog.Trace(ctx, fmt.Sprintf("Checking new GCP account status: /v3/account-cache/%d error", accountCacheId), map[string]interface{}{"error": err})
+					tflog.Trace(ctx, fmt.Sprintf("Checking new GCP account status: /v3/account-cache/%d error", accountCacheID), map[string]interface{}{"error": err})
 					return nil, "Error", err
 				}
 				return resp, "AccountExists", nil
@@ -291,26 +291,26 @@ func resourceGcpAccountCreate(ctx context.Context, d *schema.ResourceData, m int
 		switch accountLocation {
 		case ProjectLocation:
 			// Move cached account to the requested project
-			projectId := d.Get("project_id").(int)
+			projectID := d.Get("project_id").(int)
 			startDatecode := time.Now().Format("200601")
 
-			newId, err := convertCacheAccountToProjectAccount(client, accountCacheId, projectId, startDatecode)
+			newID, err := convertCacheAccountToProjectAccount(client, accountCacheID, projectID, startDatecode)
 			if err != nil {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
 					Summary:  "Unable to convert GCP cached account to project account",
-					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), accountCacheId),
+					Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), accountCacheID),
 				})
 				diags = append(diags, resourceGcpAccountRead(ctx, d, m)...)
 				return diags
 			}
 
 			diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
-			d.SetId(strconv.Itoa(newId))
+			d.SetId(strconv.Itoa(newID))
 
 		case CacheLocation:
 			diags = append(diags, hc.SafeSet(d, "location", accountLocation, "Failed to set location for account")...)
-			d.SetId(strconv.Itoa(accountCacheId))
+			d.SetId(strconv.Itoa(accountCacheID))
 		}
 	}
 

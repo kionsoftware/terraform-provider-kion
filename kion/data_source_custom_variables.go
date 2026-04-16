@@ -126,7 +126,7 @@ func dataSourceCustomVariablesRead(ctx context.Context, d *schema.ResourceData, 
 	arr := make([]map[string]interface{}, 0)
 
 	for _, item := range resp.Data.Items {
-		cvValueStr, err := hc.PackCvValueIntoJsonStr(item.DefaultValue, item.Type)
+		cvValueStr, err := hc.PackCvValueIntoJSONStr(item.DefaultValue, item.Type)
 		if err != nil {
 			return hc.HandleError(fmt.Errorf("failed to process default_value: %v", err))
 		}

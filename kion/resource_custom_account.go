@@ -121,7 +121,7 @@ func resourceCustomAccountCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	// Set initial location
 	var accountLocation string
-	if projectId := d.Get("project_id").(int); projectId != 0 {
+	if projectID := d.Get("project_id").(int); projectID != 0 {
 		accountLocation = ProjectLocation
 	} else {
 		accountLocation = CacheLocation
@@ -135,10 +135,10 @@ func resourceCustomAccountCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	// Import the existing custom account
 	var postAccountData interface{}
-	var accountUrl string
+	var accountURL string
 	switch accountLocation {
 	case CacheLocation:
-		accountUrl = "/v3/account-cache?account-type=custom"
+		accountURL = "/v3/account-cache?account-type=custom"
 		postAccountData = hc.AccountCacheNewCustomImport{
 			AccountAlias:  hc.OptionalValue[string](d, "account_alias"),
 			AccountNumber: d.Get("account_number").(string),
@@ -149,7 +149,7 @@ func resourceCustomAccountCreate(ctx context.Context, d *schema.ResourceData, m 
 	case ProjectLocation:
 		fallthrough
 	default:
-		accountUrl = "/v3/account?account-type=custom"
+		accountURL = "/v3/account?account-type=custom"
 		postAccountData = hc.AccountNewCustomImport{
 			AccountAlias:  hc.OptionalValue[string](d, "account_alias"),
 			AccountNumber: d.Get("account_number").(string),
@@ -160,11 +160,11 @@ func resourceCustomAccountCreate(ctx context.Context, d *schema.ResourceData, m 
 		}
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("Importing custom account via POST %s", accountUrl), map[string]interface{}{
-		"url": accountUrl,
+	tflog.Debug(ctx, fmt.Sprintf("Importing custom account via POST %s", accountURL), map[string]interface{}{
+		"url": accountURL,
 	})
 
-	resp, err := client.POST(accountUrl, postAccountData)
+	resp, err := client.POST(accountURL, postAccountData)
 	if err != nil {
 		diags = append(diags, hc.HandleError(fmt.Errorf("unable to import custom account: %v", err))...)
 		return diags

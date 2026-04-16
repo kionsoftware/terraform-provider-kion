@@ -117,11 +117,11 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	// Handle project ID changes
 	if d.HasChange("project_id") {
 		hasChanged = true
-		oldId, newId := d.GetChange("project_id")
-		oldProjectId := oldId.(int)
-		newProjectId := newId.(int)
+		oldID, newID := d.GetChange("project_id")
+		oldProjectID := oldID.(int)
+		newProjectID := newID.(int)
 
-		diags = append(diags, handleAccountConversion(ctx, d, client, oldProjectId, newProjectId)...)
+		diags = append(diags, handleAccountConversion(ctx, d, client, oldProjectID, newProjectID)...)
 		if diags.HasError() {
 			return diags
 		}
@@ -163,10 +163,10 @@ func handleAccountFieldUpdate(ctx context.Context, d *schema.ResourceData, clien
 	accountLocation := getKionAccountLocation(d)
 
 	var req interface{}
-	var accountUrl string
+	var accountURL string
 	switch accountLocation {
 	case CacheLocation:
-		accountUrl = fmt.Sprintf("/v3/account-cache/%s", ID)
+		accountURL = fmt.Sprintf("/v3/account-cache/%s", ID)
 		cacheReq := hc.AccountCacheUpdatable{}
 		if v, ok := d.GetOk("account_alias"); ok {
 			accountAlias := v.(string)
@@ -200,7 +200,7 @@ func handleAccountFieldUpdate(ctx context.Context, d *schema.ResourceData, clien
 	case ProjectLocation:
 		fallthrough
 	default:
-		accountUrl = fmt.Sprintf("/v3/account/%s", ID)
+		accountURL = fmt.Sprintf("/v3/account/%s", ID)
 		accountReq := hc.AccountUpdatable{}
 		if v, ok := d.GetOk("account_alias"); ok {
 			accountAlias := v.(string)
@@ -243,10 +243,10 @@ func handleAccountFieldUpdate(ctx context.Context, d *schema.ResourceData, clien
 	tflog.Debug(ctx, "Updating account fields", map[string]interface{}{
 		"account_id": ID,
 		"location":   accountLocation,
-		"url":        accountUrl,
+		"url":        accountURL,
 	})
 
-	if err := client.PATCH(accountUrl, req); err != nil {
+	if err := client.PATCH(accountURL, req); err != nil {
 		return append(diags, hc.HandleError(fmt.Errorf("failed to update account: %v", err))...)
 	}
 
@@ -264,17 +264,17 @@ func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interf
 		"location": accountLocation,
 	})
 
-	var accountUrl string
+	var accountURL string
 	switch accountLocation {
 	case CacheLocation:
-		accountUrl = fmt.Sprintf("/v3/account-cache/%s", ID)
+		accountURL = fmt.Sprintf("/v3/account-cache/%s", ID)
 	case ProjectLocation:
 		fallthrough
 	default:
-		accountUrl = fmt.Sprintf("/v3/account/%s", ID)
+		accountURL = fmt.Sprintf("/v3/account/%s", ID)
 	}
 
-	if err := client.DELETE(accountUrl, nil); err != nil {
+	if err := client.DELETE(accountURL, nil); err != nil {
 		return append(diags, hc.HandleError(fmt.Errorf("failed to delete account (ID: %s): %v", ID, err))...)
 	}
 
@@ -282,11 +282,11 @@ func resourceAccountDelete(ctx context.Context, d *schema.ResourceData, m interf
 	return diags
 }
 
-func convertCacheAccountToProjectAccount(client *hc.Client, accountCacheId, projectId int, startDatecode string) (int, error) {
+func convertCacheAccountToProjectAccount(client *hc.Client, accountCacheID, projectID int, startDatecode string) (int, error) {
 	startDatecode = strings.ReplaceAll(startDatecode, "-", "")
 
 	resp, err := client.POST(fmt.Sprintf("/v3/account-cache/%d/convert/%d?start_datecode=%s",
-		accountCacheId, projectId, startDatecode), nil)
+		accountCacheID, projectID, startDatecode), nil)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to convert cache account to project account: %v", err)
@@ -294,9 +294,9 @@ func convertCacheAccountToProjectAccount(client *hc.Client, accountCacheId, proj
 	return resp.RecordID, nil
 }
 
-func convertProjectAccountToCacheAccount(client *hc.Client, accountId int) (int, error) {
+func convertProjectAccountToCacheAccount(client *hc.Client, accountID int) (int, error) {
 	respRevert := new(hc.AccountRevertResponse)
-	err := client.DeleteWithResponse(fmt.Sprintf("/v3/account/revert/%d", accountId), nil, respRevert)
+	err := client.DeleteWithResponse(fmt.Sprintf("/v3/account/revert/%d", accountID), nil, respRevert)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to convert project account to cache account: %v", err)
@@ -304,47 +304,47 @@ func convertProjectAccountToCacheAccount(client *hc.Client, accountId int) (int,
 	return respRevert.RecordID, nil
 }
 
-func handleAccountConversion(ctx context.Context, d *schema.ResourceData, client *hc.Client, oldProjectId, newProjectId int) diag.Diagnostics {
+func handleAccountConversion(ctx context.Context, d *schema.ResourceData, client *hc.Client, oldProjectID, newProjectID int) diag.Diagnostics {
 	var diags diag.Diagnostics
 	ID := d.Id()
 
-	if oldProjectId == 0 && newProjectId != 0 {
+	if oldProjectID == 0 && newProjectID != 0 {
 		// Converting from cache to project
-		accountCacheId, err := strconv.Atoi(ID)
+		accountCacheID, err := strconv.Atoi(ID)
 		if err != nil {
 			return append(diags, hc.HandleError(fmt.Errorf("invalid account cache id: %v", err))...)
 		}
 
 		tflog.Debug(ctx, "Converting from cached account to project account", map[string]interface{}{
-			"account_cache_id": accountCacheId,
-			"project_id":       newProjectId,
+			"account_cache_id": accountCacheID,
+			"project_id":       newProjectID,
 		})
 
-		newId, err := convertCacheAccountToProjectAccount(client, accountCacheId, newProjectId, d.Get("start_datecode").(string))
+		newID, err := convertCacheAccountToProjectAccount(client, accountCacheID, newProjectID, d.Get("start_datecode").(string))
 		if err != nil {
 			return append(diags, hc.HandleError(fmt.Errorf("failed to convert cache account to project: %v", err))...)
 		}
 
-		d.SetId(fmt.Sprintf("%d", newId))
+		d.SetId(fmt.Sprintf("%d", newID))
 		diags = append(diags, hc.SafeSet(d, "location", ProjectLocation, "Failed to set location")...)
 
-	} else if oldProjectId != 0 && newProjectId == 0 {
+	} else if oldProjectID != 0 && newProjectID == 0 {
 		// Converting from project to cache
-		accountId, err := strconv.Atoi(ID)
+		accountID, err := strconv.Atoi(ID)
 		if err != nil {
 			return append(diags, hc.HandleError(fmt.Errorf("invalid account id: %v", err))...)
 		}
 
 		tflog.Debug(ctx, "Converting from project account to cached account", map[string]interface{}{
-			"account_id": accountId,
+			"account_id": accountID,
 		})
 
-		newId, err := convertProjectAccountToCacheAccount(client, accountId)
+		newID, err := convertProjectAccountToCacheAccount(client, accountID)
 		if err != nil {
 			return append(diags, hc.HandleError(fmt.Errorf("failed to convert project account to cache: %v", err))...)
 		}
 
-		d.SetId(fmt.Sprintf("%d", newId))
+		d.SetId(fmt.Sprintf("%d", newID))
 		diags = append(diags, hc.SafeSet(d, "location", CacheLocation, "Failed to set location")...)
 	}
 
@@ -370,7 +370,7 @@ func getKionAccountLocation(d *schema.ResourceData) string {
 // Show the account location computed attribute in the diff
 func customDiffComputedAccountLocation(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	// Get the project_id
-	projectId := d.Get("project_id").(int)
+	projectID := d.Get("project_id").(int)
 
 	// If we're creating a new resource and project_id is set,
 	// we need to wait for the project to exist
@@ -381,7 +381,7 @@ func customDiffComputedAccountLocation(ctx context.Context, d *schema.ResourceDi
 	}
 
 	// For existing resources, we can compute the location directly
-	if projectId != 0 {
+	if projectID != 0 {
 		if err := d.SetNew("location", ProjectLocation); err != nil {
 			return fmt.Errorf("failed to set location to project: %v", err)
 		}

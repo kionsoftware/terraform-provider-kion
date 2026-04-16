@@ -168,7 +168,7 @@ func resourceFundingSourceRead(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	for _, permissionItem := range permissionResp.Data {
-		if permissionItem.AppRoleId == 1 {
+		if permissionItem.AppRoleID == 1 {
 			if permissionItem.UserGroupIds != nil {
 				if err := d.Set("owner_user_groups", hc.InflateArrayOfIDs(*permissionItem.UserGroupIds)); err != nil {
 					return diag.FromErr(fmt.Errorf("error setting owner_user_groups: %v", err))

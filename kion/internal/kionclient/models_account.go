@@ -202,7 +202,7 @@ type AccountCacheNewAWSImport struct {
 // PayerOrganizationalUnit represents an organizational unit in AWS payer's organization.
 type PayerOrganizationalUnit struct {
 	Name      string `json:"name"`
-	OrgUnitId string `json:"org_unit_id"`
+	OrgUnitID string `json:"org_unit_id"`
 }
 
 // AccountCacheNewGCPCreate for: POST /api/v3/account-cache/create?account-type=google-cloud

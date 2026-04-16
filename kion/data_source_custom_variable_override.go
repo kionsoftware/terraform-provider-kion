@@ -145,7 +145,7 @@ func getAllOUOverrides(d *schema.ResourceData, client *hc.Client) ([]map[string]
 				return nil, hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
 			}
 
-			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
+			cvValueStr, err := hc.PackCvValueIntoJSONStr(override.Override.Value, cvResp.Data.Type)
 			if err != nil {
 				return nil, hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 			}
@@ -198,7 +198,7 @@ func getAllProjectOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 				return nil, hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
 			}
 
-			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
+			cvValueStr, err := hc.PackCvValueIntoJSONStr(override.Override.Value, cvResp.Data.Type)
 			if err != nil {
 				return nil, hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 			}
@@ -252,7 +252,7 @@ func getAllAccountOverrides(d *schema.ResourceData, client *hc.Client) ([]map[st
 				return nil, hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
 			}
 
-			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
+			cvValueStr, err := hc.PackCvValueIntoJSONStr(override.Override.Value, cvResp.Data.Type)
 			if err != nil {
 				return nil, hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 			}
@@ -306,7 +306,7 @@ func getAllAccountCacheOverrides(d *schema.ResourceData, client *hc.Client) ([]m
 				return nil, hc.HandleError(fmt.Errorf("failed to get custom variable type: %v", err))
 			}
 
-			cvValueStr, err := hc.PackCvValueIntoJsonStr(override.Override.Value, cvResp.Data.Type)
+			cvValueStr, err := hc.PackCvValueIntoJSONStr(override.Override.Value, cvResp.Data.Type)
 			if err != nil {
 				return nil, hc.HandleError(fmt.Errorf("failed to process value: %v", err))
 			}
