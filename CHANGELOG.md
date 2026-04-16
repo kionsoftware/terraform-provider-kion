@@ -16,6 +16,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 - The example's `policy` JSON now wraps the rule in a `policyRule` object and includes the parameter schema inside the policy JSON, matching what Azure expects in the `properties` body
 - The example's top-level Terraform `parameters` attribute now uses the runtime-value format (`{ "paramName": { "value": ... } }`) instead of re-declaring the parameter schema
 
+### Security
+
+- Bumped `google.golang.org/grpc` from v1.61.1 to v1.79.3 to address GHSA-p77j-4mvh-x3m3 / CVE-2026-33186 (thanks @enel1221, #146)
+- Bumped Go release line from 1.22 to 1.25 (toolchain pinned to go1.25.9) to address Go stdlib CVE-2025-68121 (thanks @enel1221, #146)
+- Pinned `release.yml` and `golangci-lint.yml` workflows to Go 1.25.9 so CI builds use the patched toolchain
+
 ## [0.3.33] - 2026-03-26
 
 ### Fixed
