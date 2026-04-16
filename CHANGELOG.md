@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
-## [0.3.34-dev] - 2026-04-16
+## [0.3.34] - 2026-04-16
 
 ### Fixed
 
