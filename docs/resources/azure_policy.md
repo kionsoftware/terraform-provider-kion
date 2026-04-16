@@ -13,40 +13,60 @@ description: |-
 ## Example Usage
 
 ```terraform
+# NOTE: The `policy` attribute is sent directly as the `properties` body of the
+# Azure Policy Definition API. That means the Azure Policy rule (`if` / `then`)
+# MUST be nested inside a `policyRule` object, and any parameter schema
+# definitions belong inside the policy JSON's own `parameters` block.
+#
+# The top-level Terraform `parameters` attribute is for RUNTIME parameter
+# values that Kion passes when the policy is assigned. Its shape is:
+#   { "paramName": { "value": <value> } }
+# NOT the full parameter schema (type / metadata / defaultValue) — that
+# schema lives inside the `policy` JSON only.
+
 # Example 1: Require tag on resources
 resource "kion_azure_policy" "require_tags" {
   name        = "Require Environment Tag"
   description = "Requires resources to have an environment tag"
 
-  policy = <<EOF
+  policy = <<-EOF
 {
-    "if": {
-        "allOf": [
-            {
-                "field": "type",
-                "equals": "Microsoft.Resources/subscriptions/resourceGroups"
-            },
-            {
-                "field": "tags['environment']",
-                "exists": "false"
-            }
-        ]
+    "displayName": "Require Environment Tag",
+    "mode": "All",
+    "policyRule": {
+        "if": {
+            "allOf": [
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Resources/subscriptions/resourceGroups"
+                },
+                {
+                    "field": "tags[parameters('tagName')]",
+                    "exists": "false"
+                }
+            ]
+        },
+        "then": {
+            "effect": "deny"
+        }
     },
-    "then": {
-        "effect": "deny"
+    "parameters": {
+        "tagName": {
+            "type": "String",
+            "metadata": {
+                "displayName": "Tag Name",
+                "description": "Name of the tag to enforce"
+            },
+            "defaultValue": "environment"
+        }
     }
 }
 EOF
 
-  parameters = <<EOF
+  parameters = <<-EOF
 {
     "tagName": {
-        "type": "String",
-        "metadata": {
-            "displayName": "Tag Name",
-            "description": "Name of the tag to enforce"
-        },
-        "defaultValue": "environment"
+        "value": "environment"
     }
 }
 EOF
@@ -59,37 +79,50 @@ resource "kion_azure_policy" "allowed_vms" {
   name        = "Allowed VM SKUs"
   description = "Restricts VM deployments to specific SKUs"
 
-  policy = <<EOF
+  policy = <<-EOF
 {
-    "if": {
-        "allOf": [
-            {
-                "field": "type",
-                "equals": "Microsoft.Compute/virtualMachines"
-            },
-            {
-                "not": {
-                    "field": "Microsoft.Compute/virtualMachines/sku.name",
-                    "in": "[parameters('allowedSkus')]"
+    "displayName": "Allowed VM SKUs",
+    "mode": "All",
+    "policyRule": {
+        "if": {
+            "allOf": [
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Compute/virtualMachines"
+                },
+                {
+                    "not": {
+                        "field": "Microsoft.Compute/virtualMachines/sku.name",
+                        "in": "[parameters('allowedSkus')]"
+                    }
                 }
-            }
-        ]
+            ]
+        },
+        "then": {
+            "effect": "deny"
+        }
     },
-    "then": {
-        "effect": "deny"
+    "parameters": {
+        "allowedSkus": {
+            "type": "Array",
+            "metadata": {
+                "displayName": "Allowed VM SKUs",
+                "description": "List of allowed VM SKUs"
+            },
+            "defaultValue": [
+                "Standard_D2s_v3",
+                "Standard_D4s_v3",
+                "Standard_D8s_v3"
+            ]
+        }
     }
 }
 EOF
 
-  parameters = <<EOF
+  parameters = <<-EOF
 {
     "allowedSkus": {
-        "type": "Array",
-        "metadata": {
-            "displayName": "Allowed VM SKUs",
-            "description": "List of allowed VM SKUs"
-        },
-        "defaultValue": [
+        "value": [
             "Standard_D2s_v3",
             "Standard_D4s_v3",
             "Standard_D8s_v3"
@@ -101,41 +134,45 @@ EOF
   owner_user_groups { id = 2 }
 }
 
-# Example 3: Enforce Storage Account Encryption
+# Example 3: Enforce Storage Account Encryption (no runtime parameters)
 resource "kion_azure_policy" "storage_encryption" {
   name        = "Storage Encryption Requirements"
   description = "Enforces encryption settings on storage accounts"
 
-  policy = <<EOF
+  policy = <<-EOF
 {
-    "if": {
-        "allOf": [
-            {
-                "field": "type",
-                "equals": "Microsoft.Storage/storageAccounts"
-            },
-            {
-                "not": {
-                    "allOf": [
-                        {
-                            "field": "Microsoft.Storage/storageAccounts/supportsHttpsTrafficOnly",
-                            "equals": "true"
-                        },
-                        {
-                            "field": "Microsoft.Storage/storageAccounts/minimumTlsVersion",
-                            "equals": "TLS1_2"
-                        },
-                        {
-                            "field": "Microsoft.Storage/storageAccounts/encryption.services.blob.enabled",
-                            "equals": "true"
-                        }
-                    ]
+    "displayName": "Storage Encryption Requirements",
+    "mode": "All",
+    "policyRule": {
+        "if": {
+            "allOf": [
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Storage/storageAccounts"
+                },
+                {
+                    "not": {
+                        "allOf": [
+                            {
+                                "field": "Microsoft.Storage/storageAccounts/supportsHttpsTrafficOnly",
+                                "equals": "true"
+                            },
+                            {
+                                "field": "Microsoft.Storage/storageAccounts/minimumTlsVersion",
+                                "equals": "TLS1_2"
+                            },
+                            {
+                                "field": "Microsoft.Storage/storageAccounts/encryption.services.blob.enabled",
+                                "equals": "true"
+                            }
+                        ]
+                    }
                 }
-            }
-        ]
-    },
-    "then": {
-        "effect": "deny"
+            ]
+        },
+        "then": {
+            "effect": "deny"
+        }
     }
 }
 EOF
@@ -149,55 +186,69 @@ resource "kion_azure_policy" "nsg_rules" {
   name        = "NSG Security Requirements"
   description = "Enforces security rules on Network Security Groups"
 
-  policy = <<EOF
+  policy = <<-EOF
 {
-    "if": {
-        "allOf": [
-            {
-                "field": "type",
-                "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
-            },
-            {
-                "anyOf": [
-                    {
-                        "allOf": [
-                            {
-                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
-                                "equals": "Allow"
-                            },
-                            {
-                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
-                                "equals": "Inbound"
-                            },
-                            {
-                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
-                                "equals": "*"
-                            }
-                        ]
-                    },
-                    {
-                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
-                        "in": "[parameters('restrictedPorts')]"
-                    }
-                ]
-            }
-        ]
+    "displayName": "NSG Security Requirements",
+    "mode": "All",
+    "policyRule": {
+        "if": {
+            "allOf": [
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
+                },
+                {
+                    "anyOf": [
+                        {
+                            "allOf": [
+                                {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+                                    "equals": "Allow"
+                                },
+                                {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+                                    "equals": "Inbound"
+                                },
+                                {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
+                                    "equals": "*"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                            "in": "[parameters('restrictedPorts')]"
+                        }
+                    ]
+                }
+            ]
+        },
+        "then": {
+            "effect": "deny"
+        }
     },
-    "then": {
-        "effect": "deny"
+    "parameters": {
+        "restrictedPorts": {
+            "type": "Array",
+            "metadata": {
+                "displayName": "Restricted Ports",
+                "description": "Ports that should not be exposed"
+            },
+            "defaultValue": [
+                "22",
+                "3389",
+                "161",
+                "162"
+            ]
+        }
     }
 }
 EOF
 
-  parameters = <<EOF
+  parameters = <<-EOF
 {
     "restrictedPorts": {
-        "type": "Array",
-        "metadata": {
-            "displayName": "Restricted Ports",
-            "description": "Ports that should not be exposed"
-        },
-        "defaultValue": [
+        "value": [
             "22",
             "3389",
             "161",

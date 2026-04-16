@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+## [0.3.34-dev] - 2026-04-16
+
+### Fixed
+
+- Fixed `kion_azure_policy` example in `examples/resources/kion_azure_policy/resource.tf` which produced a 400 from the Azure Policy Definition API (`Could not find member 'if' on object of type 'PolicyDefinitionProperties'`)
+- The example's `policy` JSON now wraps the rule in a `policyRule` object and includes the parameter schema inside the policy JSON, matching what Azure expects in the `properties` body
+- The example's top-level Terraform `parameters` attribute now uses the runtime-value format (`{ "paramName": { "value": ... } }`) instead of re-declaring the parameter schema
+
 ## [0.3.33] - 2026-03-26
 
 ### Fixed
