@@ -15,21 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25.9'
           cache: false
 
       - name: Run Linter
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.64.8
-          # Build golangci-lint from source with the workflow's Go toolchain.
-          # The prebuilt v1.64.8 binary is compiled with Go 1.24 and refuses
-          # to lint code targeting Go 1.25.9 ("Go language version used to
-          # build golangci-lint is lower than the targeted Go version").
-          install-mode: goinstall
-          args: --out-format=github-actions --issues-exit-code=1
+          version: v2.11.4
+          args: --issues-exit-code=1
