@@ -7,6 +7,8 @@ from functions.import_azure_policies import import_azure_policies
 from functions.import_azure_roles import import_azure_roles
 from functions.import_project_roles import import_project_roles
 from functions.import_ou_roles import import_ou_roles
+from functions.import_ous import import_ous
+from functions.import_projects import import_projects
 from functions.import_cfts import import_cfts
 from functions.import_cloud_rules import import_cloud_rules
 from functions.import_compliance_checks import import_compliance_checks
@@ -68,6 +70,16 @@ def main():
         import_azure_roles()
     else:
         print("\nSkipping Azure Roles")
+
+    if not ARGS.skip_ous:
+        import_ous()
+    else:
+        print("\nSkipping OUs")
+
+    if not ARGS.skip_projects:
+        import_projects()
+    else:
+        print("\nSkipping Projects")
 
     if not ARGS.skip_project_roles:
         import_project_roles()

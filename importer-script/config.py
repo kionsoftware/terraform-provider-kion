@@ -27,6 +27,10 @@ def parse_args():
                         help='Skip importing Project Cloud Access Roles.')
     parser.add_argument('--skip-ou-roles', action='store_true',
                         help='Skip importing OU Cloud Access Roles.')
+    parser.add_argument('--skip-ous', action='store_true',
+                        help='Skip importing OUs.')
+    parser.add_argument('--skip-projects', action='store_true',
+                        help='Skip importing Projects.')
     parser.add_argument('--skip-cloud-rules', action='store_true',
                         help='Skip importing Cloud Rules.')
     parser.add_argument('--skip-checks', action='store_true',

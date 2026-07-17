@@ -118,6 +118,35 @@ It will replace all spaces with underscores, and remove all non-alphanumeric cha
 
 This only applies to the names of the files kept in the import directory, and the values of some fields. It will not rename anything in Kion.
 
+## Handling of OUs and Projects
+
+In addition to Cloud Access Roles, this script imports the OUs and Projects
+themselves as `kion_ou` and `kion_project` resources. These are written to the
+`ou` and `project` sub-directories (created automatically), one `.tf` file per
+resource.
+
+### OUs
+
+OUs are imported fully. The root OU (the one with no parent) is skipped, because
+it cannot be managed as a Terraform child resource.
+
+### Projects (best-effort)
+
+Projects are imported on a best-effort basis because the Kion API does not
+return everything the `kion_project` resource requires:
+
+- `permission_scheme_id` is **not** returned by the API. A placeholder value is
+  written with a `# TODO` comment. You must set the correct scheme ID before
+  running `terraform apply`.
+- Owners are inferred from the project's permission mapping (the Admin app role).
+  Where no owners can be inferred, a `# TODO` comment is written and a warning is
+  printed. `kion_project` requires at least one owner, so you must fill these in.
+- Budgets and funding are **not** imported (a `# NOTE` comment is left in each
+  file). Add them manually if you intend to manage them via Terraform.
+
+Because of the above, generated project files will not produce a clean
+`terraform plan` until the `TODO` items are resolved.
+
 ## Handling of Cloud Access Roles
 
 This script will create sub-directories in the `cloud-access-role-ou` and `cloud-access-role-project` directories for each of the OUs and projects found in Kion that have locally applied Cloud Access Roles.
@@ -268,6 +297,26 @@ Example usage:
 
 ```bash
 python terraform-importer --skip-ou-roles
+```
+
+### `--skip-ous`
+
+Skip importing OUs.
+
+Example usage:
+
+```bash
+python terraform-importer --skip-ous
+```
+
+### `--skip-projects`
+
+Skip importing Projects.
+
+Example usage:
+
+```bash
+python terraform-importer --skip-projects
 ```
 
 ### `--skip-cloud-rules`
