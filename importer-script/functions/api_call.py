@@ -100,7 +100,10 @@ def api_call(url, method='get', payload=None, headers=None, timeout=30, test=Fal
                 print(
                     "Received unauthorized response. Will retry %s more times." % retries)
                 UNAUTH_RETRY_COUNTER += 1
-                api_call(url)
+                # return the retried call's result; without this return, a
+                # successful retry's data was discarded and the caller always
+                # saw False (presenting as "0 results" for the resource).
+                return api_call(url, method, payload, headers, timeout, test)
             else:
                 print("Hit max unauth retries.")
                 return False
