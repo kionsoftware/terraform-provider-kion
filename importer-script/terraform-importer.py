@@ -136,6 +136,13 @@ def main():
         ''')
         write_module_file(sub_filename, sub_content)
 
+        # A child module must declare required_providers itself. Without it
+        # Terraform resolves `kion_*` against the default namespace and fails
+        # with "hashicorp/kion", so every resource in the nested module is
+        # unusable even once the module is declared.
+        write_provider_file(
+            f"{ARGS.import_dir}/{parent}/{dirname}/provider.tf", PROVIDER_TEMPLATE)
+
     # Placeholder for additional scripting
     write_resource_import_script(ARGS, IMPORTED_RESOURCES)
     print("\nIf you need to refresh the terraform state of the imported resources, run:\n")

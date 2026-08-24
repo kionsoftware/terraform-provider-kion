@@ -132,7 +132,7 @@ def import_project_roles():
                             project_id                  = {project_id}
                             aws_iam_role_name           = "{aws_iam_role_name}"
                             aws_iam_path                = "{aws_iam_path}"
-                            aws_permissions_boundary_id = {aws_perm_boundary}
+                            aws_iam_permissions_boundary = {aws_perm_boundary}
                             short_term_access_keys      = {short_term_access_keys}
                             long_term_access_keys       = {long_term_access_keys}
                             web_access                  = {web_access}

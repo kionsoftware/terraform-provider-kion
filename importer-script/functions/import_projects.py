@@ -3,6 +3,7 @@ import json
 import textwrap
 from .api_call import api_call
 from .normalize_string import normalize_string
+from .owner_app_roles import owner_app_role_ids
 from .process_list import process_list
 from .get_projects import get_projects
 from .write_file import write_file
@@ -54,15 +55,22 @@ def import_projects():
             url = "%s/v3/project/%s/permission-mapping" % (BASE_URL, proj_id)
             mapping = api_call(url)
             if mapping:
+                # Which app role means "owner" is installation-specific — see
+                # owner_app_role_ids(). Accumulate across every matching role
+                # rather than stopping at the first: an installation may map
+                # owners through more than one.
+                owner_roles = owner_app_role_ids()
                 for entry in mapping:
-                    # the Admin/owner app role is app_role_id == 1
-                    if entry.get('app_role_id') == 1:
-                        if entry.get('user_ids') is not None:
-                            owner_user_ids = entry['user_ids']
-                        # NOTE: the API key is spelled 'user_groups_ids'
-                        if entry.get('user_groups_ids') is not None:
-                            owner_user_group_ids = entry['user_groups_ids']
-                        break
+                    if entry.get('app_role_id') not in owner_roles:
+                        continue
+                    if entry.get('user_ids'):
+                        owner_user_ids.extend(
+                            i for i in entry['user_ids'] if i not in owner_user_ids)
+                    # NOTE: the API key is spelled 'user_groups_ids'
+                    if entry.get('user_groups_ids'):
+                        owner_user_group_ids.extend(
+                            i for i in entry['user_groups_ids']
+                            if i not in owner_user_group_ids)
 
             # if we could not infer any owners, warn and add a TODO comment
             # so the operator knows kion_project's AtLeastOneOf requirement
