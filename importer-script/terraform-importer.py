@@ -17,6 +17,7 @@ from functions.write_resource_import_script import write_resource_import_script
 from functions.write_provider_file import write_provider_file
 from functions.write_module_file import write_module_file
 from constants import IMPORTED_MODULES
+from constants import IMPORTED_SUBMODULES
 from constants import IMPORTED_RESOURCES
 from functions.templates import PROVIDER_TEMPLATE
 from config import ARGS
@@ -121,6 +122,19 @@ def main():
         ''')
 
         write_module_file(module_filename, module_content)
+
+    # Declare each nested module inside its parent. Terraform loads only the .tf
+    # files directly inside a module's source directory, so without these the
+    # per-OU and per-project role files are never read and their import
+    # addresses resolve to nothing.
+    for parent, label, dirname in IMPORTED_SUBMODULES:
+        sub_filename = f"{ARGS.import_dir}/{parent}/{label}.tf"
+        sub_content = textwrap.dedent(f'''\
+            module "{label}" {{
+                source = "./{dirname}"
+            }}
+        ''')
+        write_module_file(sub_filename, sub_content)
 
     # Placeholder for additional scripting
     write_resource_import_script(ARGS, IMPORTED_RESOURCES)

@@ -1,6 +1,7 @@
 import re
 from .build_filename import build_filename
 from .normalize_string import normalize_string
+from .unique_label import unique_label
 from .process_owners import process_owners
 from .clone_resource import clone_resource
 from .get_objects_or_ids import get_objects_or_ids
@@ -123,9 +124,15 @@ def import_iams():
                     value = {resource_type}.{resource_id}.id
                 }}''')
 
+            # One label for the block, the filename and the import address.
+            # Deriving them separately let two policies with the same Kion name
+            # overwrite each other's file while both claimed one address.
+            label = unique_label(
+                "aws-iam-policy", normalize_string(iam['name']), i_id)
+
             content = template.format(
                 resource_type="%s_aws_iam_policy" % RESOURCE_PREFIX,
-                resource_id=normalize_string(iam['name']),
+                resource_id=label,
                 id=i_id,
                 resource_name=iam['name'],
                 description=iam['description'],
@@ -144,11 +151,11 @@ def import_iams():
             # don't add it to the list of imported resources
             if not aws_managed:
                 filename = "%s/aws-iam-policy/%s.tf" % (
-                    ARGS.import_dir, base_filename)
+                    ARGS.import_dir, label)
 
                 # add to IMPORTED_RESOURCES
                 resource = "module.aws-iam-policy.%s_aws_iam_policy.%s %s" % (
-                    RESOURCE_PREFIX, normalize_string(iam['name']), i_id)
+                    RESOURCE_PREFIX, label, i_id)
                 IMPORTED_RESOURCES.append(resource)
             else:
                 filename = "%s/aws-iam-policy/%s.tf.skip" % (
