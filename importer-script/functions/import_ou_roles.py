@@ -11,7 +11,7 @@ from .process_template import process_template
 from constants import RESOURCE_PREFIX
 from constants import BASE_URL
 from constants import IMPORTED_MODULES
-from constants import IMPORTED_RESOURCES
+from constants import IMPORTED_RESOURCES, IMPORTED_SUBMODULES
 from .templates import PROVIDER_TEMPLATE
 from config import ARGS
 
@@ -58,6 +58,13 @@ def import_ou_roles():
                 # create a folder for this ou to keep all roles together
                 if not os.path.isdir(base_path+ou_dir):
                     os.mkdir(base_path+ou_dir)
+
+                # A directory may start with a digit; a Terraform module label
+                # may not, so normalize it separately from the path.
+                ou_module_label = normalize_string(ou_dir)
+                entry = ("ou-cloud-access-role", ou_module_label, ou_dir)
+                if entry not in IMPORTED_SUBMODULES:
+                    IMPORTED_SUBMODULES.append(entry)
 
                 for r in roles:
                     # pull out the id for this role
@@ -117,7 +124,7 @@ def import_ou_roles():
                             ou_id                       = {ou_id}
                             aws_iam_role_name           = "{aws_iam_role_name}"
                             aws_iam_path                = "{aws_iam_path}"
-                            aws_permissions_boundary_id = {aws_perm_boundary}
+                            aws_iam_permissions_boundary = {aws_perm_boundary}
                             short_term_access_keys      = {short_term_access_keys}
                             long_term_access_keys       = {long_term_access_keys}
                             web_access                  = {web_access}
@@ -163,8 +170,14 @@ def import_ou_roles():
                     write_file(filename, process_template(content))
 
                     # add to IMPORTED_RESOURCES
-                    resource = "module.ou-cloud-access-role.%s.%s_ou_cloud_access_role.%s %s" % (
-                        RESOURCE_PREFIX, ou_dir, normalize_string(role['name']), r_id)
+                    # The role lives in ou-cloud-access-role/<ou_dir>/, which is
+                    # a module of its own, so the address needs that segment:
+                    #   module.ou-cloud-access-role.module.<label>.kion_ou_cloud_access_role.<name>
+                    # This used to interpolate ou_dir INTO the resource type,
+                    # producing "kion.<ou_dir>_ou_cloud_access_role" — an address
+                    # matching nothing, so every OU role failed to import.
+                    resource = "module.ou-cloud-access-role.module.%s.%s_ou_cloud_access_role.%s %s" % (
+                        ou_module_label, RESOURCE_PREFIX, normalize_string(role['name']), r_id)
                     IMPORTED_RESOURCES.append(resource)
 
             else:

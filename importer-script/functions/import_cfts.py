@@ -2,6 +2,7 @@ import re
 import json
 import textwrap
 from .normalize_string import normalize_string
+from .unique_label import unique_label
 from .process_string import process_string
 from .process_owners import process_owners
 from .get_objects_or_ids import get_objects_or_ids
@@ -88,9 +89,16 @@ def import_cfts():
                     value = {resource_type}.{resource_id}.id
                 }}''')
 
+            # One label for the block, the filename and the import address.
+            # Two templates can share a Kion name (CIS-EnableVPCFlowLogs, ids 81
+            # and 182); deriving these separately let the second overwrite the
+            # first's file while both claimed a single import address.
+            label = unique_label(
+                "aws-cloudformation-template", normalize_string(cft['name']), c_id)
+
             content = template.format(
                 resource_type="%s_aws_cloudformation_template" % RESOURCE_PREFIX,
-                resource_id=normalize_string(cft['name']),
+                resource_id=label,
                 id=c_id,
                 resource_name=cft['name'],
                 description=cft['description'],
@@ -114,20 +122,14 @@ def import_cfts():
             if cft['region'] == "null":
                 content = re.sub('\s*region\s*= "null"', '', content)
 
-            # build the file name
-            if ARGS.prepend_id:
-                base_filename = normalize_string(cft['name'], c_id)
-            else:
-                base_filename = normalize_string(cft['name'])
-
             filename = "%s/aws-cloudformation-template/%s.tf" % (
-                ARGS.import_dir, base_filename)
+                ARGS.import_dir, label)
 
             write_file(filename, process_template(content))
 
             # add to IMPORTED_RESOURCES
             resource = "module.aws-cloudformation-template.%s_aws_cloudformation_template.%s %s" % (
-                RESOURCE_PREFIX, normalize_string(cft['name']), c_id)
+                RESOURCE_PREFIX, label, c_id)
             IMPORTED_RESOURCES.append(resource)
 
         # now out of the loop, write the provider.tf file

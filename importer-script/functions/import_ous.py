@@ -2,6 +2,7 @@ import os
 import json
 from .api_call import api_call
 from .normalize_string import normalize_string
+from .owner_app_roles import owner_app_role_ids
 from .process_list import process_list
 from .get_objects_or_ids import get_objects_or_ids
 import textwrap
@@ -71,6 +72,25 @@ def import_ous():
                 print(
                     "\tDetails for OU %s weren't found. Owner data will be incomplete." % ou_name)
                 print("\tReceived data: %s" % details)
+
+            # /v3/ou/{id} returns owner_users: null for OUs whose ownership is
+            # expressed as a permission mapping instead — which kion_ou requires
+            # (one of owner_users/owner_user_groups), so without this fallback
+            # those OUs import into configuration Terraform rejects.
+            if not owner_user_ids and not owner_user_group_ids:
+                mapping = api_call("%s/v3/ou/%s/permission-mapping" % (BASE_URL, ou_id))
+                if mapping:
+                    owner_roles = owner_app_role_ids()
+                    for entry in mapping:
+                        if entry.get('app_role_id') not in owner_roles:
+                            continue
+                        if entry.get('user_ids'):
+                            owner_user_ids.extend(
+                                i for i in entry['user_ids'] if i not in owner_user_ids)
+                        if entry.get('user_groups_ids'):
+                            owner_user_group_ids.extend(
+                                i for i in entry['user_groups_ids']
+                                if i not in owner_user_group_ids)
 
             # register the module and create the directory once, only if we
             # actually have an OU to write

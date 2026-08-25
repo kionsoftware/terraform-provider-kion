@@ -11,6 +11,7 @@ from constants import RESOURCE_PREFIX
 from constants import BASE_URL
 from constants import IMPORTED_MODULES
 from constants import IMPORTED_RESOURCES
+from constants import IMPORTED_SUBMODULES
 from .templates import PROVIDER_TEMPLATE
 from config import ARGS
 
@@ -59,6 +60,11 @@ def import_project_roles():
                 # create a folder for this project to keep all roles together
                 if not os.path.isdir(base_path+proj_dir):
                     os.mkdir(base_path+proj_dir)
+
+                proj_module_label = normalize_string(proj_dir)
+                entry = ("project-cloud-access-role", proj_module_label, proj_dir)
+                if entry not in IMPORTED_SUBMODULES:
+                    IMPORTED_SUBMODULES.append(entry)
 
                 for r in roles:
                     # pull out the id for this role
@@ -126,7 +132,7 @@ def import_project_roles():
                             project_id                  = {project_id}
                             aws_iam_role_name           = "{aws_iam_role_name}"
                             aws_iam_path                = "{aws_iam_path}"
-                            aws_permissions_boundary_id = {aws_perm_boundary}
+                            aws_iam_permissions_boundary = {aws_perm_boundary}
                             short_term_access_keys      = {short_term_access_keys}
                             long_term_access_keys       = {long_term_access_keys}
                             web_access                  = {web_access}
@@ -176,8 +182,12 @@ def import_project_roles():
                     write_file(filename, process_template(content))
 
                     # add to IMPORTED_RESOURCES
-                    resource = "module.project-cloud-access-role.%s_project_cloud_access_role.%s %s" % (
-                        RESOURCE_PREFIX, normalize_string(role['name']), r_id)
+                    # Without the module segment three different "Developer"
+                    # roles in three different projects collapse onto one
+                    # address, so only one could ever be imported and the other
+                    # two reported as not existing in the configuration.
+                    resource = "module.project-cloud-access-role.module.%s.%s_project_cloud_access_role.%s %s" % (
+                        proj_module_label, RESOURCE_PREFIX, normalize_string(role['name']), r_id)
                     IMPORTED_RESOURCES.append(resource)
 
             else:
