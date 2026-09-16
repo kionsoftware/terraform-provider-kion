@@ -296,7 +296,7 @@ output "multi_cloud_id" {
 - `aws_trusted_account_numbers` (List of String) AWS account numbers this role trusts. Required when cloud_access_role_type_id is 3 (Account). Kion currently stores exactly one entry.
 - `aws_trusted_services` (Set of String) AWS service principals this role trusts, such as "lambda.amazonaws.com". Required when cloud_access_role_type_id is 4 (Service).
 - `azure_role_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_role_definitions))
-- `cloud_access_role_type_id` (Number) Type of the cloud access role: 1 = User (default), 2 = Custom Trust, 3 = Account, 4 = Service. Types other than User are AWS only and require Kion 3.16.5 or later.
+- `cloud_access_role_type_id` (Number) Type of the cloud access role: 1 = User (default), 2 = Custom Trust, 3 = Account, 4 = Service. Types other than User are AWS only and require Kion 3.16.5 or later. 3.17.0 is an exception and does not support them; support returns on the 3.17 line in 3.17.1. On a version without support, Kion creates a User role instead and the provider fails the apply rather than letting the mismatch go unnoticed.
 - `cloud_provider_ids` (Set of Number) Cloud provider IDs this role applies to: 1 for AWS, 2 for Azure, 3 for GCP. Defaults to all cloud providers. Kion accepts this on create and update but does not return it when reading a role, so changes made outside Terraform are not detected.
 - `future_accounts` (Boolean)
 - `gcp_iam_roles` (Block Set) (see [below for nested schema](#nestedblock--gcp_iam_roles))

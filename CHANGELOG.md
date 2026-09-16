@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 ### Added
 
 - Added cloud access role type support to `kion_project_cloud_access_role` and `kion_ou_cloud_access_role`, and to their data sources
-- New `cloud_access_role_type_id` attribute selects the role type: 1 = User (default), 2 = Custom Trust, 3 = Account, 4 = Service. Types other than User are AWS only and require Kion 3.16.5 or later
+- New `cloud_access_role_type_id` attribute selects the role type: 1 = User (default), 2 = Custom Trust, 3 = Account, 4 = Service. Types other than User are AWS only and require Kion 3.16.5 or later. 3.17.0 is an exception and does not support them; support returns on the 3.17 line in 3.17.1
 - New `aws_iam_role_trust_policy` (Custom Trust), `aws_trusted_account_numbers` (Account), and `aws_trusted_services` (Service) attributes supply the per-type trust configuration
 - New `aws_partition` and `aws_create_instance_profile` attributes control which AWS partition a non-User role syncs to and whether an IAM instance profile is created
 - Added `aws_session_tags` to both cloud access role resources and `cloud_provider_ids` to `kion_project_cloud_access_role`; both have been available on the public API for some time but were never exposed by the provider

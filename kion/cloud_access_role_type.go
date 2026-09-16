@@ -49,7 +49,10 @@ func cloudAccessRoleTypeSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.IntBetween(cloudAccessRoleTypeUser, cloudAccessRoleTypeService),
 			Description: "Type of the cloud access role: 1 = User (default), 2 = Custom Trust, " +
-				"3 = Account, 4 = Service. Types other than User are AWS only and require Kion 3.16.5 or later.",
+				"3 = Account, 4 = Service. Types other than User are AWS only and require Kion 3.16.5 or later. " +
+				"3.17.0 is an exception and does not support them; support returns on the 3.17 line in 3.17.1. " +
+				"On a version without support, Kion creates a User role instead and the provider fails the apply " +
+				"rather than letting the mismatch go unnoticed.",
 		},
 		"aws_iam_role_trust_policy": {
 			Type:             schema.TypeString,
