@@ -29,6 +29,8 @@ Thumbs.db
 # Compiled and apps
 terraform-provider-kion
 bin
+# goreleaser build output
+dist
 .terraform.lock.hcl
 .envrc
 
