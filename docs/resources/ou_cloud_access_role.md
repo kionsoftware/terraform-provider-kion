@@ -34,9 +34,9 @@ resource "kion_ou_cloud_access_role" "example" {
 
 # AWS-focused OU Cloud Access Role
 resource "kion_ou_cloud_access_role" "aws_admin" {
-  name              = "aws-admin-role"
+  name              = "ou-aws-admin-role"
   ou_id             = 1
-  aws_iam_role_name = "AdminRole" # Only needed if this role will be used for AWS accounts
+  aws_iam_role_name = "OUAdminRole" # Only needed if this role will be used for AWS accounts
   aws_iam_path      = "/kion/"
 
   # AWS access types
@@ -66,7 +66,7 @@ resource "kion_ou_cloud_access_role" "aws_admin" {
 
 # Azure-focused OU Cloud Access Role
 resource "kion_ou_cloud_access_role" "azure_admin" {
-  name       = "azure-admin-role"
+  name       = "ou-azure-admin-role"
   ou_id      = 1
   web_access = true
 
@@ -86,7 +86,7 @@ resource "kion_ou_cloud_access_role" "azure_admin" {
 
 # GCP-focused OU Cloud Access Role
 resource "kion_ou_cloud_access_role" "gcp_admin" {
-  name       = "gcp-admin-role"
+  name       = "ou-gcp-admin-role"
   ou_id      = 1
   web_access = true
 
@@ -109,9 +109,9 @@ resource "kion_ou_cloud_access_role" "gcp_admin" {
 
 # Multi-cloud OU Cloud Access Role
 resource "kion_ou_cloud_access_role" "multi_cloud" {
-  name              = "multi-cloud-role"
+  name              = "ou-multi-cloud-role"
   ou_id             = 1
-  aws_iam_role_name = "CrossAccountRole" # Only needed because this role includes AWS permissions
+  aws_iam_role_name = "OUCrossAccountRole" # Only needed because this role includes AWS permissions
 
   # Access types
   web_access             = true
@@ -142,9 +142,9 @@ resource "kion_ou_cloud_access_role" "multi_cloud" {
 # Custom Trust role (cloud_access_role_type_id = 2). AWS only. The trust policy
 # is supplied verbatim and the role cannot be assigned to Kion users or groups.
 resource "kion_ou_cloud_access_role" "custom_trust" {
-  name                      = "custom-trust-role"
+  name                      = "ou-custom-trust-role"
   ou_id                     = 1
-  aws_iam_role_name         = "CustomTrustRole"
+  aws_iam_role_name         = "OUCustomTrustRole"
   cloud_access_role_type_id = 2
 
   aws_iam_role_trust_policy = jsonencode({
@@ -163,9 +163,9 @@ resource "kion_ou_cloud_access_role" "custom_trust" {
 
 # Account role (cloud_access_role_type_id = 3). Trusts a single AWS account.
 resource "kion_ou_cloud_access_role" "trusted_account" {
-  name                        = "trusted-account-role"
+  name                        = "ou-trusted-account-role"
   ou_id                       = 1
-  aws_iam_role_name           = "TrustedAccountRole"
+  aws_iam_role_name           = "OUTrustedAccountRole"
   cloud_access_role_type_id   = 3
   aws_trusted_account_numbers = ["123456789012"]
 
@@ -177,9 +177,9 @@ resource "kion_ou_cloud_access_role" "trusted_account" {
 # Service role (cloud_access_role_type_id = 4). Trusts AWS service principals.
 # GovCloud and ISO partitions must set aws_partition explicitly.
 resource "kion_ou_cloud_access_role" "service" {
-  name                        = "lambda-execution-role"
+  name                        = "ou-lambda-execution-role"
   ou_id                       = 1
-  aws_iam_role_name           = "LambdaExecutionRole"
+  aws_iam_role_name           = "OULambdaExecutionRole"
   cloud_access_role_type_id   = 4
   aws_trusted_services        = ["lambda.amazonaws.com", "ec2.amazonaws.com"]
   aws_partition               = "aws"
@@ -192,7 +192,7 @@ resource "kion_ou_cloud_access_role" "service" {
 
 # Session tags on a User role.
 resource "kion_ou_cloud_access_role" "tagged" {
-  name       = "tagged-role"
+  name       = "ou-tagged-role"
   ou_id      = 1
   web_access = true
 
