@@ -49,10 +49,10 @@ func cloudAccessRoleTypeSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.IntBetween(cloudAccessRoleTypeUser, cloudAccessRoleTypeService),
 			Description: "Type of the cloud access role: 1 = User (default), 2 = Custom Trust, " +
-				"3 = Account, 4 = Service. Types other than User are AWS only and require Kion 3.16.5 or later. " +
-				"3.17.0 is an exception and does not support them; support returns on the 3.17 line in 3.17.1. " +
-				"On a version without support, Kion creates a User role instead and the provider fails the apply " +
-				"rather than letting the mismatch go unnoticed.",
+				"3 = Account, 4 = Service. Types other than User are AWS only and require Kion 3.15.3, 3.16.5 " +
+				"or 3.17.1, depending on the release line. Note that 3.17.0 does not support them. On a version " +
+				"without support, Kion creates a User role instead and the provider fails the apply rather than " +
+				"letting the mismatch go unnoticed.",
 		},
 		"aws_iam_role_trust_policy": {
 			Type:             schema.TypeString,
@@ -283,10 +283,10 @@ func verifyCloudAccessRoleType(resourceName string, requested, actual int) diag.
 	requestedName := cloudAccessRoleTypeNames[requested]
 	detail := fmt.Sprintf(
 		"Requested cloud_access_role_type_id %d (%s) but Kion returned %d. Cloud access role types reached the "+
-			"public API in 3.16.5, and on the 3.17 line in 3.17.1; earlier versions, 3.17.0 included, ignore the "+
-			"field and create a User role. The role does exist in Kion as a User role, and Terraform has marked "+
-			"it tainted, so the next apply will destroy and recreate it. Either upgrade Kion or set "+
-			"cloud_access_role_type_id to %d.",
+			"public API in 3.15.3, 3.16.5 and 3.17.1, depending on the release line; earlier versions, 3.17.0 "+
+			"included, ignore the field and create a User role. The role does exist in Kion as a User role, and "+
+			"Terraform has marked it tainted, so the next apply will destroy and recreate it. Either upgrade Kion "+
+			"or set cloud_access_role_type_id to %d.",
 		requested, requestedName, actual, cloudAccessRoleTypeUser)
 
 	return diag.Diagnostics{{
