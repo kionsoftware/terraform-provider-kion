@@ -1,6 +1,6 @@
 # This Makefile is an easy way to run common operations.
 
-VERSION=0.3.34
+VERSION=0.3.35
 
 TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=github.com
@@ -81,7 +81,9 @@ vet:
 	go vet $(TEST)
 	staticcheck $(TEST)
 
+# --provider-name is required. Without it tfplugindocs derives the name from the
+# directory, finds no matching resources, and deletes docs/ before failing.
 docs:
-	tfplugindocs 
+	tfplugindocs generate --provider-name terraform-provider-kion
 
 .PHONY: build build-dev release install install-dev test testacc fmt vet docs

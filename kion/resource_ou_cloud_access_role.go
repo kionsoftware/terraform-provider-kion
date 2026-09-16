@@ -24,7 +24,8 @@ func resourceOUCloudAccessRole() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
-		Schema: map[string]*schema.Schema{
+		CustomizeDiff: validateCloudAccessRoleTypeDiff,
+		Schema: mergeSchemas(map[string]*schema.Schema{
 			// Notice there is no 'id' field specified because it will be created.
 			"last_updated": {
 				Type:     schema.TypeString,
@@ -55,6 +56,12 @@ func resourceOUCloudAccessRole() *schema.Resource {
 			"aws_iam_role_name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				// Kion derives a role name from `name` when one is not supplied,
+				// and the read stores it. Without Computed that server-side value
+				// reads as a change against an empty configuration, and because
+				// the field is ForceNew every subsequent plan wants to replace the
+				// role.
+				Computed: true,
 				ForceNew: true, // Not allowed to be changed, forces new item if changed.
 			},
 			"azure_role_definitions": {
@@ -126,13 +133,15 @@ func resourceOUCloudAccessRole() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
-		},
+		}, cloudAccessRoleTypeSchema()),
 	}
 }
 
 func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
+
+	roleType := d.Get("cloud_access_role_type_id").(int)
 
 	// Create the request payload
 	post := hc.OUCloudAccessRoleCreate{
@@ -149,6 +158,14 @@ func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData
 		UserGroupIds:              hc.FlattenGenericIDPointer(d, "user_groups"),
 		UserIds:                   hc.FlattenGenericIDPointer(d, "users"),
 		WebAccess:                 d.Get("web_access").(bool),
+
+		CloudAccessRoleTypeID:    &roleType,
+		AwsIamRoleTrustPolicy:    hc.FlattenStringPointer(d, "aws_iam_role_trust_policy"),
+		AwsTrustedAccountNumbers: hc.FlattenStringArray(d.Get("aws_trusted_account_numbers").([]interface{})),
+		AwsTrustedServices:       hc.FlattenStringArray(d.Get("aws_trusted_services").(*schema.Set).List()),
+		AwsPartition:             d.Get("aws_partition").(string),
+		AwsCreateInstanceProfile: d.Get("aws_create_instance_profile").(bool),
+		AwsSessionTags:           hc.FlattenTags(d, "aws_session_tags"),
 	}
 
 	// Send the POST request
@@ -171,6 +188,24 @@ func resourceOUCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData
 
 	// Set the ID for the created resource
 	d.SetId(strconv.Itoa(resp.RecordID))
+
+	// A 2xx response does not prove the role type was applied, so read it back.
+	// See verifyCloudAccessRoleType for why.
+	if roleType > cloudAccessRoleTypeUser {
+		verifyResp := new(hc.OUCloudAccessRoleResponse)
+		if err := client.GET(fmt.Sprintf("/v3/ou-cloud-access-role/%d", resp.RecordID), verifyResp); err != nil {
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to verify OUCloudAccessRole type",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err, resp.RecordID),
+			})
+		}
+
+		actual := normalizeCloudAccessRoleTypeID(verifyResp.Data.OUCloudAccessRole.CloudAccessRoleTypeID)
+		if verifyDiags := verifyCloudAccessRoleType("OU", roleType, actual); verifyDiags.HasError() {
+			return append(diags, verifyDiags...)
+		}
+	}
 
 	// Read the resource to update the state
 	if readDiags := resourceOUCloudAccessRoleRead(ctx, d, m); readDiags.HasError() {
@@ -196,6 +231,7 @@ func resourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 	item := resp.Data
+	roleType := normalizeCloudAccessRoleTypeID(item.OUCloudAccessRole.CloudAccessRoleTypeID)
 
 	data := map[string]interface{}{
 		"aws_iam_path": item.OUCloudAccessRole.AwsIamPath,
@@ -215,6 +251,24 @@ func resourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData, 
 		"azure_role_definitions":       hc.InflateObjectWithID(item.AzureRoleDefinitions),
 		"gcp_iam_roles":                hc.InflateObjectWithID(item.GCPIamRoles),
 		"users":                        hc.InflateObjectWithID(item.Users),
+		"cloud_access_role_type_id":    roleType,
+		"aws_trusted_account_numbers":  item.OUCloudAccessRole.AwsTrustedAccountNumbers,
+		"aws_trusted_services":         item.OUCloudAccessRole.AwsTrustedServices,
+		"aws_partition":                item.OUCloudAccessRole.AwsPartition,
+		"aws_create_instance_profile": func() bool {
+			if item.OUCloudAccessRole.AwsCreateInstanceProfile != nil {
+				return *item.OUCloudAccessRole.AwsCreateInstanceProfile
+			}
+			return false
+		}(),
+		"aws_session_tags": hc.InflateTags(item.AwsSessionTags),
+	}
+
+	// Kion derives a trust policy for Service roles from aws_trusted_services
+	// and returns it, but the configuration never sets it. Track it only for
+	// Custom Trust roles, where it is the practitioner's own input.
+	if roleType == cloudAccessRoleTypeCustomTrust {
+		data["aws_iam_role_trust_policy"] = item.OUCloudAccessRole.AwsIamRoleTrustPolicy
 	}
 
 	for k, v := range data {
@@ -242,13 +296,28 @@ func resourceOUCloudAccessRoleUpdate(ctx context.Context, d *schema.ResourceData
 	// Leave out fields that are not allowed to be changed like
 	// `aws_iam_path` in AWS IAM policies and add `ForceNew: true` to the
 	// schema instead.
-	if d.HasChanges("long_term_access_keys", "name", "short_term_access_keys", "web_access") {
+	if d.HasChanges("long_term_access_keys", "name", "short_term_access_keys", "web_access",
+		"aws_iam_role_trust_policy", "aws_trusted_account_numbers", "aws_trusted_services",
+		"aws_partition", "aws_create_instance_profile", "aws_session_tags") {
 		hasChanged = true
 		req := hc.OUCloudAccessRoleUpdate{
 			LongTermAccessKeys:  d.Get("long_term_access_keys").(bool),
 			Name:                d.Get("name").(string),
 			ShortTermAccessKeys: d.Get("short_term_access_keys").(bool),
 			WebAccess:           d.Get("web_access").(bool),
+			AwsSessionTags:      hc.FlattenTags(d, "aws_session_tags"),
+		}
+
+		// The trust fields are rejected on User roles, so send them only for the
+		// AWS-only role types.
+		if roleType := d.Get("cloud_access_role_type_id").(int); roleType > cloudAccessRoleTypeUser {
+			req.AwsIamRoleTrustPolicy = hc.FlattenStringPointer(d, "aws_iam_role_trust_policy")
+			req.AwsTrustedAccountNumbers = hc.FlattenStringArray(d.Get("aws_trusted_account_numbers").([]interface{}))
+			req.AwsTrustedServices = hc.FlattenStringArray(d.Get("aws_trusted_services").(*schema.Set).List())
+			req.AwsPartition = d.Get("aws_partition").(string)
+
+			createInstanceProfile := d.Get("aws_create_instance_profile").(bool)
+			req.AwsCreateInstanceProfile = &createInstanceProfile
 		}
 
 		if err := client.PATCH(fmt.Sprintf("/v3/ou-cloud-access-role/%s", ID), req); err != nil {

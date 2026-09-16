@@ -24,7 +24,8 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
-		Schema: map[string]*schema.Schema{
+		CustomizeDiff: validateCloudAccessRoleTypeDiff,
+		Schema: mergeSchemas(map[string]*schema.Schema{
 			// Notice there is no 'id' field specified because it will be created.
 			"last_updated": {
 				Type:     schema.TypeString,
@@ -77,6 +78,12 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 			"aws_iam_role_name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				// Kion derives a role name from `name` when one is not supplied,
+				// and the read stores it. Without Computed that server-side value
+				// reads as a change against an empty configuration, and because
+				// the field is ForceNew every subsequent plan wants to replace the
+				// role.
+				Computed: true,
 				ForceNew: true, // Not allowed to be changed, forces new item if changed.
 			},
 			"azure_role_definitions": {
@@ -152,13 +159,23 @@ func resourceProjectCloudAccessRole() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
-		},
+			"cloud_provider_ids": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeInt},
+				Description: "Cloud provider IDs this role applies to: 1 for AWS, 2 for Azure, 3 for GCP. " +
+					"Defaults to all cloud providers. Kion accepts this on create and update but does not return " +
+					"it when reading a role, so changes made outside Terraform are not detected.",
+			},
+		}, cloudAccessRoleTypeSchema()),
 	}
 }
 
 func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
+
+	roleType := d.Get("cloud_access_role_type_id").(int)
 
 	// Create the request payload
 	post := hc.ProjectCloudAccessRoleCreate{
@@ -178,6 +195,15 @@ func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.Resourc
 		UserGroupIds:              hc.FlattenGenericIDPointer(d, "user_groups"),
 		UserIds:                   hc.FlattenGenericIDPointer(d, "users"),
 		WebAccess:                 d.Get("web_access").(bool),
+
+		CloudAccessRoleTypeID:    &roleType,
+		AwsIamRoleTrustPolicy:    hc.FlattenStringPointer(d, "aws_iam_role_trust_policy"),
+		AwsTrustedAccountNumbers: hc.FlattenStringArray(d.Get("aws_trusted_account_numbers").([]interface{})),
+		AwsTrustedServices:       hc.FlattenStringArray(d.Get("aws_trusted_services").(*schema.Set).List()),
+		AwsPartition:             d.Get("aws_partition").(string),
+		AwsCreateInstanceProfile: d.Get("aws_create_instance_profile").(bool),
+		AwsSessionTags:           hc.FlattenTags(d, "aws_session_tags"),
+		CloudProviderIds:         hc.FlattenIntArrayPointer(d.Get("cloud_provider_ids").(*schema.Set).List()),
 	}
 
 	// Send the POST request
@@ -200,6 +226,24 @@ func resourceProjectCloudAccessRoleCreate(ctx context.Context, d *schema.Resourc
 
 	// Set the ID for the created resource
 	d.SetId(strconv.Itoa(resp.RecordID))
+
+	// A 2xx response does not prove the role type was applied, so read it back.
+	// See verifyCloudAccessRoleType for why.
+	if roleType > cloudAccessRoleTypeUser {
+		verifyResp := new(hc.ProjectCloudAccessRoleResponse)
+		if err := client.GET(fmt.Sprintf("/v3/project-cloud-access-role/%d", resp.RecordID), verifyResp); err != nil {
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to verify ProjectCloudAccessRole type",
+				Detail:   fmt.Sprintf("Error: %v\nItem: %v", err, resp.RecordID),
+			})
+		}
+
+		actual := normalizeCloudAccessRoleTypeID(verifyResp.Data.ProjectCloudAccessRole.CloudAccessRoleTypeID)
+		if verifyDiags := verifyCloudAccessRoleType("project", roleType, actual); verifyDiags.HasError() {
+			return append(diags, verifyDiags...)
+		}
+	}
 
 	// Read the resource to update the state
 	if readDiags := resourceProjectCloudAccessRoleRead(ctx, d, m); readDiags.HasError() {
@@ -225,6 +269,7 @@ func resourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.ResourceD
 		return diags
 	}
 	item := resp.Data
+	roleType := normalizeCloudAccessRoleTypeID(item.ProjectCloudAccessRole.CloudAccessRoleTypeID)
 
 	data := map[string]interface{}{
 		"apply_to_all_accounts": item.ProjectCloudAccessRole.ApplyToAllAccounts,
@@ -248,6 +293,31 @@ func resourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.ResourceD
 		"user_groups":                  hc.InflateObjectWithID(item.UserGroups),
 		"users":                        hc.InflateObjectWithID(item.Users),
 		"future_accounts":              item.ProjectCloudAccessRole.FutureAccounts,
+		"cloud_access_role_type_id":    roleType,
+		"aws_trusted_account_numbers":  item.ProjectCloudAccessRole.AwsTrustedAccountNumbers,
+		"aws_trusted_services":         item.ProjectCloudAccessRole.AwsTrustedServices,
+		"aws_partition":                item.ProjectCloudAccessRole.AwsPartition,
+		"aws_create_instance_profile": func() bool {
+			if item.ProjectCloudAccessRole.AwsCreateInstanceProfile != nil {
+				return *item.ProjectCloudAccessRole.AwsCreateInstanceProfile
+			}
+			return false
+		}(),
+		"aws_session_tags": hc.InflateTags(item.AwsSessionTags),
+	}
+
+	// Kion's read handler never populates cloud_provider_ids, so overwriting
+	// state from an empty response would clear the configured value and diff
+	// forever. Only take the API's word for it when it actually sends a list.
+	if len(item.CloudProviderIds) > 0 {
+		data["cloud_provider_ids"] = item.CloudProviderIds
+	}
+
+	// Kion derives a trust policy for Service roles from aws_trusted_services
+	// and returns it, but the configuration never sets it. Track it only for
+	// Custom Trust roles, where it is the practitioner's own input.
+	if roleType == cloudAccessRoleTypeCustomTrust {
+		data["aws_iam_role_trust_policy"] = item.ProjectCloudAccessRole.AwsIamRoleTrustPolicy
 	}
 
 	for k, v := range data {
@@ -272,7 +342,10 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 	var hasChanged bool
 
 	// Determine if the attributes that are updatable are changed.
-	if d.HasChanges("apply_to_all_accounts", "future_accounts", "long_term_access_keys", "name", "short_term_access_keys", "web_access") {
+	if d.HasChanges("apply_to_all_accounts", "future_accounts", "long_term_access_keys", "name",
+		"short_term_access_keys", "web_access", "aws_iam_role_trust_policy", "aws_trusted_account_numbers",
+		"aws_trusted_services", "aws_partition", "aws_create_instance_profile", "aws_session_tags",
+		"cloud_provider_ids") {
 		hasChanged = true
 		req := hc.ProjectCloudAccessRoleUpdate{
 			ApplyToAllAccounts:  d.Get("apply_to_all_accounts").(bool),
@@ -281,6 +354,20 @@ func resourceProjectCloudAccessRoleUpdate(ctx context.Context, d *schema.Resourc
 			Name:                d.Get("name").(string),
 			ShortTermAccessKeys: d.Get("short_term_access_keys").(bool),
 			WebAccess:           d.Get("web_access").(bool),
+			AwsSessionTags:      hc.FlattenTags(d, "aws_session_tags"),
+			CloudProviderIds:    hc.FlattenIntArrayPointer(d.Get("cloud_provider_ids").(*schema.Set).List()),
+		}
+
+		// The trust fields are rejected on User roles, so send them only for the
+		// AWS-only role types.
+		if roleType := d.Get("cloud_access_role_type_id").(int); roleType > cloudAccessRoleTypeUser {
+			req.AwsIamRoleTrustPolicy = hc.FlattenStringPointer(d, "aws_iam_role_trust_policy")
+			req.AwsTrustedAccountNumbers = hc.FlattenStringArray(d.Get("aws_trusted_account_numbers").([]interface{}))
+			req.AwsTrustedServices = hc.FlattenStringArray(d.Get("aws_trusted_services").(*schema.Set).List())
+			req.AwsPartition = d.Get("aws_partition").(string)
+
+			createInstanceProfile := d.Get("aws_create_instance_profile").(bool)
+			req.AwsCreateInstanceProfile = &createInstanceProfile
 		}
 
 		if err := client.PATCH(fmt.Sprintf("/v3/project-cloud-access-role/%s", ID), req); err != nil {

@@ -151,11 +151,18 @@ output "multi_cloud_analysis" {
 
 - `accounts` (Set of Object) The accounts associated with this project cloud access role. (see [below for nested schema](#nestedatt--accounts))
 - `apply_to_all_accounts` (Boolean) Whether this role applies to all accounts.
+- `aws_create_instance_profile` (Boolean)
 - `aws_iam_path` (String) The AWS IAM path for the role.
 - `aws_iam_permissions_boundary` (Number) The AWS IAM permissions boundary ID.
 - `aws_iam_policies` (Set of Object) The AWS IAM policies associated with this role. (see [below for nested schema](#nestedatt--aws_iam_policies))
 - `aws_iam_role_name` (String) The AWS IAM role name.
+- `aws_iam_role_trust_policy` (String)
+- `aws_partition` (String)
+- `aws_session_tags` (Map of String)
+- `aws_trusted_account_numbers` (List of String)
+- `aws_trusted_services` (Set of String)
 - `azure_role_definitions` (Set of Object) The Azure role definitions associated with this role. (see [below for nested schema](#nestedatt--azure_role_definitions))
+- `cloud_access_role_type_id` (Number)
 - `future_accounts` (Boolean) Whether this role applies to future accounts.
 - `gcp_iam_roles` (Set of Object) The GCP IAM roles associated with this role. (see [below for nested schema](#nestedatt--gcp_iam_roles))
 - `long_term_access_keys` (Boolean) Whether long-term access keys are enabled.

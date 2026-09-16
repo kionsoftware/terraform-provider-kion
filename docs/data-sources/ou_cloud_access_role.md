@@ -88,11 +88,18 @@ output "associated_user_group_ids" {
 
 ### Read-Only
 
+- `aws_create_instance_profile` (Boolean)
 - `aws_iam_path` (String)
 - `aws_iam_permissions_boundary` (Number)
 - `aws_iam_policies` (Set of Object) (see [below for nested schema](#nestedatt--aws_iam_policies))
 - `aws_iam_role_name` (String)
+- `aws_iam_role_trust_policy` (String)
+- `aws_partition` (String)
+- `aws_session_tags` (Map of String)
+- `aws_trusted_account_numbers` (List of String)
+- `aws_trusted_services` (Set of String)
 - `azure_role_definitions` (Set of Object) (see [below for nested schema](#nestedatt--azure_role_definitions))
+- `cloud_access_role_type_id` (Number)
 - `gcp_iam_roles` (Set of Object) (see [below for nested schema](#nestedatt--gcp_iam_roles))
 - `long_term_access_keys` (Boolean)
 - `name` (String)

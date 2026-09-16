@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+## [0.3.35] - 2026-09-16
+
+### Added
+
+- Added cloud access role type support to `kion_project_cloud_access_role` and `kion_ou_cloud_access_role`, and to their data sources
+- New `cloud_access_role_type_id` attribute selects the role type: 1 = User (default), 2 = Custom Trust, 3 = Account, 4 = Service. Types other than User are AWS only and require Kion 3.16.5 or later
+- New `aws_iam_role_trust_policy` (Custom Trust), `aws_trusted_account_numbers` (Account), and `aws_trusted_services` (Service) attributes supply the per-type trust configuration
+- New `aws_partition` and `aws_create_instance_profile` attributes control which AWS partition a non-User role syncs to and whether an IAM instance profile is created
+- Added `aws_session_tags` to both cloud access role resources and `cloud_provider_ids` to `kion_project_cloud_access_role`; both have been available on the public API for some time but were never exposed by the provider
+- `cloud_provider_ids` is write-only: Kion accepts it on create and update but omits it when reading a role back, so the provider cannot detect drift on it. It is not offered on the `kion_project_cloud_access_role` data source for the same reason
+- Creating a non-User role now verifies the type Kion actually stored and fails with an explicit error if the installation ignored the request, rather than leaving a permanent diff
+- Plan-time validation rejects per-type misconfigurations, such as a Custom Trust role without a trust policy or a non-User role with Kion users attached
+
+### Fixed
+
+- Fixed `kion_project_cloud_access_role` and `kion_ou_cloud_access_role` planning a replacement on every run when `aws_iam_role_name` was left unset
+- Kion derives a role name from `name` when the caller omits one, and the read stored it. Because `aws_iam_role_name` is `ForceNew`, that server-side value read as a change against an empty configuration and forced replacement on each plan. The attribute is now `Computed` as well, so a generated name is kept as-is. Explicitly changing the attribute still forces replacement
+
 ## [0.3.34] - 2026-04-16
 
 ### Fixed
