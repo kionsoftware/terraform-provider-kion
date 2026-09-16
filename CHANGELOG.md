@@ -19,6 +19,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 - Creating a non-User role now verifies the type Kion actually stored and fails with an explicit error if the installation ignored the request, rather than leaving a permanent diff
 - Plan-time validation rejects per-type misconfigurations, such as a Custom Trust role without a trust policy or a non-User role with Kion users attached
 
+### Changed
+
+- Building the provider from source now requires Go 1.26 or newer. `go.mod` declares `go 1.26.0`, and CI and the release pipeline build with Go 1.26.8. This does not affect practitioners using released binaries from the registry
+
 ### Fixed
 
 - Fixed `kion_project_cloud_access_role` and `kion_ou_cloud_access_role` planning a replacement on every run when `aws_iam_role_name` was left unset
