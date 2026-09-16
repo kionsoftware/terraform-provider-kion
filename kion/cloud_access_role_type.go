@@ -279,10 +279,11 @@ func verifyCloudAccessRoleType(resourceName string, requested, actual int) diag.
 
 	requestedName := cloudAccessRoleTypeNames[requested]
 	detail := fmt.Sprintf(
-		"Requested cloud_access_role_type_id %d (%s) but Kion returned %d. This Kion installation most likely "+
-			"predates 3.16.5, which added cloud access role types to the public API. Older versions ignore the "+
-			"field and create a User role instead. The role was created and is left in state; remove it and "+
-			"upgrade Kion, or set cloud_access_role_type_id to %d.",
+		"Requested cloud_access_role_type_id %d (%s) but Kion returned %d. Cloud access role types reached the "+
+			"public API in 3.16.5, and on the 3.17 line in 3.17.1; earlier versions, 3.17.0 included, ignore the "+
+			"field and create a User role. The role does exist in Kion as a User role, and Terraform has marked "+
+			"it tainted, so the next apply will destroy and recreate it. Either upgrade Kion or set "+
+			"cloud_access_role_type_id to %d.",
 		requested, requestedName, actual, cloudAccessRoleTypeUser)
 
 	return diag.Diagnostics{{
