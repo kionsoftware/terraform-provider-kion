@@ -1,8 +1,8 @@
 module github.com/kionsoftware/terraform-provider-kion
 
-go 1.25.0
+go 1.26.0
 
-toolchain go1.25.9
+toolchain go1.26.8
 
 require (
 	github.com/hashicorp/terraform-plugin-log v0.9.0

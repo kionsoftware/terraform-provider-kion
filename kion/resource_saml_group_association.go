@@ -177,7 +177,7 @@ func resourceSamlGroupAssociationUpdate(ctx context.Context, d *schema.ResourceD
 		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Failed to set last_updated",
+				Summary:  summaryLastUpdatedFailed,
 				Detail:   err.Error(),
 			})
 			return diags

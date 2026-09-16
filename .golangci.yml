@@ -27,6 +27,11 @@ linters:
     goconst:
       min-len: 3
       min-occurrences: 5
+      # Terraform schema attribute keys repeat by design. Ignoring
+      # identifier-shaped strings leaves goconst to flag duplicated prose.
+      ignore-string-values:
+        - '^[A-Za-z0-9_.]+$'
+
     gocyclo:
       min-complexity: 50
     lll:
@@ -64,6 +69,8 @@ linters:
       - examples$
 issues:
   max-same-issues: 0
+  # Report every finding; the default truncates at 50.
+  max-issues-per-linter: 0
 severity:
   default: error
   rules:

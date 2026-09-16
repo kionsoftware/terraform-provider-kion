@@ -28,18 +28,18 @@ func dataSourceCustomVariable() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
-							Description: "The field name whose values you wish to filter by.",
+							Description: descFilterName,
 							Type:        schema.TypeString,
 							Required:    true,
 						},
 						"values": {
-							Description: "The values of the field name you specified.",
+							Description: descFilterValues,
 							Type:        schema.TypeList,
 							Required:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 						"regex": {
-							Description: "Dictates if the values provided should be treated as regular expressions.",
+							Description: descFilterRegex,
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
@@ -48,7 +48,7 @@ func dataSourceCustomVariable() *schema.Resource {
 				},
 			},
 			"list": {
-				Description: "This is where Kion makes the discovered data available as a list of resources.",
+				Description: descDataSourceList,
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{

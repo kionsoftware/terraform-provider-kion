@@ -58,7 +58,7 @@ func resourceAzureArmTemplate() *schema.Resource {
 				},
 				Type:         schema.TypeSet,
 				Optional:     true,
-				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				Description:  descOwnerRequired,
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"owner_users": {
@@ -72,7 +72,7 @@ func resourceAzureArmTemplate() *schema.Resource {
 				},
 				Type:         schema.TypeSet,
 				Optional:     true,
-				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				Description:  descOwnerRequired,
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"resource_group_name": {
@@ -270,7 +270,7 @@ func resourceAzureArmTemplateUpdate(ctx context.Context, d *schema.ResourceData,
 		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Failed to set last_updated",
+				Summary:  summaryLastUpdatedFailed,
 				Detail:   err.Error(),
 			})
 			return diags

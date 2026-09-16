@@ -222,7 +222,7 @@ func resourceCustomVariableOverrideUpdate(ctx context.Context, d *schema.Resourc
 			return hc.HandleError(fmt.Errorf("unable to update CustomVariable Override: %v", err))
 		}
 
-		diags := hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Failed to set last_updated")
+		diags := hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), summaryLastUpdatedFailed)
 		if diags.HasError() {
 			return diags
 		}

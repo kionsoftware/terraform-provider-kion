@@ -174,7 +174,7 @@ func resourceCloudRule() *schema.Resource {
 				},
 				Type:         schema.TypeSet,
 				Optional:     true,
-				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				Description:  descOwnerRequired,
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"owner_users": {
@@ -188,7 +188,7 @@ func resourceCloudRule() *schema.Resource {
 				},
 				Type:         schema.TypeSet,
 				Optional:     true,
-				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				Description:  descOwnerRequired,
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"post_webhook_id": {
@@ -635,7 +635,7 @@ func resourceCloudRuleUpdate(ctx context.Context, d *schema.ResourceData, m inte
 		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Failed to set last_updated",
+				Summary:  summaryLastUpdatedFailed,
 				Detail:   err.Error(),
 			})
 			return diags

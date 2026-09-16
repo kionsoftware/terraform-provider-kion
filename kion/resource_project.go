@@ -120,7 +120,7 @@ func resourceProject() *schema.Resource {
 				},
 				Type:         schema.TypeSet,
 				Optional:     true,
-				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				Description:  descOwnerRequired,
 				AtLeastOneOf: []string{"owner_user_group_ids", "owner_user_ids"},
 			},
 			"owner_user_group_ids": {
@@ -134,7 +134,7 @@ func resourceProject() *schema.Resource {
 				},
 				Type:         schema.TypeSet,
 				Optional:     true,
-				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				Description:  descOwnerRequired,
 				AtLeastOneOf: []string{"owner_user_group_ids", "owner_user_ids"},
 			},
 			"permission_scheme_id": {
@@ -745,7 +745,7 @@ func resourceProjectUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	if hasChanged > 0 {
-		if err := hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Failed to set last_updated"); err != nil {
+		if err := hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), summaryLastUpdatedFailed); err != nil {
 			diags = append(diags, err...)
 			return diags
 		}
