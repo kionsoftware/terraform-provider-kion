@@ -83,7 +83,7 @@ func (client *Client) doRequest(req *http.Request) ([]byte, int, error) {
 func (client *Client) GET(urlPath string, returnData interface{}) error {
 	if returnData != nil {
 		v := reflect.ValueOf(returnData)
-		if v.Kind() != reflect.Ptr {
+		if v.Kind() != reflect.Pointer {
 			return errors.New("data must be a pointer, not a value")
 		}
 	}

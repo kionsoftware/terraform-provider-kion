@@ -151,7 +151,7 @@ func resourceAccountUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	if hasChanged {
-		diags = append(diags, hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), "Failed to set last_updated")...)
+		diags = append(diags, hc.SafeSet(d, "last_updated", time.Now().Format(time.RFC850), summaryLastUpdatedFailed)...)
 	}
 
 	return diags

@@ -50,7 +50,7 @@ func resourceAwsCloudformationTemplate() *schema.Resource {
 				},
 				Type:         schema.TypeSet,
 				Optional:     true,
-				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				Description:  descOwnerRequired,
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"owner_users": {
@@ -64,7 +64,7 @@ func resourceAwsCloudformationTemplate() *schema.Resource {
 				},
 				Type:         schema.TypeSet,
 				Optional:     true,
-				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				Description:  descOwnerRequired,
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"policy": {
@@ -280,7 +280,7 @@ func resourceAwsCloudformationTemplateUpdate(ctx context.Context, d *schema.Reso
 		if err := d.Set("last_updated", time.Now().Format(time.RFC850)); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Failed to set last_updated",
+				Summary:  summaryLastUpdatedFailed,
 				Detail:   err.Error(),
 			})
 			return diags

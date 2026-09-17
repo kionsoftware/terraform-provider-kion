@@ -65,7 +65,7 @@ func resourceFundingSource() *schema.Resource {
 				},
 				Type:         schema.TypeSet,
 				Optional:     true,
-				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				Description:  descOwnerRequired,
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"owner_user_groups": {
@@ -79,7 +79,7 @@ func resourceFundingSource() *schema.Resource {
 				},
 				Type:         schema.TypeSet,
 				Optional:     true,
-				Description:  "Must provide at least the owner_user_groups field or the owner_users field.",
+				Description:  descOwnerRequired,
 				AtLeastOneOf: []string{"owner_user_groups", "owner_users"},
 			},
 			"permission_scheme_id": {
