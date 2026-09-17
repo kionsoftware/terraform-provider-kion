@@ -16,7 +16,9 @@ output "project_car_applies_to_all" {
   value = data.kion_project_cloud_access_role.example.apply_to_all_accounts
 }
 
-# Example using the data source to create a similar role in another project
+# Example using the data source to create a similar role in another project.
+# This copies a User role. Copying a non-User role would also need to carry over
+# cloud_access_role_type_id and that type's trust attributes.
 resource "kion_project_cloud_access_role" "copy_role" {
   name                   = "Copy of ${data.kion_project_cloud_access_role.example.name}"
   project_id             = 2 # Different project
@@ -123,3 +125,34 @@ output "multi_cloud_analysis" {
     ])
   }
 }
+
+# Cloud access role types
+#
+# 1 = User (default, multi-cloud, assumable by Kion users and groups)
+# 2 = Custom Trust (AWS only, custom trust policy)
+# 3 = Account      (AWS only, trusts another AWS account)
+# 4 = Service      (AWS only, trusts AWS service principals)
+data "kion_project_cloud_access_role" "custom_trust" {
+  id = "20"
+}
+
+output "custom_trust_details" {
+  value = {
+    role_type        = data.kion_project_cloud_access_role.custom_trust.cloud_access_role_type_id
+    trust_policy     = data.kion_project_cloud_access_role.custom_trust.aws_iam_role_trust_policy
+    trusted_accounts = data.kion_project_cloud_access_role.custom_trust.aws_trusted_account_numbers
+    trusted_services = data.kion_project_cloud_access_role.custom_trust.aws_trusted_services
+    aws_partition    = data.kion_project_cloud_access_role.custom_trust.aws_partition
+    instance_profile = data.kion_project_cloud_access_role.custom_trust.aws_create_instance_profile
+    session_tags     = data.kion_project_cloud_access_role.custom_trust.aws_session_tags
+  }
+}
+
+# Only User roles accept Kion users and user groups, so branching on the type
+# tells you whether the users and user_groups attributes can be populated.
+output "accepts_kion_users" {
+  value = data.kion_project_cloud_access_role.custom_trust.cloud_access_role_type_id == 1
+}
+
+# Note: cloud_provider_ids is not exposed on this data source. Kion accepts it
+# when creating or updating a role but omits it when reading one back.

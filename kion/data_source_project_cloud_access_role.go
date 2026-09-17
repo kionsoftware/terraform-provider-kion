@@ -13,7 +13,7 @@ import (
 func dataSourceProjectCloudAccessRole() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceProjectCloudAccessRoleRead,
-		Schema: map[string]*schema.Schema{
+		Schema: mergeSchemas(map[string]*schema.Schema{
 			"id": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -153,7 +153,10 @@ func dataSourceProjectCloudAccessRole() *schema.Resource {
 				Computed:    true,
 				Description: "Whether web access is enabled.",
 			},
-		},
+			// cloud_provider_ids is deliberately absent. Kion accepts it on
+			// create and update but never returns it when reading a role, so a
+			// data source attribute for it would always be empty.
+		}, cloudAccessRoleTypeDataSourceSchema()),
 	}
 }
 
@@ -205,6 +208,21 @@ func dataSourceProjectCloudAccessRoleRead(ctx context.Context, d *schema.Resourc
 	diags = append(diags, hc.SafeSet(d, "gcp_iam_roles", hc.InflateObjectWithID(item.GCPIamRoles), "Failed to set gcp_iam_roles")...)
 	diags = append(diags, hc.SafeSet(d, "user_groups", hc.InflateObjectWithID(item.UserGroups), "Failed to set user_groups")...)
 	diags = append(diags, hc.SafeSet(d, "users", hc.InflateObjectWithID(item.Users), "Failed to set users")...)
+
+	roleType := normalizeCloudAccessRoleTypeID(item.ProjectCloudAccessRole.CloudAccessRoleTypeID)
+	diags = append(diags, hc.SafeSet(d, "cloud_access_role_type_id", roleType, "Failed to set cloud_access_role_type_id")...)
+	diags = append(diags, hc.SafeSet(d, "aws_iam_role_trust_policy", item.ProjectCloudAccessRole.AwsIamRoleTrustPolicy, "Failed to set aws_iam_role_trust_policy")...)
+	diags = append(diags, hc.SafeSet(d, "aws_trusted_account_numbers", item.ProjectCloudAccessRole.AwsTrustedAccountNumbers, "Failed to set aws_trusted_account_numbers")...)
+	diags = append(diags, hc.SafeSet(d, "aws_trusted_services", item.ProjectCloudAccessRole.AwsTrustedServices, "Failed to set aws_trusted_services")...)
+	diags = append(diags, hc.SafeSet(d, "aws_partition", item.ProjectCloudAccessRole.AwsPartition, "Failed to set aws_partition")...)
+
+	awsCreateInstanceProfile := false
+	if item.ProjectCloudAccessRole.AwsCreateInstanceProfile != nil {
+		awsCreateInstanceProfile = *item.ProjectCloudAccessRole.AwsCreateInstanceProfile
+	}
+	diags = append(diags, hc.SafeSet(d, "aws_create_instance_profile", awsCreateInstanceProfile, "Failed to set aws_create_instance_profile")...)
+
+	diags = append(diags, hc.SafeSet(d, "aws_session_tags", hc.InflateTags(item.AwsSessionTags), "Failed to set aws_session_tags")...)
 
 	return diags
 }

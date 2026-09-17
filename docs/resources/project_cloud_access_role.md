@@ -17,15 +17,15 @@ description: |-
 resource "kion_project_cloud_access_role" "example" {
   name       = "example-project-car"
   project_id = 1
-  
+
   # Basic access permissions
   web_access             = true
   short_term_access_keys = true
   long_term_access_keys  = false
-  
+
   # Apply to all accounts
   apply_to_all_accounts = true
-  
+
   # Assign to users and groups
   users {
     id = 1
@@ -39,14 +39,14 @@ resource "kion_project_cloud_access_role" "example" {
 resource "kion_project_cloud_access_role" "aws_admin" {
   name              = "aws-admin-role"
   project_id        = 1
-  aws_iam_role_name = "AdminRole"  # Only needed if this role will be used for AWS accounts
+  aws_iam_role_name = "AdminRole" # Only needed if this role will be used for AWS accounts
   aws_iam_path      = "/kion/"
-  
+
   # AWS access types
   web_access             = true
   short_term_access_keys = true
   long_term_access_keys  = false
-  
+
   # Apply to specific accounts
   accounts {
     id = 1
@@ -54,10 +54,10 @@ resource "kion_project_cloud_access_role" "aws_admin" {
   accounts {
     id = 2
   }
-  
+
   # Include future accounts
   future_accounts = true
-  
+
   # AWS IAM policies
   aws_iam_policies {
     id = 1
@@ -65,10 +65,10 @@ resource "kion_project_cloud_access_role" "aws_admin" {
   aws_iam_policies {
     id = 2
   }
-  
+
   # AWS permissions boundary
   aws_iam_permissions_boundary = 1
-  
+
   # Assign to users and groups
   users {
     id = 1
@@ -83,7 +83,7 @@ resource "kion_project_cloud_access_role" "azure_admin" {
   name       = "azure-admin-role"
   project_id = 2
   web_access = true
-  
+
   # Apply to specific accounts
   accounts {
     id = 3
@@ -91,7 +91,7 @@ resource "kion_project_cloud_access_role" "azure_admin" {
   accounts {
     id = 4
   }
-  
+
   # Azure role definitions
   azure_role_definitions {
     id = 1
@@ -99,7 +99,7 @@ resource "kion_project_cloud_access_role" "azure_admin" {
   azure_role_definitions {
     id = 2
   }
-  
+
   # Assign to groups
   user_groups {
     id = 2
@@ -111,11 +111,11 @@ resource "kion_project_cloud_access_role" "gcp_admin" {
   name       = "gcp-admin-role"
   project_id = 3
   web_access = true
-  
+
   # Apply to all accounts and future accounts
   apply_to_all_accounts = true
   future_accounts       = true
-  
+
   # GCP IAM roles
   gcp_iam_roles {
     id = 1
@@ -123,7 +123,7 @@ resource "kion_project_cloud_access_role" "gcp_admin" {
   gcp_iam_roles {
     id = 2
   }
-  
+
   # Assign to users and groups
   users {
     id = 2
@@ -137,33 +137,103 @@ resource "kion_project_cloud_access_role" "gcp_admin" {
 resource "kion_project_cloud_access_role" "multi_cloud" {
   name              = "multi-cloud-role"
   project_id        = 4
-  aws_iam_role_name = "CrossAccountRole"  # Only needed because this role includes AWS permissions
-  
+  aws_iam_role_name = "CrossAccountRole" # Only needed because this role includes AWS permissions
+
   # Access types
   web_access             = true
   short_term_access_keys = true
   long_term_access_keys  = false
-  
+
   # Apply to all accounts
   apply_to_all_accounts = true
   future_accounts       = true
-  
+
   # AWS permissions
   aws_iam_policies {
     id = 1
   }
-  
+
   # Azure permissions
   azure_role_definitions {
     id = 1
   }
-  
+
   # GCP permissions
   gcp_iam_roles {
     id = 1
   }
-  
+
   # Assign to users
+  users {
+    id = 1
+  }
+}
+
+# Custom Trust role (cloud_access_role_type_id = 2). AWS only. The trust policy
+# is supplied verbatim and the role cannot be assigned to Kion users or groups.
+resource "kion_project_cloud_access_role" "custom_trust" {
+  name                      = "custom-trust-role"
+  project_id                = 1
+  aws_iam_role_name         = "CustomTrustRole"
+  cloud_access_role_type_id = 2
+
+  aws_iam_role_trust_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { AWS = "arn:aws:iam::123456789012:root" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  aws_iam_policies {
+    id = 1
+  }
+}
+
+# Account role (cloud_access_role_type_id = 3). Trusts a single AWS account.
+resource "kion_project_cloud_access_role" "trusted_account" {
+  name                        = "trusted-account-role"
+  project_id                  = 1
+  aws_iam_role_name           = "TrustedAccountRole"
+  cloud_access_role_type_id   = 3
+  aws_trusted_account_numbers = ["123456789012"]
+
+  aws_iam_policies {
+    id = 1
+  }
+}
+
+# Service role (cloud_access_role_type_id = 4). Trusts AWS service principals.
+# GovCloud and ISO partitions must set aws_partition explicitly.
+resource "kion_project_cloud_access_role" "service" {
+  name                        = "lambda-execution-role"
+  project_id                  = 1
+  aws_iam_role_name           = "LambdaExecutionRole"
+  cloud_access_role_type_id   = 4
+  aws_trusted_services        = ["lambda.amazonaws.com", "ec2.amazonaws.com"]
+  aws_partition               = "aws"
+  aws_create_instance_profile = true
+
+  aws_iam_policies {
+    id = 1
+  }
+}
+
+# Session tags and an explicit cloud provider restriction on a User role.
+resource "kion_project_cloud_access_role" "tagged" {
+  name       = "tagged-role"
+  project_id = 1
+  web_access = true
+
+  # 1 = AWS, 2 = Azure, 3 = GCP
+  cloud_provider_ids = [1]
+
+  aws_session_tags = {
+    department  = "engineering"
+    cost_center = "1234"
+  }
+
   users {
     id = 1
   }
@@ -172,6 +242,18 @@ resource "kion_project_cloud_access_role" "multi_cloud" {
 # Outputs
 output "example_id" {
   value = kion_project_cloud_access_role.example.id
+}
+
+output "custom_trust_id" {
+  value = kion_project_cloud_access_role.custom_trust.id
+}
+
+output "trusted_account_id" {
+  value = kion_project_cloud_access_role.trusted_account.id
+}
+
+output "service_id" {
+  value = kion_project_cloud_access_role.service.id
 }
 
 output "aws_admin_id" {
@@ -203,11 +285,19 @@ output "multi_cloud_id" {
 
 - `accounts` (Block Set) This field will be ignored if 'apply_to_all_accounts' is set to: true. (see [below for nested schema](#nestedblock--accounts))
 - `apply_to_all_accounts` (Boolean)
+- `aws_create_instance_profile` (Boolean) Whether to create an IAM instance profile for this role. Applies only to non-User role types.
 - `aws_iam_path` (String)
 - `aws_iam_permissions_boundary` (Number)
 - `aws_iam_policies` (Block Set) (see [below for nested schema](#nestedblock--aws_iam_policies))
 - `aws_iam_role_name` (String)
+- `aws_iam_role_trust_policy` (String) AWS IAM role trust policy JSON. Required when cloud_access_role_type_id is 2 (Custom Trust).
+- `aws_partition` (String) AWS partition this role is synced to. Applies only to non-User role types and defaults to "aws". Callers in GovCloud or ISO partitions must set this explicitly.
+- `aws_session_tags` (Map of String) AWS session tags applied when assuming this role in the AWS console.
+- `aws_trusted_account_numbers` (List of String) AWS account numbers this role trusts. Required when cloud_access_role_type_id is 3 (Account). Kion currently stores exactly one entry.
+- `aws_trusted_services` (Set of String) AWS service principals this role trusts, such as "lambda.amazonaws.com". Required when cloud_access_role_type_id is 4 (Service).
 - `azure_role_definitions` (Block Set) (see [below for nested schema](#nestedblock--azure_role_definitions))
+- `cloud_access_role_type_id` (Number) Type of the cloud access role: 1 = User (default), 2 = Custom Trust, 3 = Account, 4 = Service. Types other than User are AWS only and require Kion 3.15.3, 3.16.5 or 3.17.1, depending on the release line. Note that 3.17.0 does not support them. On a version without support, Kion creates a User role instead and the provider fails the apply rather than letting the mismatch go unnoticed.
+- `cloud_provider_ids` (Set of Number) Cloud provider IDs this role applies to: 1 for AWS, 2 for Azure, 3 for GCP. Defaults to all cloud providers. Kion accepts this on create and update but does not return it when reading a role, so changes made outside Terraform are not detected.
 - `future_accounts` (Boolean)
 - `gcp_iam_roles` (Block Set) (see [below for nested schema](#nestedblock--gcp_iam_roles))
 - `last_updated` (String)

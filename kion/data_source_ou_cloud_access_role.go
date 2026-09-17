@@ -13,7 +13,7 @@ import (
 func dataSourceOUCloudAccessRole() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceOUCloudAccessRoleRead,
-		Schema: map[string]*schema.Schema{
+		Schema: mergeSchemas(map[string]*schema.Schema{
 			"id": {
 				Description: "The ID of the OU cloud access role to look up.",
 				Type:        schema.TypeInt,
@@ -111,7 +111,7 @@ func dataSourceOUCloudAccessRole() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
-		},
+		}, cloudAccessRoleTypeDataSourceSchema()),
 	}
 }
 
@@ -150,6 +150,18 @@ func dataSourceOUCloudAccessRoleRead(ctx context.Context, d *schema.ResourceData
 		"gcp_iam_roles":                hc.InflateObjectWithID(item.GCPIamRoles),
 		"users":                        hc.InflateObjectWithID(item.Users),
 		"user_groups":                  hc.InflateObjectWithID(item.UserGroups),
+		"cloud_access_role_type_id":    normalizeCloudAccessRoleTypeID(item.OUCloudAccessRole.CloudAccessRoleTypeID),
+		"aws_iam_role_trust_policy":    item.OUCloudAccessRole.AwsIamRoleTrustPolicy,
+		"aws_trusted_account_numbers":  item.OUCloudAccessRole.AwsTrustedAccountNumbers,
+		"aws_trusted_services":         item.OUCloudAccessRole.AwsTrustedServices,
+		"aws_partition":                item.OUCloudAccessRole.AwsPartition,
+		"aws_create_instance_profile": func() bool {
+			if item.OUCloudAccessRole.AwsCreateInstanceProfile != nil {
+				return *item.OUCloudAccessRole.AwsCreateInstanceProfile
+			}
+			return false
+		}(),
+		"aws_session_tags": hc.InflateTags(item.AwsSessionTags),
 	}
 
 	for k, v := range data {
