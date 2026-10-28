@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+### Fixed
+
+- Fixed the `kion_saml_group_association` data source failing on every read
+- It requested `/v3/idms/{id}/group-association` with the `{id}` placeholder never filled in, and offered no argument to supply the IDMS ID. A new required `idms_id` argument names the SAML IDMS whose group associations are listed
+- Fixed the `kion_saml_group_association` data source example, which referenced a nonexistent `saml_group_association` attribute instead of `list` and passed regex patterns without setting `regex = true`
+
 ## [0.3.35] - 2026-09-16
 
 ### Added

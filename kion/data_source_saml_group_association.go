@@ -15,6 +15,11 @@ func dataSourceSamlGroupAssociation() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceSamlGroupAssociationRead,
 		Schema: map[string]*schema.Schema{
+			"idms_id": {
+				Type:        schema.TypeInt,
+				Required:    true,
+				Description: "ID of the SAML IDMS to fetch group associations for.",
+			},
 			"filter": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -85,13 +90,15 @@ func dataSourceSamlGroupAssociationRead(ctx context.Context, d *schema.ResourceD
 	var diags diag.Diagnostics
 	client := m.(*hc.Client)
 
+	idmsID := d.Get("idms_id").(int)
+
 	resp := new(hc.GroupAssociationListResponse)
-	err := client.GET("/v3/idms/{id}/group-association", resp)
+	err := client.GET(fmt.Sprintf("/v3/idms/%d/group-association", idmsID), resp)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to read SamlGroupAssociation",
-			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), "all"),
+			Detail:   fmt.Sprintf("Error: %v\nItem: %v", err.Error(), idmsID),
 		})
 		return diags
 	}
