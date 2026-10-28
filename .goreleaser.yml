@@ -54,7 +54,5 @@ signs:
       - "${artifact}"
 changelog:
   use: github
-  format: "{{.SHA}}: {{.Message}} (@{{.AuthorUsername}})"
-  sort: asc
-  abbrev: -1
+  format: "{{ .Message }} (@{{ .AuthorUsername }})"
   disable: "{{ .Env.dry_run }}"
