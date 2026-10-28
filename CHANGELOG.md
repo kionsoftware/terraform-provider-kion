@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). This proj
 
 [Unreleased] - yyyy-mm-dd
 
+## [0.3.36] - 2026-10-28
+
 ### Fixed
 
 - Fixed the `kion_saml_group_association` data source failing on every read
