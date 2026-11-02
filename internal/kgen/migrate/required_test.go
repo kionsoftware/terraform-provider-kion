@@ -8,7 +8,7 @@ import (
 )
 
 // computeRequiredAdditions derives, from the schema snapshots, the attributes
-// the new schema requires that the old schema had no attribute for at all.
+// the new schema requires that the old schema did not: absent, or optional.
 // Rename targets are excluded: the rewrite supplies those from the old name, so
 // they are not something the practitioner must add.
 func computeRequiredAdditions(t *testing.T) map[string][]string {
@@ -61,7 +61,7 @@ func computeRequiredAdditions(t *testing.T) map[string][]string {
 			if !a.Required || renamed[name] {
 				continue
 			}
-			if _, existed := oldR.Attrs[name]; !existed {
+			if oa, existed := oldR.Attrs[name]; !existed || !oa.Required {
 				missing = append(missing, name)
 			}
 		}
@@ -141,6 +141,29 @@ func TestRequiredAdditions_excludesRenameTargets(t *testing.T) {
 			if a == "account_name" {
 				t.Errorf("%s: account_name is a rename of `name`, not an addition the user must make", rtype)
 			}
+		}
+	}
+}
+
+// A cached account has no project, so "add project_id" alone would move it;
+// the follow-up must point at kion_account_cache.
+func TestRewriteFile_cachedAccountHint(t *testing.T) {
+	src := `resource "kion_custom_account" "cached" {
+  name           = "c"
+  account_number = "123"
+  payer_id       = 1
+}
+`
+	_, _, actions, err := RewriteFile([]byte(src), map[string]Transform{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actions) != 1 {
+		t.Fatalf("expected one follow-up, got %v", actions)
+	}
+	for _, want := range []string{"project_id", "start_datecode", "kion_account_cache"} {
+		if !strings.Contains(actions[0], want) {
+			t.Errorf("follow-up should name %q, got: %s", want, actions[0])
 		}
 	}
 }

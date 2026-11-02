@@ -35,7 +35,7 @@ var AttrsToObject = map[string]objFold{
 }
 
 // RequiredAdditions lists attributes the new schema requires that the old schema
-// had no equivalent for. These are not renames, the rewrite handles those, so
+// lacked or left optional. These are not renames, the rewrite handles those, so
 // there is no old value to carry over and kmigrate cannot supply one. It reports
 // the blocks that need them instead, which is the difference between a config
 // that fails `terraform plan` with "Missing required argument" and one the
@@ -47,7 +47,23 @@ var RequiredAdditions = map[string][]string{
 	// no create: it could only adopt an existing user for deletion. The new
 	// resource is full CRUD.
 	"kion_user": {"email", "first_name", "idms_id", "last_name", "username"},
+	// Optional in the old provider, which could leave these accounts in the
+	// account cache; the new resources always place one in a project.
+	"kion_azure_account":  {"project_id", "start_datecode"},
+	"kion_custom_account": {"project_id", "start_datecode"},
+	"kion_gcp_account":    {"project_id", "start_datecode"},
 }
+
+// requiredAdditionHints follows a RequiredAdditions report where the obvious
+// fix is wrong: adding project_id to a cached account moves it into a project.
+var requiredAdditionHints = map[string]string{
+	"kion_azure_account":  cachedAccountHint,
+	"kion_custom_account": cachedAccountHint,
+	"kion_gcp_account":    cachedAccountHint,
+}
+
+const cachedAccountHint = "if the account is in the account cache, move it to kion_account_cache " +
+	"instead (see the upgrade guide); setting project_id would move it into that project"
 
 // RewriteFile applies the input-attribute half of the state_upgrades transforms
 // to one .tf file's `resource "kion_*"` blocks: attribute renames and the
@@ -310,9 +326,12 @@ func RewriteNamedFile(name string, src []byte, ups map[string]Transform) ([]byte
 			}
 		}
 		if len(missing) > 0 {
-			actions = append(actions, fmt.Sprintf(
-				"%s.%s: add %v: required by the new schema, and kmigrate has no value to supply",
-				rtype, rname, missing))
+			action := fmt.Sprintf("%s.%s: add %v: required by the new schema, and kmigrate has no value to supply",
+				rtype, rname, missing)
+			if hint := requiredAdditionHints[rtype]; hint != "" {
+				action += "; " + hint
+			}
+			actions = append(actions, action)
 		}
 	}
 	return f.Bytes(), changes, actions, nil
