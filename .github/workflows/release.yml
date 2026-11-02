@@ -28,8 +28,8 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # kion-sdk-go needs no checkout: the replace directive in go.mod is
-      # versioned, so the module proxy resolves it like any other dependency.
+      # kion-sdk-go needs no checkout: the module proxy resolves the version
+      # go.mod requires like any other dependency.
       # A release must build from exactly the SDK version go.mod pins, which a
       # branch clone would silently override it, so do not reintroduce one.
 
