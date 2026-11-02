@@ -1,6 +1,0 @@
-kind: ENHANCEMENTS
-body: >-
-  kion-import: retries a read that gets a 401, 429, 502, 503 or 504, twice, after 1s and then 3s.
-  The old importer retried a 401 because Kion occasionally rejects a valid key. A 401 that outlasts
-  its retries marks the key as bad, and later reads fail at once, so a wrong key still fails quickly.
-time: 2026-11-02T20:53:53Z
