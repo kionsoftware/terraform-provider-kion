@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -337,10 +338,18 @@ func TestMapToObjectList_matchSchemas(t *testing.T) {
 			if na.NestedMode != "list" && na.NestedMode != "set" {
 				t.Errorf("%s.%s: kv_list target nesting = %q, want list or set", newType, attr, na.NestedMode)
 			}
-			want := []string{fold.KeyField, fold.ValField}
-			sort.Strings(want)
-			if !eqStrs(na.NestedAttrs, want) {
-				t.Errorf("%s.%s: new nested fields = %v, kv_list names %v", newType, attr, na.NestedAttrs, want)
+			// The rule fills key and value; any other field stays null, which
+			// is safe only for one the provider computes on the next read.
+			for _, f := range []string{fold.KeyField, fold.ValField} {
+				if !slices.Contains(na.NestedAttrs, f) {
+					t.Errorf("%s.%s: kv_list names %q, not a nested field %v", newType, attr, f, na.NestedAttrs)
+				}
+			}
+			for _, f := range na.NestedAttrs {
+				if f != fold.KeyField && f != fold.ValField && !na.NestedComputed[f] {
+					t.Errorf("%s.%s: nested field %q is neither the kv_list key nor value and is not computed; "+
+						"the upgrader would leave it null", newType, attr, f)
+				}
 			}
 		}
 	}

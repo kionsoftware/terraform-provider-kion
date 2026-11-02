@@ -27,6 +27,9 @@ type Attr struct {
 	// nested-object attribute can be checked field-for-field.
 	NestedMode  string
 	NestedAttrs []string
+	// NestedComputed holds the nested-object fields the provider can set, which
+	// a rule may leave null for the next refresh to fill.
+	NestedComputed map[string]bool
 }
 
 // Settable reports whether a user can write this attribute in config (so a
@@ -86,15 +89,21 @@ func LoadSchema(path string) (map[string]Resource, error) {
 				}
 				if attr.NestedObj {
 					var nt struct {
-						NestingMode string                     `json:"nesting_mode"`
-						Attributes  map[string]json.RawMessage `json:"attributes"`
+						NestingMode string `json:"nesting_mode"`
+						Attributes  map[string]struct {
+							Computed bool `json:"computed"`
+						} `json:"attributes"`
 					}
 					if err := json.Unmarshal(a.NestedType, &nt); err != nil {
 						return nil, fmt.Errorf("parse %s: nested_type of %s.%s: %w", path, rtype, name, err)
 					}
 					attr.NestedMode = nt.NestingMode
-					for n := range nt.Attributes {
+					attr.NestedComputed = map[string]bool{}
+					for n, na := range nt.Attributes {
 						attr.NestedAttrs = append(attr.NestedAttrs, n)
+						if na.Computed {
+							attr.NestedComputed[n] = true
+						}
 					}
 					sort.Strings(attr.NestedAttrs)
 				}

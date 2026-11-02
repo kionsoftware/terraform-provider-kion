@@ -88,6 +88,10 @@ them. The main patterns:
   nested `azure_policy = { … }` object.
 - `aws_cloudformation_template`'s `tags` went from a map to a list of objects:
   `tags = { env = "prod" }` → `tags = [{ tag_key = "env", tag_value = "prod" }]`.
+- `ou_cloud_access_role` and `project_cloud_access_role`'s `aws_session_tags`
+  (added in 0.3.36) made the same change:
+  `aws_session_tags = { Team = "platform" }` →
+  `aws_session_tags = [{ tag_key = "Team", tag_value = "platform" }]`.
 - Obsolete attributes the new schema dropped (e.g. `last_updated`,
   `gcp_iam_role.system_managed_policy`) are removed.
 
@@ -137,6 +141,9 @@ on the next refresh from the Kion API):
   object list. Tags arrive in sorted key order, the order the old state itself
   recorded, and the next refresh replaces it with the API's order, so any
   reordering you see on the first plan is cosmetic.
+- `kion_ou_cloud_access_role` / `kion_project_cloud_access_role`:
+  `aws_session_tags` is exploded the same way. The tag objects' `id` fields
+  start null and the next refresh fills them.
 
 ## What migrates automatically
 
