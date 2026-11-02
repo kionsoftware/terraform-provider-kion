@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Terraform provider for the Kion cloud governance platform, built on HashiCorp's Terraform Plugin Framework and organized as one service package per resource (AWS-provider style). Uses kion-sdk-go (ogen-generated from the same OpenAPI spec), resolved from the module proxy via a versioned `replace` in `go.mod` — a plain clone builds with no sibling checkout.
+Terraform provider for the Kion cloud governance platform, built on HashiCorp's Terraform Plugin Framework and organized as one service package per resource (AWS-provider style). Uses kion-sdk-go (ogen-generated from the same OpenAPI spec), resolved from the module proxy at the version `go.mod` requires — a plain clone builds with no sibling checkout.
 
 Nearly the whole provider is generated: schemas, CRUD, data sources, tests, examples, docs, and a Terraform module per resource. **Edit the codegen inputs in `codegen/`, not the generated output.**
 
@@ -167,7 +167,7 @@ wrappers, and `no_read` resources that import as empty shells).
 
 ## CI/CD
 
-GitHub Actions only; there is no `.gitlab-ci.yml`. `.github/workflows/ci.yml` runs on pull requests and pushes to `main`: `fmt`, `vet`, `lint`, `test-unit` (race detector + coverage), `acctest-config` (test HCL matches provider schema), `docs` (docs/examples drift gate), `modules` (drift + `terraform validate`/`test` over every module), `align-check` (`kalign check` against the two-way ratchet in `codegen/align_baseline.yaml`; `make align-baseline` rewrites it, keeping reasons), `internal-refs`, `secrets`, `codeql`, and a `ci` aggregator job for branch protection. `.github/workflows/release.yml` runs goreleaser on a `v*` tag; the tag is the version — nothing in the repo records it. No kion-sdk-go checkout is needed anywhere: the `replace` in `go.mod` is versioned, so the module proxy resolves it (do not reintroduce a clone step in workflows — it would silently override the pin). Local `make ci` covers every job except `codeql`. See `.github/workflows/README.md`.
+GitHub Actions only; there is no `.gitlab-ci.yml`. `.github/workflows/ci.yml` runs on pull requests and pushes to `main`: `fmt`, `vet`, `lint`, `test-unit` (race detector + coverage), `acctest-config` (test HCL matches provider schema), `docs` (docs/examples drift gate), `modules` (drift + `terraform validate`/`test` over every module), `align-check` (`kalign check` against the two-way ratchet in `codegen/align_baseline.yaml`; `make align-baseline` rewrites it, keeping reasons), `internal-refs`, `secrets`, `codeql`, and a `ci` aggregator job for branch protection. `.github/workflows/release.yml` runs goreleaser on a `v*` tag; the tag is the version — nothing in the repo records it. No kion-sdk-go checkout is needed anywhere: the module proxy resolves the version `go.mod` requires (do not reintroduce a clone step in workflows — it would silently override the pin). Local `make ci` covers every job except `codeql`. See `.github/workflows/README.md`.
 
 Acceptance tests are generated from `codegen/test_values.yaml` (see its header
 for `env_args`/`require_env`/`known_issues`/`prereqs`/`fixtures`/`extra_args`/`hcl:`). Every resource that

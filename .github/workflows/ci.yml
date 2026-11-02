@@ -14,9 +14,9 @@ name: CI
 # plus `internal-refs`, which has no GitLab counterpart: this repo is public,
 # and scripts/check-no-internal-refs.sh fails if internal references reappear.
 #
-# kion-sdk-go resolves from the module proxy via the versioned replace in
-# go.mod. The GitLab jobs cloned it as a sibling checkout with a job token,
-# that is obsolete, so no job here clones anything but this repo.
+# kion-sdk-go resolves from the module proxy at the version go.mod requires.
+# The GitLab jobs cloned it as a sibling checkout with a job token; that is
+# obsolete, so no job here clones anything but this repo.
 
 on:
   pull_request:

@@ -111,11 +111,11 @@ Resources embed `framework.ResourceWithConfigure` (data sources embed `framework
 
 ### SDK integration
 
-The provider uses [kion-sdk-go](https://github.com/bshutterkion/kion-sdk-go), a typed Go SDK generated from the Kion OpenAPI spec with [ogen](https://ogen.dev/). Resource code imports the `generated/v3_17` sub-package, aliased `generated`.
+The provider uses [kion-sdk-go](https://github.com/kionsoftware/kion-sdk-go), a typed Go SDK generated from the Kion OpenAPI spec with [ogen](https://ogen.dev/). Resource code imports the `generated/v3_17` sub-package, aliased `generated`.
 
 Type conversion between Terraform Framework types (`types.String`, `types.Int64`, …) and SDK types (`generated.OptString`, `generated.OptUint64`, …) lives in `internal/flex`.
 
-The SDK's module path is `github.com/kionsoftware/kion-sdk-go`, and `go.mod` carries a **versioned** `replace` pointing it at `github.com/bshutterkion/kion-sdk-go`, where it is published today. Because the replace names a version rather than a filesystem path, the module proxy resolves it like any other dependency. **A plain clone builds with no sibling checkout**, and a release builds from exactly the version `go.mod` pins.
+`go.mod` requires `github.com/kionsoftware/kion-sdk-go` at a tagged version, which the module proxy resolves like any other dependency. **A plain clone builds with no sibling checkout**, and a release builds from exactly the version `go.mod` pins.
 
 **`spec/openapi3.json` is not committed.** It is gitignored. This repo is published for customers and ships the provider, not Kion's interface files. Because the generated code *is* committed, a plain clone still builds, tests, and regenerates modules, docs, and examples with no spec present.
 
@@ -217,7 +217,7 @@ Runs on pull requests and pushes to `main`. Every job runs in parallel, and the 
 | `secrets` | Credential scan over the tree | `make ci-secrets` |
 | `codeql` | CodeQL analysis for Go | GitHub only |
 
-No SDK checkout step is needed: the `replace` is versioned, so the module proxy resolves it.
+No SDK checkout step is needed: the module proxy resolves the version `go.mod` requires.
 
 ### `release.yml` publishes
 
@@ -262,9 +262,7 @@ The tag triggers `release.yml`, which builds with goreleaser, signs `_SHA256SUMS
 
 Publishing needs two repository secrets: `GPG_PRIVATE_KEY` (the ASCII-armoured private key) and `PASSPHRASE` (its passphrase), with the matching public key registered on the Registry provider page.
 
-The `replace` for `github.com/kionsoftware/kion-sdk-go` is versioned, so the release workflow needs no SDK checkout. The module proxy resolves it, and the build uses exactly the version `go.mod` pins. Do not reintroduce a clone step: a branch checkout would silently override that pin and make the release unreproducible.
-
-The replace itself is temporary. It exists only because the SDK is published at `github.com/bshutterkion/kion-sdk-go` rather than at its own module path; once it is published at `github.com/kionsoftware/kion-sdk-go`, drop the directive.
+`github.com/kionsoftware/kion-sdk-go` resolves from the module proxy, so the release workflow needs no SDK checkout, and the build uses exactly the version `go.mod` pins. Do not reintroduce a clone step: a branch checkout would silently override that pin and make the release unreproducible.
 
 ## Contributing
 

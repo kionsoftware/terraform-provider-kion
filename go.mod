@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.38.1
 	github.com/hashicorp/terraform-plugin-testing v1.14.0
-	github.com/kionsoftware/kion-sdk-go v0.0.0
+	github.com/kionsoftware/kion-sdk-go v0.14.0
 	github.com/spf13/cobra v1.10.2
 	github.com/zclconf/go-cty v1.17.0
 )
@@ -39,13 +39,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
-
-// The SDK's module path is github.com/kionsoftware/kion-sdk-go; it is currently
-// published at github.com/bshutterkion/kion-sdk-go. This versioned replace points
-// the import path at that host so the provider builds from a plain clone, with no
-// sibling checkout. Delete this line once the module path itself is published,
-// no import in the tree changes.
-replace github.com/kionsoftware/kion-sdk-go => github.com/bshutterkion/kion-sdk-go v0.14.0
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
