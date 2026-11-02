@@ -1,4 +1,10 @@
 data "kion_saml_group_association" "example" {
   # Required
-  id = 1
+  idms_id = 1
+
+  # filter {
+  #   name   = "example"
+  #   regex  = false
+  #   values = []
+  # }
 }

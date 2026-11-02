@@ -1,0 +1,8 @@
+kind: BUG FIXES
+body: >-
+  The kion_saml_group_association data source works for configurations written for the
+  old provider again. It takes a required idms_id and an optional filter block, and
+  returns the matching group associations in list, as the old provider's 0.3.36 did. Before
+  this, it fetched only one association by id, so a 0.3.36 configuration failed. The by-id
+  form is gone. To pick one association, set idms_id and filter on id.
+time: 2026-11-02T20:51:58Z
