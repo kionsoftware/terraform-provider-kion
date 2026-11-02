@@ -10,11 +10,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"terraform-provider-kion/internal/paging"
@@ -57,6 +59,33 @@ type Client struct {
 	baseURL string
 	apiKey  string
 	http    *http.Client
+	// backoff is the wait before each retry of a transient failure; its length
+	// is the retry count.
+	backoff []time.Duration
+	// authRejected is set once a 401 outlasts its retries: the key is bad, so
+	// later 401s fail at once instead of each waiting out the backoff.
+	authRejected atomic.Bool
+}
+
+// defaultBackoff retries a transient failure twice, after 1s and then 3s.
+var defaultBackoff = []time.Duration{time.Second, 3 * time.Second}
+
+// RetryBackoff replaces the waits before each retry (tests pass zeros).
+func (c *Client) RetryBackoff(waits ...time.Duration) *Client {
+	c.backoff = waits
+	return c
+}
+
+// retryable reports whether a status is worth another attempt. Kion sometimes
+// answers a valid key with a spurious 401; 429 and gateway errors pass. A 500
+// is not retried: Kion returns it for deterministic failures.
+func retryable(status int) bool {
+	switch status {
+	case http.StatusUnauthorized, http.StatusTooManyRequests,
+		http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		return true
+	}
+	return false
 }
 
 // NewClient builds a Client. apiPrefix (e.g. "/api") is appended to baseURL,
@@ -78,6 +107,7 @@ func NewClient(baseURL, apiKey string, skipSSL bool, apiPrefix string) *Client {
 		baseURL: joinAPIPrefix(baseURL, apiPrefix),
 		apiKey:  apiKey,
 		http:    &http.Client{Transport: transport, Timeout: 60 * time.Second},
+		backoff: defaultBackoff,
 	}
 }
 
@@ -98,7 +128,28 @@ func joinAPIPrefix(baseURL, prefix string) string {
 	return base + "/" + trimmedPrefix
 }
 
+// get fetches one page, retrying a transient failure (see retryable) with the
+// same request each time.
 func (c *Client) get(ctx context.Context, path string, page int) (json.RawMessage, error) {
+	for attempt := 0; ; attempt++ {
+		body, err := c.getOnce(ctx, path, page)
+		var se *StatusError
+		if err == nil || !errors.As(err, &se) || !retryable(se.Status) || attempt == len(c.backoff) ||
+			(se.Status == http.StatusUnauthorized && c.authRejected.Load()) {
+			if se != nil && se.Status == http.StatusUnauthorized {
+				c.authRejected.Store(true)
+			}
+			return body, err
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(c.backoff[attempt]):
+		}
+	}
+}
+
+func (c *Client) getOnce(ctx context.Context, path string, page int) (json.RawMessage, error) {
 	// A path may carry its own filter (kion_billing_rule's rule_type_ids).
 	path, rawQuery, _ := strings.Cut(path, "?")
 	q, err := url.ParseQuery(rawQuery)
