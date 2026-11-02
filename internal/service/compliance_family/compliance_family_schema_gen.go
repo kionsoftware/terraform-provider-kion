@@ -29,6 +29,7 @@ func ComplianceFamilyResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "Description for the compliance family in the application.",
 				MarkdownDescription: "Description for the compliance family in the application.",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},

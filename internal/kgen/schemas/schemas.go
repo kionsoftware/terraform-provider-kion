@@ -1578,6 +1578,10 @@ var planModifierPkg = map[string]string{
 // An attribute the server genuinely recomputes should opt out by declaring its
 // own plan_modifiers in schema_overrides.yaml, which wins because this runs
 // first and only fills an empty list.
+//
+// One exception: declared modifiers that force replacement still get it,
+// prepended. Without it, a change to any other attribute leaves an unset one
+// unknown, which RequiresReplace reads as a change and destroys the record.
 func applyUseStateForUnknownDefault(node any) error {
 	list, ok := node.([]any)
 	if !ok {
@@ -1610,19 +1614,46 @@ func applyUseStateForUnknownDefault(node any) error {
 				if !ok || (cor != "computed" && cor != "computed_optional") {
 					continue
 				}
-				if _, exists := typeObj["plan_modifiers"]; exists {
-					continue
-				}
-				typeObj["plan_modifiers"] = []any{map[string]any{
+				usfu := map[string]any{
 					"custom": map[string]any{
 						"imports": []any{map[string]any{
 							"path": planModifierBase + pkg,
 						}},
 						"schema_definition": pkg + ".UseStateForUnknown()",
 					},
-				}}
+				}
+				if declared, exists := typeObj["plan_modifiers"]; exists {
+					if mods, ok := declared.([]any); ok && forcesReplace(mods) && !keepsState(mods) {
+						typeObj["plan_modifiers"] = append([]any{usfu}, mods...)
+					}
+					continue
+				}
+				typeObj["plan_modifiers"] = []any{usfu}
 			}
 		}
 	}
 	return nil
+}
+
+// forcesReplace reports whether declared plan modifiers include a RequiresReplace.
+func forcesReplace(mods []any) bool { return modifierMatches(mods, ".RequiresReplace") }
+
+// keepsState reports whether declared plan modifiers already keep the state value.
+func keepsState(mods []any) bool { return modifierMatches(mods, ".UseStateForUnknown()") }
+
+func modifierMatches(mods []any, needle string) bool {
+	for _, m := range mods {
+		mm, ok := m.(map[string]any)
+		if !ok {
+			continue
+		}
+		c, ok := mm["custom"].(map[string]any)
+		if !ok {
+			continue
+		}
+		if def, ok := c["schema_definition"].(string); ok && strings.Contains(def, needle) {
+			return true
+		}
+	}
+	return false
 }

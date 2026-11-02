@@ -98,6 +98,14 @@ user_group:
     - user_ids
     - viewer_user_ids
 
+webhook:
+  kind: entity
+  # Kion returns an empty owner list as null, so a configured `[]` failed the
+  # apply ("was SetValEmpty, but now null"), as user_group's did (#147).
+  empty_collections:
+    - owner_user_group_ids
+    - owner_user_ids
+
 compliance_control:
   kind: entity
   # Kion stores an empty id list as null and returns null, so null and empty are

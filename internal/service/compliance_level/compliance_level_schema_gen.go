@@ -29,6 +29,7 @@ func ComplianceLevelResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "Description for the compliance level in the application.",
 				MarkdownDescription: "Description for the compliance level in the application.",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},

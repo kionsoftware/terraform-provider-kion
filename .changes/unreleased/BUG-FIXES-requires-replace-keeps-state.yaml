@@ -1,0 +1,8 @@
+kind: BUG FIXES
+body: >-
+  kion_ou_cloud_access_role and kion_project_cloud_access_role no longer plan to destroy and recreate a role when
+  any other attribute changes. cloud_access_role_type_id forces replacement, and when it was left unset it became
+  unknown on every in-place change, so Terraform read it as changed. Sixteen attributes on eight resources had this
+  combination; it was live on the two cloud access roles, whose other attributes update in place. Found by the live
+  migration test, where migrating a role from 0.3.36 planned its replacement.
+time: 2026-11-02T23:47:55Z
