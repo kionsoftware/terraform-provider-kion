@@ -12,7 +12,7 @@ The provider is built against a single Kion API version, the SDK's `generated/v3
 
 `kion-import` reads a live Kion install and writes Terraform `import` blocks;
 `terraform plan -generate-config-out` then writes the configuration. See
-**[docs/IMPORTING.md](docs/IMPORTING.md)**, which covers choosing what to import,
+**[docs/guides/importing.md](docs/guides/importing.md)**, which covers choosing what to import,
 because a real install carries tens of thousands of records in Kion's shipped
 catalogs.
 
@@ -20,7 +20,7 @@ catalogs.
 
 Coming from the SDKv2 `kion` provider? State migrates automatically; configuration
 needs a rewrite, which [`kmigrate`](cmd/kmigrate) does for you and which ships as
-a binary on every release. **[docs/MIGRATION.md](docs/MIGRATION.md)** is the
+a binary on every release. **[docs/guides/upgrading-from-0.3.md](docs/guides/upgrading-from-0.3.md)** is the
 procedure, and [docs/MIGRATION-COVERAGE.md](docs/MIGRATION-COVERAGE.md) records
 what is covered.
 

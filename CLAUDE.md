@@ -150,7 +150,7 @@ wrappers, and `no_read` resources that import as empty shells).
 
 ### Migration from the previous provider
 
-`cmd/kmigrate` rewrites configurations written for the old SDKv2 provider; state migrates automatically (alias state upgraders live in `codegen/state_upgrades.yaml`). Procedure: `docs/MIGRATION.md`; coverage record: `docs/MIGRATION-COVERAGE.md`.
+`cmd/kmigrate` rewrites configurations written for the old SDKv2 provider; state migrates automatically (alias state upgraders live in `codegen/state_upgrades.yaml`). Procedure: `docs/guides/upgrading-from-0.3.md` (from `templates/guides/`); coverage record: `docs/MIGRATION-COVERAGE.md`.
 
 ## Key Conventions
 
@@ -158,7 +158,7 @@ wrappers, and `no_read` resources that import as empty shells).
 - 75 service packages in `internal/service/` (plus the `accounthelper` helper package)
 - Linting via golangci-lint v2 (`.golangci.yml`)
 - Generated `*_gen.go` files excluded from all linters
-- `kion-import` enumerates a live install into import blocks; see [docs/IMPORTING.md](docs/IMPORTING.md) and [docs/import-tooling-validation.md](docs/import-tooling-validation.md)
+- `kion-import` enumerates a live install into import blocks; see [docs/guides/importing.md](docs/guides/importing.md) and [docs/import-tooling-validation.md](docs/import-tooling-validation.md)
 - Everything is generated from `spec/openapi3.json`. Read [`codegen/README.md`](codegen/README.md) before changing anything under `codegen/`, and run `make codegen-check` after; `make ci` cannot, because it needs the spec
 - A settable attribute no request body carries is input the provider accepts and discards, and it compiles/vets/lints/unit-tests clean. `make bind-check` (`internal/kgen/bindaudit`) fails on a new one; pre-existing ones are ratcheted in `codegen/unbound_attributes.yaml`. See "Nothing may be dropped in silence" in `codegen/README.md`
 - Service packages have targeted exclusions (revive, unused, staticcheck)

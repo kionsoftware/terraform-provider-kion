@@ -1,0 +1,7 @@
+kind: NOTES
+body: >-
+  The migration and import guides are now Registry guides: "Upgrading from 0.3.x" and
+  "Importing an existing Kion install". The upgrade guide adds the Terraform 1.0 requirement and a
+  breaking-changes section, which includes how to move an account in the account cache to
+  kion_account_cache. CHANGELOG.md now also carries the previous provider's history, 0.3.36 and earlier.
+time: 2026-11-02T21:00:07Z

@@ -1,4 +1,11 @@
-# Migrating to the new Kion provider
+---
+page_title: "Upgrading from 0.3.x"
+subcategory: ""
+description: |-
+  Move a configuration and its state from the 0.3.x Kion provider to the new major version.
+---
+
+# Upgrading from 0.3.x
 
 The new `kion` provider (Plugin Framework) ships at the **same registry address**
 (`kionsoftware/kion`) as a new **major version**. Your existing Terraform state
@@ -6,6 +13,14 @@ migrates **automatically**. The provider carries state upgraders that transform
 old-schema state to the new schema the first time you plan, the same mechanism the
 AWS provider uses across major versions. There is no separate state-rewriting
 tool to run, and nothing is changed until you review and apply.
+
+## Requirements
+
+- **Terraform 1.0 or later.** The new provider speaks plugin protocol 6, which
+  Terraform 0.x cannot load.
+- Upgrade from the **latest 0.3.x release** if you can. The state upgraders
+  are written against it. An attribute that a later 0.3.x added and your
+  version lacks simply starts empty.
 
 ## Steps
 
@@ -30,9 +45,9 @@ tool to run, and nothing is changed until you review and apply.
    rewrite rules inside it, so there is nothing else to fetch:
 
    ```sh
-   # macOS on Apple silicon; substitute your platform
-   # (darwin/linux/windows x amd64/arm64)
-   V=1.1.1
+   # Set V to the provider release you are moving to. macOS on Apple silicon
+   # shown; substitute your platform (darwin/linux/windows x amd64/arm64).
+   V=X.Y.Z
    curl -fsSLO "https://github.com/kionsoftware/terraform-provider-kion/releases/download/v${V}/kmigrate_${V}_darwin_arm64.zip"
    unzip -j "kmigrate_${V}_darwin_arm64.zip" kmigrate && chmod +x kmigrate
    ```
@@ -46,8 +61,8 @@ tool to run, and nothing is changed until you review and apply.
 
    `kmigrate` rewrites `.tf` files in place, leaving comments, formatting and
    everything it does not recognise untouched. It reports any block it cannot
-   finish. `kion_user` gains five required attributes that have no old-provider
-   equivalent, so it names those and leaves them for you.
+   finish, such as an attribute the new schema requires that it has no value
+   for (see "Breaking changes" below), and leaves those for you.
 
    Commit or diff the result before moving on.
 
@@ -89,7 +104,7 @@ them. The main patterns:
 - `aws_cloudformation_template`'s `tags` went from a map to a list of objects:
   `tags = { env = "prod" }` → `tags = [{ tag_key = "env", tag_value = "prod" }]`.
 - `ou_cloud_access_role` and `project_cloud_access_role`'s `aws_session_tags`
-  (added in 0.3.36) made the same change:
+  (added in 0.3.35) made the same change:
   `aws_session_tags = { Team = "platform" }` →
   `aws_session_tags = [{ tag_key = "Team", tag_value = "platform" }]`.
 - Obsolete attributes the new schema dropped (e.g. `last_updated`,
@@ -125,6 +140,50 @@ keep working under the new provider. Both their state and config migrate
 automatically (the alias inherits the primary resource's upgrader), so you need
 not rename them.
 
+## Breaking changes
+
+These need a decision or a value from you. `kmigrate` reports each one it can
+see in a resource block, and `terraform plan` fails on any you miss.
+
+- **`kion_user` is a full resource.** The old one could only adopt an existing
+  user. The new one requires `email`, `first_name`, `idms_id`, `last_name` and
+  `username`.
+- **`kion_azure_account`, `kion_custom_account` and `kion_gcp_account` require
+  `project_id` and `start_datecode`.** The old provider placed an account with no
+  `project_id` in the account cache. The new resources always manage an
+  account in a project, and an account in the cache is a `kion_account_cache`.
+  **Don't add `project_id` to a cached account**, because that would move it into
+  the project. Move it to `kion_account_cache` instead:
+
+  ```hcl
+  # Terraform 1.7+. On older versions, run
+  # `terraform state rm kion_custom_account.example` instead.
+  removed {
+    from = kion_custom_account.example
+    lifecycle {
+      destroy = false
+    }
+  }
+
+  import {
+    to = kion_account_cache.example
+    id = "123" # the account cache ID
+  }
+
+  resource "kion_account_cache" "example" {
+    account_name = "example"
+    payer_id     = 1
+  }
+  ```
+
+- **`data "kion_aws_iam_policy"`** no longer takes `query`, `policy_type`,
+  `page` or `page_size`. Match with a `filter` block instead, for example
+  `filter { name = "name", values = ["ReadOnly"] }`. `kmigrate` does not rewrite
+  data sources.
+- **`data "kion_project_enforcement"`** requires `project_id`. The old data
+  source sent its request with the project placeholder unfilled, so it never
+  returned results. Set `project_id` to the project to read.
+
 ## Benign one-time diffs
 
 A few resources may show a small, safe diff on the first plan (state is corrected
@@ -149,11 +208,10 @@ on the next refresh from the Kion API):
 
 Every resource whose schema changed structurally (ownership/membership/id-list
 restructures, `aws_account`’s id, single-nested-block changes) carries a
-generated state upgrader (`internal/service/<name>/<name>_upgrade_gen.go`),
-driven by `codegen/state_upgrades.yaml`. A CI drift test
-(`internal/kgen/migrate`) fails the build if any resource gains a structural
-change without a corresponding upgrader, so this coverage cannot silently
-regress.
+generated state upgrader, and a CI test fails the build if any resource gains a
+structural change without one. The [migration coverage
+record](https://github.com/kionsoftware/terraform-provider-kion/blob/main/docs/MIGRATION-COVERAGE.md)
+lists every resource and how it migrates.
 
 Resources whose only change is an added or removed **scalar** attribute need no
 upgrader. Terraform reconciles those automatically (missing → null → Read

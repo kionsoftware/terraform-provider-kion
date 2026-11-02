@@ -101,7 +101,7 @@ resources:
       compliance_check_ids: { from: compliance_checks, field: id }
 
   # cloud-access-roles: same-name object blocks → id lists. aws_session_tags
-  # (0.3.36, #150) was map(string); the new provider takes a tag-object list.
+  # (0.3.35, #150) was map(string); the new provider takes a tag-object list.
   kion_ou_cloud_access_role:
     project:
       user_ids: { from: users, field: id }
