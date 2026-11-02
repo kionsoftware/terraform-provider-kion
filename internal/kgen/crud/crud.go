@@ -631,7 +631,7 @@ func (g *generator) generateResource(root, name string, ops resOps, ds dsOps, id
 	if err != nil {
 		return 0, err
 	}
-	if dsDowngrade != "" {
+	if dsDowngrade != "" && !companionSupplies(name, name+"_data_source.go") {
 		g.downgrades = append(g.downgrades, downgrade{Resource: name, Reason: dsDowngrade})
 	}
 	for _, d := range dsDrops {
@@ -680,7 +680,7 @@ func (g *generator) generateResource(root, name string, ops resOps, ds dsOps, id
 		fmt.Fprintf(os.Stderr, "kgen crud: %s: no test_values entry; skipping acceptance tests\n", name)
 	}
 
-	for _, f := range files {
+	for _, f := range withoutCompanionFiles(name, files) {
 		if err := g.writeFile(f.path, f.data, force); err != nil {
 			return 0, err
 		}
@@ -773,6 +773,31 @@ func (g *generator) generateCompound(dir, name string, ops resOps, idx sdkIndex,
 		return 0, err
 	}
 	return 1, nil
+}
+
+// withoutCompanionFiles drops the derived files a companion replaces. Writing
+// both would leave the derived one in place on a non-force wipe, since the
+// companion's write then fails as already existing.
+func withoutCompanionFiles(name string, files []genFile) []genFile {
+	out := files[:0:0]
+	for _, f := range files {
+		if !companionSupplies(name, filepath.Base(f.path)) {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// companionSupplies reports whether a companion template writes outName for name.
+func companionSupplies(name, outName string) bool {
+	for _, m := range []map[string][]bespokeFile{companionsByName, companionBlendedByName, companionTestsByName} {
+		for _, f := range m[name] {
+			if f.outName == outName {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // genFile is a rendered file destined for a service package.

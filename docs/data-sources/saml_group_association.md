@@ -3,19 +3,25 @@
 page_title: "kion_saml_group_association Data Source - kion"
 subcategory: ""
 description: |-
-  Use this data source to look up a Kion SamlGroupAssociation by id.
+  Use this data source to list the group associations of a Kion SAML IDMS.
 ---
 
 # kion_saml_group_association (Data Source)
 
-Use this data source to look up a Kion SamlGroupAssociation by id.
+Use this data source to list the group associations of a Kion SAML IDMS.
 
 ## Example Usage
 
 ```terraform
 data "kion_saml_group_association" "example" {
   # Required
-  id = 1
+  idms_id = 1
+
+  # filter {
+  #   name   = "example"
+  #   regex  = false
+  #   values = []
+  # }
 }
 ```
 
@@ -24,12 +30,38 @@ data "kion_saml_group_association" "example" {
 
 ### Required
 
-- `id` (Number) The ID of the SamlGroupAssociation to fetch.
+- `idms_id` (Number) ID of the SAML IDMS whose group associations to list.
+
+### Optional
+
+- `filter` (Block List) Filter results by attribute. Multiple filter blocks are AND'd; values within a single filter are OR'd. (see [below for nested schema](#nestedblock--filter))
 
 ### Read-Only
 
+- `id` (String) Synthetic data source identifier (the IDMS ID).
+- `list` (Attributes List) The group associations that match every filter. (see [below for nested schema](#nestedatt--list))
+
+<a id="nestedblock--filter"></a>
+### Nested Schema for `filter`
+
+Required:
+
+- `name` (String) The field name whose values you wish to filter by. Supports dotted paths (e.g. "owner.id") to traverse nested objects.
+- `values` (List of String) The values of the field name you specified. A row matches if its field equals any of these values.
+
+Optional:
+
+- `regex` (Boolean) When true, the values are treated as regular expressions instead of exact matches.
+
+
+<a id="nestedatt--list"></a>
+### Nested Schema for `list`
+
+Read-Only:
+
 - `assertion_name` (String)
 - `assertion_regex` (String)
+- `id` (Number)
 - `idms_id` (Number)
 - `idms_saml_id` (Number)
 - `should_update_on_login` (Boolean)

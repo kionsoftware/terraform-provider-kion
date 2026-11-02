@@ -83,6 +83,15 @@ var billingRuleDataSourceTmpl string
 //go:embed companion_billing_rule_sweep.gtpl
 var billingRuleSweepTmpl string
 
+//go:embed companion_saml_group_association_data_source.gtpl
+var samlGroupAssociationDataSourceTmpl string
+
+//go:embed companion_saml_group_association_data_source_test.gtpl
+var samlGroupAssociationDataSourceTestTmpl string
+
+//go:embed companion_saml_group_association_data_source_list_test.gtpl
+var samlGroupAssociationListTestTmpl string
+
 // companionBlendedByName are the data source and sweeper a blended resource
 // ships but its archetype does not derive: it emits only the resource and the
 // service package. Without these the committed files claimed "Code generated"
@@ -95,6 +104,11 @@ var companionBlendedByName = map[string][]bespokeFile{
 	"billing_rule": {
 		{billingRuleDataSourceTmpl, "billing_rule_data_source.go"},
 		{billingRuleSweepTmpl, "sweep.go"},
+	},
+	// An entity, but Kion lists its records only under their IDMS, which the
+	// derived data source cannot do; this keeps the old provider's list shape.
+	"saml_group_association": {
+		{samlGroupAssociationDataSourceTmpl, "saml_group_association_data_source.go"},
 	},
 }
 
@@ -156,6 +170,10 @@ var companionTestsByName = map[string][]bespokeFile{
 	},
 	"billing_rule": {
 		{billingRuleDataSourceTestTmpl, "billing_rule_data_source_test.go"},
+	},
+	"saml_group_association": {
+		{samlGroupAssociationDataSourceTestTmpl, "saml_group_association_data_source_test.go"},
+		{samlGroupAssociationListTestTmpl, "saml_group_association_data_source_list_test.go"},
 	},
 	"custom_variable_override": {
 		{customVariableOverrideDataSourceTestTmpl, "custom_variable_override_data_source_test.go"},
