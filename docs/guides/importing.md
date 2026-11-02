@@ -1,3 +1,10 @@
+---
+page_title: "Importing an existing Kion install"
+subcategory: ""
+description: |-
+  Generate Terraform import blocks for everything in a live Kion install with kion-import.
+---
+
 # Importing an existing Kion install
 
 `kion-import` reads a live Kion install and writes Terraform `import` blocks.
@@ -7,6 +14,9 @@ It deliberately does not write configuration or state. Every resource implements
 configuration and `terraform apply` writes the state, both through the provider's
 own Read. What Terraform cannot do is discover what exists in Kion, and that is
 the only job this tool has.
+
+It needs **Terraform 1.5 or later**, the first release with `import` blocks and
+`terraform plan -generate-config-out`.
 
 ## Get it
 
@@ -95,7 +105,7 @@ of rewriting in place. Running it twice is a no-op.
 record. `portfolio_id` is the portfolio's id *in AWS*; `account_type_id` is an
 enum; `car_external_id` is an external identifier. Rewriting one would aim a
 Terraform reference at a foreign id space. The full classification, with a
-reason for every entry, is [`codegen/references.yaml`](../codegen/references.yaml).
+reason for every entry, is [`codegen/references.yaml`](https://github.com/kionsoftware/terraform-provider-kion/blob/main/codegen/references.yaml).
 
 **`payer_id` resolves across billing source types.** Every billing source type
 is keyed on the payer id, so `payer_id = 5` becomes a reference to whichever of

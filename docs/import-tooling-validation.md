@@ -224,7 +224,7 @@ not mean unreadable*). `kion_dashboard` and `kion_funding_source_note` now read;
 of "structurally unreadable" entirely.
 
 The production-scale figures are the ones quoted in
-[IMPORTING.md](IMPORTING.md): 53,513 records, of which 19,425 are Azure policy
+[the importing guide](guides/importing.md): 53,513 records, of which 19,425 are Azure policy
 definitions and 16,265 are compliance checks.
 
 ## Defects this run found
@@ -665,7 +665,7 @@ export KION_APIKEY=…
 ```
 
 Narrow a run with `--include` / `--exclude` / `--selection`; see
-[IMPORTING.md](IMPORTING.md). Importing everything is rarely what an operator
+[the importing guide](guides/importing.md). Importing everything is rarely what an operator
 wants: Kion's shipped policy and compliance catalogs dominate the count. On the
 install above, excluding `kion_azure_policy`, `kion_compliance_check`,
 `kion_compliance_control` and `kion_compliance_standard` takes the run from

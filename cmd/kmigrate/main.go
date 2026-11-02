@@ -4,7 +4,7 @@
 // use). It handles the input-attribute half of migration, attribute renames and
 // block-set → id-list restructures. So a customer's config keeps working after
 // the provider version bump. State migrates automatically in-provider; see
-// docs/MIGRATION.md.
+// docs/guides/upgrading-from-0.3.md.
 //
 // Usage:
 //

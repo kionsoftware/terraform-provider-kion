@@ -1,5 +1,4 @@
 ---
-layout: ""
 page_title: "Kion Terraform Provider"
 description: |-
   The Kion Terraform Provider allows you to interact with an installation of Kion.
@@ -15,7 +14,7 @@ Version 1.0 is a new major version built on the Terraform Plugin Framework, publ
 
 Your `.tf` configuration does need updating, because some attributes were renamed and several blocks became id lists. The `kmigrate` tool attached to every release rewrites them for you; it is a single binary with no dependencies.
 
-See the [migration guide](https://github.com/kionsoftware/terraform-provider-kion/blob/main/docs/MIGRATION.md) for the full procedure and the complete list of config changes.
+See the [upgrade guide](https://registry.terraform.io/providers/kionsoftware/kion/latest/docs/guides/upgrading-from-0.3) for the full procedure and the complete list of config changes.
 
 ## Example Usage
 

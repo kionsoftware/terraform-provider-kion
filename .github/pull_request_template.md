@@ -77,6 +77,6 @@ Preview what the next release notes would say: `make changelog-preview`
 <!--
 Thanks for contributing to the Kion Terraform Provider.
 
-- Migrating from the previous provider? See docs/MIGRATION.md
+- Migrating from the previous provider? See docs/guides/upgrading-from-0.3.md
 - CI details: .github/workflows/README.md
 -->

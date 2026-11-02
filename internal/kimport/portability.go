@@ -16,7 +16,7 @@ type Warning struct {
 
 // portabilityRules are checks on a record's list payload, keyed by type. Each
 // was found applying one install's configuration to another; see
-// docs/IMPORTING.md "Applying to another install".
+// docs/guides/importing.md "Applying to another install".
 var portabilityRules = map[string]func(raw map[string]any) string{
 	"kion_funding_source": func(raw map[string]any) string {
 		if v, ok := raw["ou_id"].(float64); ok && v > 0 {
