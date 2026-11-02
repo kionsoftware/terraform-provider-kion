@@ -126,10 +126,12 @@ func TestUpgradeShapes_allIncompatiblesHandled(t *testing.T) {
 	// stale. This list is short on purpose: it is the whole set of ways a
 	// customer's upgrade can hard-fail, and it should stay reviewable.
 	want := map[string]string{
-		"kion_aws_account.aws_organizational_unit": "unwrap",  // block set → single nested
-		"kion_aws_account.move_project_settings":   "unwrap",  // block set → single nested
-		"kion_aws_account.id":                      "id_int",  // string → number
-		"kion_aws_cloudformation_template.tags":    "kv_list", // map(string) → list of {tag_key, tag_value}
+		"kion_aws_account.aws_organizational_unit":        "unwrap",  // block set → single nested
+		"kion_aws_account.move_project_settings":          "unwrap",  // block set → single nested
+		"kion_aws_account.id":                             "id_int",  // string → number
+		"kion_aws_cloudformation_template.tags":           "kv_list", // map(string) → list of {tag_key, tag_value}
+		"kion_ou_cloud_access_role.aws_session_tags":      "kv_list", // map(string) → list of {tag_key, tag_value, computed ids}
+		"kion_project_cloud_access_role.aws_session_tags": "kv_list",
 	}
 	got := map[string]string{}
 

@@ -27,6 +27,7 @@ func TestUpgradeState_decodes(t *testing.T) {
 
 	oldState := `{
 		"aws_iam_policies": [{"id": 1}, {"id": 2}],
+		"aws_session_tags": {"alpha": "sample", "beta": "sample"},
 		"azure_role_definitions": [{"id": 1}, {"id": 2}],
 		"gcp_iam_roles": [{"id": 1}, {"id": 2}],
 		"id": "1234",
