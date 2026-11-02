@@ -1,0 +1,7 @@
+kind: BUG FIXES
+body: >-
+  kmigrate: reports kion_azure_account, kion_custom_account and kion_gcp_account blocks that lack project_id or
+  start_datecode. Both were optional in the old provider and are required now. Before this, kmigrate said nothing
+  and terraform plan failed. The report notes that an account in the account cache belongs in kion_account_cache,
+  because adding project_id to it would move it into that project.
+time: 2026-11-02T20:56:38Z
