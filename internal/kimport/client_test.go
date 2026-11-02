@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"unicode/utf8"
 
@@ -187,7 +188,7 @@ func TestListPage2TransportErrorIsStatusErrorThroughPagingWrap(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	got, err := NewClient(srv.URL, "k", false, "").List(context.Background(), "/beta/scope")
+	got, err := NewClient(srv.URL, "k", false, "").RetryBackoff(0, 0).List(context.Background(), "/beta/scope")
 	require.Error(t, err)
 	assert.Len(t, got, 2) // page 1 records are returned despite page 2 error
 
@@ -551,4 +552,77 @@ func TestGetHTMLBodyWithLeadingWhitespaceStillDetected(t *testing.T) {
 	_, err := NewClient(srv.URL, "k", false, "").List(context.Background(), "/v3/ou")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "HTML")
+}
+
+// --- transient-failure retry ---
+
+func TestListRetriesSpurious401(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "Bearer k", r.Header.Get("Authorization"), "a retry must resend the key")
+		assert.Equal(t, "2", r.URL.Query().Get("rule_type_ids"), "a retry must resend the path query")
+		if calls.Add(1) == 1 {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		fmt.Fprint(w, `[{"id":1}]`)
+	}))
+	defer srv.Close()
+
+	got, err := NewClient(srv.URL, "k", false, "").RetryBackoff(0, 0).List(context.Background(), "/v3/billing-rule?rule_type_ids=2")
+	require.NoError(t, err)
+	assert.Len(t, got, 1)
+	assert.Equal(t, int32(2), calls.Load())
+}
+
+// A bad key is retried once per run, not once per resource: after the first
+// 401 outlasts its retries, later 401s fail on the first attempt.
+func TestListBadKeyFailsFastAfterFirstRejection(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "bad", false, "").RetryBackoff(0, 0)
+	for range 5 {
+		_, err := c.List(context.Background(), "/v3/label")
+		var statusErr *StatusError
+		require.True(t, errors.As(err, &statusErr))
+		assert.Equal(t, http.StatusUnauthorized, statusErr.Status)
+	}
+	assert.Equal(t, int32(3+4), calls.Load()) // 3 attempts, then 1 for each later list
+}
+
+func TestListDoesNotRetry500(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	_, err := NewClient(srv.URL, "k", false, "").RetryBackoff(0, 0).List(context.Background(), "/v3/label")
+	require.Error(t, err)
+	assert.Equal(t, int32(1), calls.Load())
+}
+
+func TestListGivesUpAfterRetries(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+
+	_, err := NewClient(srv.URL, "k", false, "").RetryBackoff(0, 0).List(context.Background(), "/v3/label")
+	var statusErr *StatusError
+	require.True(t, errors.As(err, &statusErr))
+	assert.Equal(t, http.StatusServiceUnavailable, statusErr.Status)
+	assert.Equal(t, int32(3), calls.Load())
 }

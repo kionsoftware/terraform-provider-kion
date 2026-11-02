@@ -15,6 +15,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -25,6 +26,9 @@ import (
 
 // version is the release, set by goreleaser's ldflags; a source build is "dev".
 var version = "dev"
+
+// retryBackoff overrides the client's retry waits when non-nil (tests).
+var retryBackoff []time.Duration
 
 var (
 	flagURL             string
@@ -142,6 +146,9 @@ func run(_ *cobra.Command, _ []string) error {
 
 	ctx := context.Background()
 	client := kimport.NewClient(flagURL, flagAPIKey, flagSkipSSL, flagAPIPrefix)
+	if retryBackoff != nil {
+		client.RetryBackoff(retryBackoff...)
+	}
 
 	scope := fmt.Sprintf("%d resource types", len(selected))
 	if len(selected) != len(manifest.Resources) {

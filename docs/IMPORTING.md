@@ -396,6 +396,11 @@ output records what it could not reach rather than quietly omitting it.
 If every read fails -- a rejected API key, the wrong `--url` or `--api-prefix` --
 the run exits non-zero and writes nothing, `--probe` included.
 
+A read that gets a 401, 429, 502, 503 or 504 is retried twice, after 1s and then
+3s, because Kion occasionally rejects a valid key. Once a 401 outlasts its
+retries, later 401s are not retried, so a bad key still fails quickly. A 500 is
+not retried.
+
 ## Applying to another install
 
 Imported configuration recreates its records when you apply it to an install

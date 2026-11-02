@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -79,7 +80,9 @@ func setFlags(t *testing.T, url, out string) {
 	t.Cleanup(func() {
 		flagURL, flagAPIKey, flagOut, flagProviderVersion = url0, key0, out0, pv0
 		flagAPIPrefix, flagInclude, flagProbe = prefix0, inc0, probe0
+		retryBackoff = nil
 	})
+	retryBackoff = []time.Duration{0, 0}
 	flagURL, flagAPIKey, flagOut = url, "test-key", out
 	flagProviderVersion = defaultProviderConstraint(version)
 	flagAPIPrefix = ""
