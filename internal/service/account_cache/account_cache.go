@@ -159,6 +159,14 @@ func (r *account_cacheResource) Read(ctx context.Context, req resource.ReadReque
 		resp.State.RemoveResource(ctx)
 		return
 	}
+	// This read answers a missing record with a 500, not a 404; the list
+	// omits deleted records, so absence there means deleted.
+	if errs.IsInternalServerError(out) {
+		if listed, lerr := r.Meta().RawIDListed(ctx, "/v3/account-cache", int64(idInt)); lerr == nil && !listed {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+	}
 
 	resp.Diagnostics.Append(flattenAccountCache(out, &state)...)
 	if resp.Diagnostics.HasError() {

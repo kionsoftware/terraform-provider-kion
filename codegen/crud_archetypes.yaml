@@ -275,6 +275,8 @@ account_cache:
     objects:
       - tf: organizational_unit
         subs: [name, org_unit_id]
+  # A deleted cache entry's by-id read answers 500; the list omits it.
+  missing_via_list: /v3/account-cache
 
 # Raw create only (#102). PostCustomAccount requests
 # /v3/account/__qs__/account-type/custom -- the spec encodes the account-type

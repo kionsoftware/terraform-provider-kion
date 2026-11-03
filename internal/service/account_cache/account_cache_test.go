@@ -158,6 +158,12 @@ func testAccCheckAccountCacheDestroy(_ context.Context) resource.TestCheckFunc {
 			if err != nil {
 				return fmt.Errorf("reading kion_account_cache (%d): %w", id, err)
 			}
+			// The read answers a deleted record with a 500; the list omits it.
+			if errs.IsInternalServerError(out) {
+				if listed, lerr := conn.RawIDListed(ctx, "/v3/account-cache", int64(id)); lerr == nil && !listed {
+					continue
+				}
+			}
 
 			return fmt.Errorf("kion_account_cache (%d) still exists", id)
 		}

@@ -4,5 +4,7 @@ body: >-
   called Kion's create route, which makes a new AWS account through the payer's AWS Organization, so applying a
   configuration that named an existing account created a different, new one wherever account creation was enabled
   (and failed where it was not). account_number now requires account_type_id, which the import route needs. Without
-  account_number the resource still creates a new account, as the 0.3.x kion_aws_account did.
+  account_number the resource still creates a new account, as the 0.3.x kion_aws_account did. A cache entry deleted
+  outside Terraform also no longer fails every refresh with "API returned status 500": Kion answers a by-id read of a
+  deleted entry with a 500, so the read now checks the cache list.
 time: 2026-11-03T21:50:21Z
