@@ -117,7 +117,7 @@ func TestFetchAll_walksMultiplePages(t *testing.T) {
 	require.Len(t, d.urls, 3)
 }
 
-// The portal answers a create with the bare id; an id read as zero would leave
+// Kion answers a create with the bare id; an id read as zero would leave
 // the new policy in Kion with nothing in state to delete it.
 func TestCreateEnvelope_id(t *testing.T) {
 	for body, want := range map[string]int64{

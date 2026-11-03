@@ -137,7 +137,7 @@ type automation_policyCreateEnvelope struct {
 	Data     json.RawMessage `json:"data"`
 }
 
-// id returns whichever shape carried the new record's id: the portal answers
+// id returns whichever shape carried the new record's id: Kion answers
 // with the bare id ("data": 5), but record_id and an augmented-policy object
 // are accepted too. Anything else reads as zero, which RawCreatedID rejects.
 func (e automation_policyCreateEnvelope) id() int64 {
