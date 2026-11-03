@@ -203,6 +203,14 @@ on the next refresh from the Kion API):
 - `kion_ou_cloud_access_role` / `kion_project_cloud_access_role`:
   `aws_session_tags` is exploded the same way. The tag objects' `id` fields
   start null and the next refresh fills them.
+- `kion_ou_cloud_access_role` / `kion_project_cloud_access_role`:
+  `apply_to_all_accounts = true -> false`. 0.3.x never sent `false`, so Kion
+  kept its default of `true` and the old state recorded it. The first apply
+  sets the value you configured. This changes the role's account scope in
+  Kion, so check the configured value before applying.
+- Empty collections that the old provider stored as null, such as
+  `regions = []` on `kion_compliance_check` or `owner_user_group_ids = []` on
+  `kion_webhook` and `kion_custom_variable`, show `+ ... = []` once.
 
 ## What migrates automatically
 
