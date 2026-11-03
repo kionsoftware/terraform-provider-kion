@@ -492,3 +492,49 @@ func TestRewriteNamedFile_reportsRealFilename(t *testing.T) {
 		t.Errorf("error still reports the placeholder filename: %v", err)
 	}
 }
+
+// A reference to an attribute the new schema dropped fails `terraform plan`
+// ("Unsupported attribute"), and nothing inside a resource block points at it.
+// Migrating a customer configuration hit this in a module's outputs.tf, which
+// kmigrate rewrote cleanly and then left unplannable, so each such reference
+// is reported, with the new name when the attribute was renamed.
+func TestRewriteFile_reportsReferencesToDroppedAttributes(t *testing.T) {
+	src := `output "managed" {
+  value = kion_azure_role.this.system_managed_policy
+}
+
+output "updated" {
+  value = kion_azure_role.this[0].last_updated
+}
+
+output "owners" {
+  value = kion_azure_role.this.owner_users
+}
+
+output "name" {
+  value = kion_azure_role.this.name
+}
+
+locals {
+  data_too = data.kion_azure_role.x.list
+}
+`
+	ups := map[string]Transform{
+		"kion_azure_role": {Project: map[string]ProjectRule{"owner_user_ids": {From: "owner_users", Field: "id"}}},
+	}
+	_, changes, actions, err := RewriteFile([]byte(src), ups)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(changes) != 0 {
+		t.Errorf("a reference is reported, never rewritten; got changes %v", changes)
+	}
+	want := []string{
+		"line 2: kion_azure_role.this.system_managed_policy: the new kion_azure_role has no system_managed_policy; remove the reference",
+		"line 6: kion_azure_role.this.last_updated: the new kion_azure_role has no last_updated; remove the reference",
+		"line 10: kion_azure_role.this.owner_users: the new kion_azure_role has no owner_users; it is now owner_user_ids",
+	}
+	if strings.Join(actions, "\n") != strings.Join(want, "\n") {
+		t.Errorf("actions:\n%s\nwant:\n%s", strings.Join(actions, "\n"), strings.Join(want, "\n"))
+	}
+}

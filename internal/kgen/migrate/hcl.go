@@ -2,6 +2,8 @@ package migrate
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -334,6 +336,7 @@ func RewriteNamedFile(name string, src []byte, ups map[string]Transform) ([]byte
 			actions = append(actions, action)
 		}
 	}
+	actions = append(actions, droppedAttrRefs(name, src, ups)...)
 	return f.Bytes(), changes, actions, nil
 }
 
@@ -720,4 +723,90 @@ func setVersionInObject(toks hclwrite.Tokens, want string) (hclwrite.Tokens, str
 		}
 	}
 	return toks, "", false
+}
+
+// droppedAttrRefs reports each `kion_<type>.<name>.<attr>` reference, anywhere in
+// the file, whose attribute the new schema dropped (RemovedAttrs). Nothing in a
+// resource block points at such a reference, an output or a local does, and
+// `terraform plan` fails on it with "Unsupported attribute". A renamed attribute
+// names its replacement; any other is for the practitioner to remove.
+func droppedAttrRefs(name string, src []byte, ups map[string]Transform) []string {
+	f, diags := hclsyntax.ParseConfig(src, name, hcl.Pos{Line: 1, Column: 1})
+	if diags.HasErrors() {
+		return nil
+	}
+	body, ok := f.Body.(*hclsyntax.Body)
+	if !ok {
+		return nil
+	}
+	renamed := map[string]map[string]string{}
+	for rtype, t := range ups {
+		m := maps.Clone(t.Rename)
+		if m == nil {
+			m = map[string]string{}
+		}
+		for newA, pr := range t.Project {
+			m[pr.From] = newA
+		}
+		renamed[rtype] = m
+		if t.OldType != "" {
+			renamed[t.OldType] = m
+		}
+	}
+
+	type ref struct {
+		line int
+		msg  string
+	}
+	var refs []ref
+	seen := map[string]bool{}
+	// The visitor never returns diagnostics, so VisitAll's are always empty.
+	visitDiags := hclsyntax.VisitAll(body, func(n hclsyntax.Node) hcl.Diagnostics {
+		e, ok := n.(*hclsyntax.ScopeTraversalExpr)
+		if !ok || len(e.Traversal) < 3 {
+			return nil
+		}
+		rtype := e.Traversal.RootName()
+		dropped, ok := RemovedAttrs[rtype]
+		if !ok {
+			return nil
+		}
+		label, ok := e.Traversal[1].(hcl.TraverseAttr)
+		if !ok {
+			return nil
+		}
+		// kion_x.this[0].attr: step past the index to the attribute.
+		var attr string
+		for _, step := range e.Traversal[2:] {
+			if a, ok := step.(hcl.TraverseAttr); ok {
+				attr = a.Name
+				break
+			}
+		}
+		if attr == "" || !slices.Contains(dropped, attr) {
+			return nil
+		}
+		line := e.SrcRange.Start.Line
+		key := fmt.Sprintf("%d %s.%s.%s", line, rtype, label.Name, attr)
+		if seen[key] {
+			return nil
+		}
+		seen[key] = true
+		hint := "remove the reference"
+		if newA := renamed[rtype][attr]; newA != "" {
+			hint = "it is now " + newA
+		}
+		refs = append(refs, ref{line, fmt.Sprintf("line %d: %s.%s.%s: the new %s has no %s; %s",
+			line, rtype, label.Name, attr, rtype, attr, hint)})
+		return nil
+	})
+	if visitDiags.HasErrors() {
+		return nil
+	}
+	sort.SliceStable(refs, func(i, j int) bool { return refs[i].line < refs[j].line })
+	out := make([]string, len(refs))
+	for i, r := range refs {
+		out[i] = r.msg
+	}
+	return out
 }
