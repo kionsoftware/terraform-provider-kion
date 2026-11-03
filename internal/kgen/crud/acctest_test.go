@@ -191,6 +191,7 @@ func TestLoadTestValues_rejectsIncompleteEntries(t *testing.T) {
 		"require_env duplicating env_args": "env_args: [KION_ACC_X]\n    require_env: [{name: KION_ACC_X, reason: an x}]",
 		"known_issue without number":       "known_issues: [{note: broken}]",
 		"known_issue without note":         "known_issues: [{issue: 3}]",
+		"import_unrecoverable w/o reason":  "import_unrecoverable: [{attr: color}]",
 	}
 	for name, body := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -316,5 +317,61 @@ func TestRenderResourceTest_createOnlyAssertedSet(t *testing.T) {
 	tv.CreateOnlyUnset = []string{"nope"}
 	if _, err := renderResourceTest(rm, tv); err == nil {
 		t.Error("create_only_unset naming a non-create_only attribute was accepted")
+	}
+}
+
+// A map or nested object is held in state as name.% plus its members, and
+// AttrSet on the name itself is refused like a collection's.
+func TestRenderResourceTest_objectsCheckedByCount(t *testing.T) {
+	rm := labelResourceModel(t)
+	rm.Fields = append(rm.Fields,
+		ModelField{GoName: "AzurePolicy", TFSDK: "azure_policy", Type: "AzurePolicyValue"},
+		ModelField{GoName: "Labels", TFSDK: "labels", Type: "types.Map"},
+	)
+	tv := labelTestValues()
+	tv.Create["azure_policy"] = `hcl:{ name = "x" }`
+	tv.Create["labels"] = `hcl:{ a = "b" }`
+	got, err := renderResourceTest(rm, tv)
+	if err != nil {
+		t.Fatalf("renderResourceTest: %v", err)
+	}
+	for _, name := range []string{"azure_policy", "labels"} {
+		if w := `resource.TestCheckResourceAttrSet(resourceName, "` + name + `.%")`; !bytes.Contains(got, []byte(w)) {
+			t.Errorf("generated resource test missing %q:\n%s", w, got)
+		}
+		if bad := `TestCheckResourceAttrSet(resourceName, "` + name + `")`; bytes.Contains(got, []byte(bad)) {
+			t.Errorf("object %s checked with AttrSet on the attribute itself", name)
+		}
+	}
+}
+
+// A compound "<parent>/<id>" import id is built from state, and an attribute
+// the read cannot restore is left out of the import's verification.
+func TestRenderResourceTest_importParentAndUnrecoverable(t *testing.T) {
+	rm := labelResourceModel(t)
+	rm.ImportParentTF = "color"
+	tv := labelTestValues()
+	tv.ImportUnrecoverable = []importUnrecoverable{{Attr: "value", Reason: "the read never returns it"}}
+	got, err := renderResourceTest(rm, tv)
+	if err != nil {
+		t.Fatalf("renderResourceTest: %v", err)
+	}
+	if _, err := parser.ParseFile(token.NewFileSet(), "label_test.go", got, parser.ParseComments); err != nil {
+		t.Fatalf("generated resource test does not parse: %v\n%s", err, got)
+	}
+	for w, n := range map[string]int{
+		"ImportStateIdFunc: testAccLabelImportID(resourceName),":           2,
+		`return rs.Primary.Attributes["color"] + "/" + rs.Primary.ID, nil`: 1,
+		"// value: the read never returns it":                              2,
+		`ImportStateVerifyIgnore: []string{"value"},`:                      2,
+	} {
+		if c := bytes.Count(got, []byte(w)); c != n {
+			t.Errorf("want %d of %q, found %d:\n%s", n, w, c, got)
+		}
+	}
+
+	tv.ImportUnrecoverable = []importUnrecoverable{{Attr: "nope", Reason: "r"}}
+	if _, err := renderResourceTest(rm, tv); err == nil {
+		t.Error("import_unrecoverable naming no attribute was accepted")
 	}
 }

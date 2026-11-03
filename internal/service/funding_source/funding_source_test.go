@@ -36,7 +36,7 @@ func TestAccKionFundingSource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckFundingSourceExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "amount", "1000.00"),
+					resource.TestCheckResourceAttr(resourceName, "amount", "1000"),
 					resource.TestCheckResourceAttr(resourceName, "end_datecode", "2026-12"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttrSet(resourceName, "ou_id"),
@@ -73,7 +73,7 @@ func TestAccKionFundingSource_update(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckFundingSourceExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "amount", "1000.00"),
+					resource.TestCheckResourceAttr(resourceName, "amount", "1000"),
 					resource.TestCheckResourceAttr(resourceName, "end_datecode", "2026-12"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttrSet(resourceName, "ou_id"),
@@ -87,7 +87,7 @@ func TestAccKionFundingSource_update(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckFundingSourceExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "amount", "2000.00"),
+					resource.TestCheckResourceAttr(resourceName, "amount", "2000"),
 					resource.TestCheckResourceAttr(resourceName, "description", "test-acc-updated"),
 					resource.TestCheckResourceAttr(resourceName, "end_datecode", "2027-12"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
@@ -190,7 +190,7 @@ resource "kion_ou" "test_ou" {
 }
 
 resource "kion_funding_source" "test" {
-  amount = 1000.00
+  amount = 1000
   end_datecode = "2026-12"
   name = "%[1]s"
   ou_id = kion_ou.test_ou.id
@@ -219,7 +219,7 @@ resource "kion_ou" "test_ou" {
 }
 
 resource "kion_funding_source" "test" {
-  amount = 2000.00
+  amount = 2000
   description = "test-acc-updated"
   end_datecode = "2027-12"
   name = "%[1]s"

@@ -39,7 +39,7 @@ func TestAccKionBillingSource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckBillingSourceExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttrSet(resourceName, "aws_connection"),
+					resource.TestCheckResourceAttrSet(resourceName, "aws_connection.%"),
 					resource.TestCheckResourceAttr(resourceName, "billing_start_date", "2026-01"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("test-acc-%[1]s", rName)),
 					resource.TestCheckResourceAttr(resourceName, "skip_validation", "true"),
@@ -77,7 +77,7 @@ func TestAccKionBillingSource_update(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckBillingSourceExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttrSet(resourceName, "aws_connection"),
+					resource.TestCheckResourceAttrSet(resourceName, "aws_connection.%"),
 					resource.TestCheckResourceAttr(resourceName, "billing_start_date", "2026-01"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("test-acc-%[1]s", rName)),
 					resource.TestCheckResourceAttr(resourceName, "skip_validation", "true"),
@@ -88,7 +88,7 @@ func TestAccKionBillingSource_update(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckBillingSourceExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttrSet(resourceName, "aws_connection"),
+					resource.TestCheckResourceAttrSet(resourceName, "aws_connection.%"),
 					resource.TestCheckResourceAttr(resourceName, "billing_start_date", "2026-01"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("test-acc-%[1]s-upd", rName)),
 					resource.TestCheckResourceAttr(resourceName, "skip_validation", "true"),

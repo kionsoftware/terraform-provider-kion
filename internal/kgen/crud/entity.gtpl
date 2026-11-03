@@ -949,6 +949,11 @@ type {{$.Pkg}}{{.ModelGo}}Wire struct {
 			}
 			{{.Var}}List, {{.Var}}LD := types.ListValueFrom(ctx, {{.ValueType}}{}.Type(ctx), {{.Var}}Elems)
 			diags.Append({{.Var}}LD...)
+			{{- if .OrderKey}}
+			// list_order_keys: Kion returns these in an order of its own.
+			{{.Var}}List, {{.Var}}LD = flex.OrderLikePrior(ctx, model.{{.ModelGo}}, {{.Var}}List, "{{.OrderKey}}")
+			diags.Append({{.Var}}LD...)
+			{{- end}}
 			model.{{.ModelGo}} = {{.Var}}List
 			{{- end}}
 			{{- range .RespIDProjs}}

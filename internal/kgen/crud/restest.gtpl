@@ -57,8 +57,10 @@ func TestAccKion{{.Pascal}}_basic(t *testing.T) {
 			},
 			{
 				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,{{if .ImportVerifyIgnore}}
+				ImportState:       true,{{if .ImportParentTF}}
+				ImportStateIdFunc: testAcc{{.Pascal}}ImportID(resourceName),{{end}}
+				ImportStateVerify: true,{{range .ImportUnrecoverable}}
+				// {{.Attr}}: {{.Reason}}{{end}}{{if .ImportVerifyIgnore}}
 				ImportStateVerifyIgnore: []string{ {{- range $i, $a := .ImportVerifyIgnore}}{{if $i}}, {{end}}{{printf "%q" $a}}{{end -}} },{{end}}
 			},
 		},
@@ -112,12 +114,26 @@ func TestAccKion{{.Pascal}}_update(t *testing.T) {
 			},
 			{
 				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,{{if .ImportVerifyIgnore}}
+				ImportState:       true,{{if .ImportParentTF}}
+				ImportStateIdFunc: testAcc{{.Pascal}}ImportID(resourceName),{{end}}
+				ImportStateVerify: true,{{range .ImportUnrecoverable}}
+				// {{.Attr}}: {{.Reason}}{{end}}{{if .ImportVerifyIgnore}}
 				ImportStateVerifyIgnore: []string{ {{- range $i, $a := .ImportVerifyIgnore}}{{if $i}}, {{end}}{{printf "%q" $a}}{{end -}} },{{end}}
 			},
 		},
 	})
+}
+{{end}}{{if .ImportParentTF}}
+// testAcc{{.Pascal}}ImportID builds the compound "{{.ImportParentTF}}/id" import id
+// from state: the read cannot recover the parent from the record id alone.
+func testAcc{{.Pascal}}ImportID(name string) resource.ImportStateIdFunc {
+	return func(s *terraform.State) (string, error) {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return "", fmt.Errorf("not found: %s", name)
+		}
+		return rs.Primary.Attributes["{{.ImportParentTF}}"] + "/" + rs.Primary.ID, nil
+	}
 }
 {{end}}
 func testAccCheck{{.Pascal}}Exists(_ context.Context, name string) resource.TestCheckFunc {

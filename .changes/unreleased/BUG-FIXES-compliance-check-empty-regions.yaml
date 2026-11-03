@@ -1,0 +1,5 @@
+kind: BUG FIXES
+body: >-
+  kion_compliance_check: regions = [] no longer fails the apply. Kion stores an empty region list as [""], which read
+  back as a one-element set.
+time: 2026-11-03T14:47:34Z

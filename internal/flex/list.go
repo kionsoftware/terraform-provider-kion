@@ -179,6 +179,20 @@ func Uint64SliceToFrameworkSetOrEmpty(ctx context.Context, v []uint64) (types.Se
 	return Uint64SliceToFrameworkSet(ctx, v)
 }
 
+// StringSliceToFrameworkSetOrEmpty is StringSliceToFrameworkSet with a nil
+// slice mapped to an EMPTY set and blank elements dropped. Kion stores an empty
+// compliance check region list as [""], so a configured `[]` came back with one
+// element and failed the apply.
+func StringSliceToFrameworkSetOrEmpty(ctx context.Context, v []string) (types.Set, diag.Diagnostics) {
+	kept := make([]string, 0, len(v))
+	for _, s := range v {
+		if s != "" {
+			kept = append(kept, s)
+		}
+	}
+	return StringSliceToFrameworkSet(ctx, kept)
+}
+
 // --- Membership diff: for associations synced via paired add/remove endpoints ---
 
 // Uint64SetDiff extracts the old (state) and new (plan) uint64 id sets and

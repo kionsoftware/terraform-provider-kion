@@ -44,14 +44,23 @@ type testValues struct {
 	KnownIssues []knownIssue `yaml:"known_issues"`
 	// CreateOnlyUnset are create_only attributes this config does not produce,
 	// so the test does not assert them set after create.
-	CreateOnlyUnset []string          `yaml:"create_only_unset"`
-	Create          map[string]string `yaml:"create"`
-	Update          map[string]string `yaml:"update"`
+	CreateOnlyUnset []string `yaml:"create_only_unset"`
+	// ImportUnrecoverable are attributes the read cannot restore, so an import
+	// leaves them null; each is left out of the import's verification.
+	ImportUnrecoverable []importUnrecoverable `yaml:"import_unrecoverable"`
+	Create              map[string]string     `yaml:"create"`
+	Update              map[string]string     `yaml:"update"`
 }
 
 // envRequirement is a skip guard: Reason completes "<Name> must be set to ...".
 type envRequirement struct {
 	Name   string `yaml:"name"`
+	Reason string `yaml:"reason"`
+}
+
+// importUnrecoverable is one attribute import cannot restore, and why.
+type importUnrecoverable struct {
+	Attr   string `yaml:"attr"`
 	Reason string `yaml:"reason"`
 }
 
@@ -72,6 +81,11 @@ func (tv testValues) validate() error {
 		}
 		if slices.Contains(tv.EnvArgs, r.Name) {
 			return fmt.Errorf("require_env %s is already in env_args, which gates it", r.Name)
+		}
+	}
+	for _, u := range tv.ImportUnrecoverable {
+		if u.Attr == "" || strings.TrimSpace(u.Reason) == "" {
+			return fmt.Errorf("import_unrecoverable entry %+v needs both attr and reason", u)
 		}
 	}
 	for _, k := range tv.KnownIssues {
@@ -147,6 +161,9 @@ type acctestAttr struct {
 	// Collection marks a list or set attribute, which state holds as name.# plus
 	// one key per element; Set is a set, whose duplicate elements collapse.
 	Collection, Set bool
+	// Object marks a map or nested object, which state holds as name.% plus one
+	// key per member; AttrSet on the name itself is refused.
+	Object bool
 }
 
 // Check is the assertion a generated test makes for the attribute after apply.
@@ -159,6 +176,8 @@ func (a acctestAttr) Check() string {
 			return fmt.Sprintf("resource.TestCheckResourceAttr(resourceName, %q, %q)", a.Name+".#", strconv.Itoa(n))
 		}
 		return fmt.Sprintf("resource.TestCheckResourceAttrSet(resourceName, %q)", a.Name+".#")
+	case a.Object:
+		return fmt.Sprintf("resource.TestCheckResourceAttrSet(resourceName, %q)", a.Name+".%")
 	case a.IsHCL:
 		return fmt.Sprintf("resource.TestCheckResourceAttrSet(resourceName, %q)", a.Name)
 	default:
@@ -278,6 +297,12 @@ type acctestData struct {
 	// ImportVerifyIgnore are the create_only attributes: an import has no
 	// create response to capture them from, so they are null after import.
 	ImportVerifyIgnore []string
+	// ImportUnrecoverable are test_values' import_unrecoverable entries, also
+	// in ImportVerifyIgnore, kept whole for the comment naming each reason.
+	ImportUnrecoverable []importUnrecoverable
+	// ImportParentTF is the parent attribute a compound "<parent>/<id>" import
+	// id carries; the test builds that id from state.
+	ImportParentTF string
 	// CreateOnlySet are the create_only attributes asserted set after create:
 	// all of them, less those test_values says this config does not produce.
 	CreateOnlySet []string
@@ -302,6 +327,7 @@ func buildAcctestData(rm ResourceModel, tv testValues) (acctestData, error) {
 
 		ConfirmListed:   rm.ConfirmListed,
 		ConfirmListedTF: rm.ConfirmListedTF,
+		ImportParentTF:  rm.ImportParentTF,
 	}
 	d.CreateAttrs = sortAttrs(tv.Create, rm)
 	d.UpdateAttrs = sortAttrs(tv.Update, rm)
@@ -322,6 +348,13 @@ func buildAcctestData(rm ResourceModel, tv testValues) (acctestData, error) {
 		}
 		delete(unset, a.TF)
 	}
+	for _, u := range tv.ImportUnrecoverable {
+		if !slices.ContainsFunc(rm.Fields, func(f ModelField) bool { return f.TFSDK == u.Attr }) {
+			return acctestData{}, fmt.Errorf("%s test_values: import_unrecoverable names %q, which is not an attribute", rm.Name, u.Attr)
+		}
+		d.ImportVerifyIgnore = append(d.ImportVerifyIgnore, u.Attr)
+	}
+	d.ImportUnrecoverable = tv.ImportUnrecoverable
 	if len(unset) > 0 {
 		return acctestData{}, fmt.Errorf("%s test_values: create_only_unset names %v, which are not create_only attributes", rm.Name, sortedKeys(unset))
 	}
@@ -476,6 +509,8 @@ func newAcctestAttr(name, value, modelType string, quoted bool) acctestAttr {
 	}
 	a.Collection = modelType == "types.List" || modelType == "types.Set"
 	a.Set = modelType == "types.Set"
+	a.Object = modelType == "types.Map" || modelType == "basetypes.ObjectValue" ||
+		(!strings.Contains(modelType, ".") && strings.HasSuffix(modelType, "Value"))
 	return a
 }
 

@@ -318,7 +318,7 @@ func flattenComplianceCheck(ctx context.Context, apiObject any, model *Complianc
 			model.LastScanId = flex.OptNilUint64ToFramework(v.Data.Value.ComplianceCheck.Value.LastScanID)
 			model.Name = flex.OptStringToFramework(v.Data.Value.ComplianceCheck.Value.Name)
 			model.SeverityTypeId = flex.OptNilUint64ToFramework(v.Data.Value.ComplianceCheck.Value.SeverityTypeID)
-			regions, regionsDiags := flex.StringSliceToFrameworkSet(ctx, v.Data.Value.ComplianceCheck.Value.Regions)
+			regions, regionsDiags := flex.StringSliceToFrameworkSetOrEmpty(ctx, v.Data.Value.ComplianceCheck.Value.Regions)
 			diags.Append(regionsDiags...)
 			model.Regions = regions
 			var ownerUserGroupsIDs []int64

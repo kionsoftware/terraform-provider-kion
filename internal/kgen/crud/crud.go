@@ -565,6 +565,7 @@ func (g *generator) generateResource(root, name string, ops resOps, ds dsOps, id
 	rm.RequiredTogether = g.configValidators.RequiredTogetherFor(name)
 	if entityArch != nil {
 		rm.EmptyCollections = entityArch.EmptyCollections
+		rm.ListOrderKeys = entityArch.ListOrderKeys
 		// An entity whose delete needs a parent the read does not return must
 		// carry that parent in its import id.
 		if entityArch.DeleteExtraField != "" {

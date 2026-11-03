@@ -51,6 +51,7 @@ resource "kion_ou" "test_ou" {
 }
 
 resource "kion_ou_cloud_access_role" "test" {
+  aws_session_tags = [{ tag_key = "env", tag_value = "test" }, { tag_key = "team", tag_value = "test-acc" }]
   name = "%[1]s"
   ou_id = kion_ou.test_ou.id
   short_term_access_keys = true

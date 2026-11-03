@@ -55,7 +55,7 @@ resource "kion_ou" "test_ou" {
 }
 
 resource "kion_funding_source" "test" {
-  amount = 1000.00
+  amount = 1000
   end_datecode = "2026-12"
   name = "%[1]s"
   ou_id = kion_ou.test_ou.id

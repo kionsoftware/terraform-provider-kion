@@ -473,7 +473,23 @@ func buildEntityData(rm ResourceModel) (entityData, error) {
 		}
 		slices.SortFunc(d.RespBinds, func(a, b respBind) int { return cmp.Compare(a.ModelGo, b.ModelGo) })
 		slices.SortFunc(d.RespSliceBinds, func(a, b sliceRespBind) int { return cmp.Compare(a.ModelGo, b.ModelGo) })
-		d.RespObjFlats, d.RespArrFlats = rm.ReadNested.Objs, rm.ReadNested.Arrs
+		d.RespObjFlats = rm.ReadNested.Objs
+		ordered := map[string]bool{}
+		for _, a := range rm.ReadNested.Arrs {
+			a.OrderKey = rm.ListOrderKeys[a.TFSDK]
+			if a.OrderKey != "" {
+				if !slices.ContainsFunc(a.Subs, func(s flatSub) bool { return s.TF == a.OrderKey }) {
+					return entityData{}, fmt.Errorf("%s list_order_keys: %s has no element attribute %q", rm.Name, a.TFSDK, a.OrderKey)
+				}
+				ordered[a.TFSDK] = true
+			}
+			d.RespArrFlats = append(d.RespArrFlats, a)
+		}
+		for tf := range rm.ListOrderKeys {
+			if !ordered[tf] {
+				return entityData{}, fmt.Errorf("%s list_order_keys: %s is not a nested-object list the read flattens", rm.Name, tf)
+			}
+		}
 		for _, p := range rm.ReadNested.IDProjs {
 			p.OrEmpty = emptyColl[p.TFSDK]
 			d.RespIDProjs = append(d.RespIDProjs, p)

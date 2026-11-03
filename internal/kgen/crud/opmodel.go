@@ -154,6 +154,8 @@ type ResourceModel struct {
 	ImportParentTF   string
 	// EmptyCollections: see archetype.EmptyCollections.
 	EmptyCollections []string
+	// ListOrderKeys: see archetype.ListOrderKeys.
+	ListOrderKeys map[string]string
 	// Renames maps this resource's API attribute names to its provider ones.
 	Renames map[string]string
 	Pascal  string       // "Label"

@@ -1,0 +1,6 @@
+kind: BUG FIXES
+body: >-
+  kion_idms_open_id_access_rule: import now recovers open_id_id, which the by-id read does not return, from the IDMS
+  that lists the rule, as kion_idms_open_id_group_association already did. It was left null, so the next plan replaced
+  the rule.
+time: 2026-11-03T14:47:34Z

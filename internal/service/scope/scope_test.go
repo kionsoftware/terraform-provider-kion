@@ -49,6 +49,8 @@ func TestAccKionScope_basic(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// criteria: a create-time seed for the scope's first criteria record, which Kion expands and kion_scope_criteria then manages; the scope read does not return it
+				ImportStateVerifyIgnore: []string{"criteria"},
 			},
 		},
 	})
@@ -100,6 +102,8 @@ func TestAccKionScope_update(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// criteria: a create-time seed for the scope's first criteria record, which Kion expands and kion_scope_criteria then manages; the scope read does not return it
+				ImportStateVerifyIgnore: []string{"criteria"},
 			},
 		},
 	})
