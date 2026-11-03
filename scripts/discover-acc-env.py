@@ -132,7 +132,12 @@ record("KION_ACC_APP_ROLE_ID", (roles[0] if roles else {}).get("id"), "no app ro
 
 # --- azure region: Kion's own database id, not the Azure name ---
 regions = items(get("/v3/azure-region")) or items(get("/v3/region"))
-record("KION_ACC_AZURE_REGION_ID", (regions[0] if regions else {}).get("id"),
+# A Government tenant (*.onmicrosoft.us) cannot deploy into a commercial region,
+# and ARM template validation then fails "an issue with the ARM template or a
+# dependent resource", so match the region to the Azure payer's cloud.
+gov = str(((azure_bs or {}).get("azure_payer") or {}).get("domain", "")).endswith(".us")
+region = next((r for r in regions if str(r.get("azure_name", "")).startswith("usgov") == gov), None)
+record("KION_ACC_AZURE_REGION_ID", (region or {}).get("id"),
        "no azure region endpoint answered (/v3/azure-region, /v3/region)")
 
 if ERRORS:
