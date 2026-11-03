@@ -36,6 +36,32 @@ func TestMissingViaListReachesGeneratedRead(t *testing.T) {
 	}
 }
 
+// The entity archetype's missing_via_list must reach the generated read too.
+func TestEntityMissingViaListReachesGeneratedRead(t *testing.T) {
+	t.Parallel()
+	archs, err := loadArchetypes(filepath.Join("..", "..", "..", "codegen", "crud_archetypes.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := 0
+	for pkg, a := range archs {
+		if a.MissingViaList == "" {
+			continue
+		}
+		n++
+		src, err := os.ReadFile(filepath.Join("..", "..", "service", pkg, pkg+".go"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(src), `Listed(ctx, "`+a.MissingViaList+`", `) {
+			t.Errorf("%s declares missing_via_list %s but its read does not consult it; run `make crud-force`", pkg, a.MissingViaList)
+		}
+	}
+	if n == 0 {
+		t.Fatal("no entity declares missing_via_list; oauth2_client should")
+	}
+}
+
 // A payer-kind min_kion_version must become a gate in the generated resource:
 // version_support cannot derive one from a private route, so without it an old
 // install fails at apply with an opaque API error.

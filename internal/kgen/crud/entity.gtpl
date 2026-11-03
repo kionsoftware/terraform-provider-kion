@@ -365,6 +365,16 @@ func (r *{{.Pkg}}Resource) Read(ctx context.Context, req resource.ReadRequest, r
 		resp.State.RemoveResource(ctx)
 		return
 	}
+{{- if .MissingViaList}}
+	// This read answers a missing record with a 500, not a 404; the list
+	// omits deleted records, so absence there means deleted.
+	if errs.IsInternalServerError(out) {
+		if listed, lerr := r.Meta().{{if eq .IDParamType "string"}}RawKeyListed{{else}}RawIDListed{{end}}(ctx, "{{.MissingViaList}}", {{if eq .IDParamType "string"}}{{.IDVar}}{{else}}int64({{.IDVar}}){{end}}); lerr == nil && !listed {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+	}
+{{- end}}
 {{- if .ConfirmListed}}
 
 	// The by-id read serves soft-deleted records; the parent list does not.

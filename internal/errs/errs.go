@@ -63,6 +63,13 @@ func RawCreatedStringID(id string) (string, diag.Diagnostics) {
 	return id, nil
 }
 
+// IsInternalServerError reports whether the response is a 500. Some reads
+// answer a missing record with one; see missing_via_list.
+func IsInternalServerError(res any) bool {
+	_, ok := res.(*generated.InternalServerErrorResponse)
+	return ok
+}
+
 // IsNotFound returns true if the response is a *NotFoundResponse.
 func IsNotFound(res any) bool {
 	_, ok := res.(*generated.NotFoundResponse)

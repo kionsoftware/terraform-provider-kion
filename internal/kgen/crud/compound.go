@@ -79,6 +79,10 @@ type archetype struct {
 	// unknown, so the read finds the one whose confirm_listed list holds the
 	// record and sets create_parent_field from it.
 	ConfirmParents string `yaml:"confirm_parents"`
+	// MissingViaList (kind: entity) is a list path consulted when the by-id read
+	// answers a 500: an id the list omits is treated as deleted. For reads that
+	// answer a missing record with a 500 rather than a 404.
+	MissingViaList string `yaml:"missing_via_list"`
 	// CreateViaUpdate (kind: parent_list) lists attributes only the update body
 	// carries; a configured value is applied by an update right after create.
 	CreateViaUpdate []string `yaml:"create_via_update"`

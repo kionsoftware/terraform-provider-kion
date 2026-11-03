@@ -104,6 +104,7 @@ type entityData struct {
 	CreateParentCast  string
 	ConfirmListed     string // see ResourceModel.ConfirmListed
 	ConfirmParents    string // see ResourceModel.ConfirmParents
+	MissingViaList    string // see ResourceModel.MissingViaList
 	// Create id source: "created" uses errs.CreatedID (a *CreatedResponse);
 	// "envelope" reads the id from the create response payload (a returned record).
 	CreateIDMode       string
@@ -241,6 +242,7 @@ func buildEntityData(rm ResourceModel) (entityData, error) {
 	}
 
 	d := entityData{
+		MissingViaList:   rm.MissingViaList,
 		Owners:           rm.Owners,
 		Assocs:           rm.Assocs,
 		Labels:           rm.Labels,

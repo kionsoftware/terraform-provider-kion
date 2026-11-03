@@ -149,6 +149,10 @@ func testAccCheckPermissionSchemeDestroy(_ context.Context) resource.TestCheckFu
 			if conns.IsRawNotFound(err) {
 				continue
 			}
+			// The by-id read answers a deleted record with a 500; see the resource.
+			if listed, lerr := conn.RawIDListed(ctx, "/v3/permission-scheme", id); err != nil && lerr == nil && !listed {
+				continue
+			}
 			if err != nil {
 				return fmt.Errorf("reading kion_permission_scheme (%d): %w", id, err)
 			}

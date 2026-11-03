@@ -300,6 +300,8 @@ type acctestData struct {
 	// ImportUnrecoverable are test_values' import_unrecoverable entries, also
 	// in ImportVerifyIgnore, kept whole for the comment naming each reason.
 	ImportUnrecoverable []importUnrecoverable
+	// MissingViaList: a 500 from the read is "gone" when this list omits the id.
+	MissingViaList string
 	// ImportParentTF is the parent attribute a compound "<parent>/<id>" import
 	// id carries; the test builds that id from state.
 	ImportParentTF string
@@ -328,6 +330,7 @@ func buildAcctestData(rm ResourceModel, tv testValues) (acctestData, error) {
 		ConfirmListed:   rm.ConfirmListed,
 		ConfirmListedTF: rm.ConfirmListedTF,
 		ImportParentTF:  rm.ImportParentTF,
+		MissingViaList:  rm.MissingViaList,
 	}
 	d.CreateAttrs = sortAttrs(tv.Create, rm)
 	d.UpdateAttrs = sortAttrs(tv.Update, rm)

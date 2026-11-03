@@ -566,6 +566,7 @@ func (g *generator) generateResource(root, name string, ops resOps, ds dsOps, id
 	if entityArch != nil {
 		rm.EmptyCollections = entityArch.EmptyCollections
 		rm.ListOrderKeys = entityArch.ListOrderKeys
+		rm.MissingViaList = entityArch.MissingViaList
 		// An entity whose delete needs a parent the read does not return must
 		// carry that parent in its import id.
 		if entityArch.DeleteExtraField != "" {

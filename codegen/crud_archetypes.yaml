@@ -31,6 +31,9 @@
 #                attribute, or not a string field on the create response,
 #                fails generation.
 #
+#   missing_via_list  list path consulted when the by-id read answers a 500:
+#                an id the list omits is treated as deleted.
+#
 #   list_order_keys  nested-object list -> element attribute identifying an
 #                element. The read keeps the prior state's order, matched on it,
 #                for a list the API returns in an order of its own. A list the
@@ -483,3 +486,5 @@ automation_policy:
 oauth2_client:
   kind: entity
   create_only: [secret]
+  # GET /v3/oauth2/clients/{id} answers a deleted or unknown id with a 500.
+  missing_via_list: /v3/oauth2/clients

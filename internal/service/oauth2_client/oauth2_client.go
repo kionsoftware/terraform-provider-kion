@@ -152,6 +152,14 @@ func (r *oauth2_clientResource) Read(ctx context.Context, req resource.ReadReque
 		resp.State.RemoveResource(ctx)
 		return
 	}
+	// This read answers a missing record with a 500, not a 404; the list
+	// omits deleted records, so absence there means deleted.
+	if errs.IsInternalServerError(out) {
+		if listed, lerr := r.Meta().RawKeyListed(ctx, "/v3/oauth2/clients", id); lerr == nil && !listed {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+	}
 
 	resp.Diagnostics.Append(flattenOauth2Client(ctx, out, &state)...)
 	if resp.Diagnostics.HasError() {

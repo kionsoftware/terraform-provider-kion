@@ -204,6 +204,7 @@ type ResourceModel struct {
 	ConfirmListed   string
 	ConfirmListedTF string
 	ConfirmParents  string
+	MissingViaList  string // see the archetype field
 	// Nested-object fields: create/update body objects expanded to SDK structs,
 	// read-payload objects flattened into tfplugingen Value types.
 	CreateNested nestedResult

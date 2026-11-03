@@ -194,6 +194,14 @@ func testAccCheck{{.Pascal}}Destroy(_ context.Context) resource.TestCheckFunc {
 			if err != nil {
 				return fmt.Errorf("reading {{.ResourceType}} ({{.IDFormat}}): %w", id, err)
 			}
+			{{- if .MissingViaList}}
+			// The read answers a deleted record with a 500; the list omits it.
+			if errs.IsInternalServerError(out) {
+				if listed, lerr := conn.{{if eq .IDParamType "string"}}RawKeyListed{{else}}RawIDListed{{end}}(ctx, "{{.MissingViaList}}", {{if eq .IDParamType "string"}}id{{else}}int64(id){{end}}); lerr == nil && !listed {
+					continue
+				}
+			}
+			{{- end}}
 			{{- if .ConfirmListed}}
 			// The by-id read serves soft-deleted records; the parent list does not.
 			path := strings.Replace("{{.ConfirmListed}}", "{id}", rs.Primary.Attributes["{{.ConfirmListedTF}}"], 1)
