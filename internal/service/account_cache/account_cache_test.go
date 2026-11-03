@@ -25,7 +25,7 @@ func TestAccKionAccountCache_basic(t *testing.T) {
 	ctx := acctest.Context(t)
 	rName := acctest.RandomWithPrefix(acctest.ResourcePrefix)
 	payerID := acctest.RequireEnv(t, "KION_ACC_PAYER_ID", "the payer id")
-	awsAccountNumber := acctest.RequireEnv(t, "KION_ACC_AWS_ACCOUNT_NUMBER", "the aws account number")
+	unmanagedAwsAccountNumber := acctest.RequireEnv(t, "KION_ACC_UNMANAGED_AWS_ACCOUNT_NUMBER", "the unmanaged aws account number")
 	resourceName := "kion_account_cache.test"
 
 	resource.Test(t, resource.TestCase{
@@ -34,12 +34,13 @@ func TestAccKionAccountCache_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckAccountCacheDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAccountCacheConfig_basic(rName, payerID, awsAccountNumber),
+				Config: testAccAccountCacheConfig_basic(rName, payerID, unmanagedAwsAccountNumber),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckAccountCacheExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "account_name", fmt.Sprintf("%[1]s", rName)),
-					resource.TestCheckResourceAttr(resourceName, "account_number", fmt.Sprintf("%[3]s", rName, payerID, awsAccountNumber)),
+					resource.TestCheckResourceAttr(resourceName, "account_number", fmt.Sprintf("%[3]s", rName, payerID, unmanagedAwsAccountNumber)),
+					resource.TestCheckResourceAttr(resourceName, "account_type_id", "1"),
 					resource.TestCheckResourceAttrSet(resourceName, "payer_id"),
 				),
 			},
@@ -60,7 +61,7 @@ func TestAccKionAccountCache_update(t *testing.T) {
 	ctx := acctest.Context(t)
 	rName := acctest.RandomWithPrefix(acctest.ResourcePrefix)
 	payerID := acctest.RequireEnv(t, "KION_ACC_PAYER_ID", "the payer id")
-	awsAccountNumber := acctest.RequireEnv(t, "KION_ACC_AWS_ACCOUNT_NUMBER", "the aws account number")
+	unmanagedAwsAccountNumber := acctest.RequireEnv(t, "KION_ACC_UNMANAGED_AWS_ACCOUNT_NUMBER", "the unmanaged aws account number")
 	resourceName := "kion_account_cache.test"
 
 	resource.Test(t, resource.TestCase{
@@ -69,22 +70,24 @@ func TestAccKionAccountCache_update(t *testing.T) {
 		CheckDestroy:             testAccCheckAccountCacheDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAccountCacheConfig_basic(rName, payerID, awsAccountNumber),
+				Config: testAccAccountCacheConfig_basic(rName, payerID, unmanagedAwsAccountNumber),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckAccountCacheExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "account_name", fmt.Sprintf("%[1]s", rName)),
-					resource.TestCheckResourceAttr(resourceName, "account_number", fmt.Sprintf("%[3]s", rName, payerID, awsAccountNumber)),
+					resource.TestCheckResourceAttr(resourceName, "account_number", fmt.Sprintf("%[3]s", rName, payerID, unmanagedAwsAccountNumber)),
+					resource.TestCheckResourceAttr(resourceName, "account_type_id", "1"),
 					resource.TestCheckResourceAttrSet(resourceName, "payer_id"),
 				),
 			},
 			{
-				Config: testAccAccountCacheConfig_update(rName, payerID, awsAccountNumber),
+				Config: testAccAccountCacheConfig_update(rName, payerID, unmanagedAwsAccountNumber),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckAccountCacheExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "account_name", fmt.Sprintf("%[1]s-updated", rName)),
-					resource.TestCheckResourceAttr(resourceName, "account_number", fmt.Sprintf("%[3]s", rName, payerID, awsAccountNumber)),
+					resource.TestCheckResourceAttr(resourceName, "account_number", fmt.Sprintf("%[3]s", rName, payerID, unmanagedAwsAccountNumber)),
+					resource.TestCheckResourceAttr(resourceName, "account_type_id", "1"),
 					resource.TestCheckResourceAttrSet(resourceName, "payer_id"),
 				),
 			},
@@ -163,22 +166,24 @@ func testAccCheckAccountCacheDestroy(_ context.Context) resource.TestCheckFunc {
 	}
 }
 
-func testAccAccountCacheConfig_basic(rName string, payerID string, awsAccountNumber string) string {
+func testAccAccountCacheConfig_basic(rName string, payerID string, unmanagedAwsAccountNumber string) string {
 	return fmt.Sprintf(`
 resource "kion_account_cache" "test" {
   account_name = "%[1]s"
   account_number = "%[3]s"
+  account_type_id = 1
   payer_id = %[2]s
 }
-`, rName, payerID, awsAccountNumber)
+`, rName, payerID, unmanagedAwsAccountNumber)
 }
 
-func testAccAccountCacheConfig_update(rName string, payerID string, awsAccountNumber string) string {
+func testAccAccountCacheConfig_update(rName string, payerID string, unmanagedAwsAccountNumber string) string {
 	return fmt.Sprintf(`
 resource "kion_account_cache" "test" {
   account_name = "%[1]s-updated"
   account_number = "%[3]s"
+  account_type_id = 1
   payer_id = %[2]s
 }
-`, rName, payerID, awsAccountNumber)
+`, rName, payerID, unmanagedAwsAccountNumber)
 }

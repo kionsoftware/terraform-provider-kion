@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
@@ -55,11 +56,14 @@ func AccountCacheResourceSchema(ctx context.Context) schema.Schema {
 			"account_number": schema.StringAttribute{
 				Optional:            true,
 				Computed:            true,
-				Description:         "The account number.",
-				MarkdownDescription: "The account number.",
+				Description:         "The account number. When set, the existing AWS account is imported into the account cache, and account_type_id is required. When omitted, Kion creates a new AWS account through the payer's AWS Organization.",
+				MarkdownDescription: "The account number. When set, the existing AWS account is imported into the account cache, and account_type_id is required. When omitted, Kion creates a new AWS account through the payer's AWS Organization.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					framework.CreateOnlyString(),
+				},
+				Validators: []validator.String{
+					stringvalidator.AlsoRequires(path.MatchRoot("account_type_id")),
 				},
 			},
 			"account_type_id": schema.Int64Attribute{

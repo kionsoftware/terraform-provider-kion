@@ -18,7 +18,7 @@ func TestAccKionAccountCacheDataSource_basic(t *testing.T) {
 
 	rName := acctest.RandomWithPrefix(acctest.ResourcePrefix)
 	payerID := acctest.RequireEnv(t, "KION_ACC_PAYER_ID", "the payer id")
-	awsAccountNumber := acctest.RequireEnv(t, "KION_ACC_AWS_ACCOUNT_NUMBER", "the aws account number")
+	unmanagedAwsAccountNumber := acctest.RequireEnv(t, "KION_ACC_UNMANAGED_AWS_ACCOUNT_NUMBER", "the unmanaged aws account number")
 	dataSourceName := "data.kion_account_cache.test"
 
 	resource.Test(t, resource.TestCase{
@@ -26,11 +26,12 @@ func TestAccKionAccountCacheDataSource_basic(t *testing.T) {
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAccountCacheDataSourceConfig_basic(rName, payerID, awsAccountNumber),
+				Config: testAccAccountCacheDataSourceConfig_basic(rName, payerID, unmanagedAwsAccountNumber),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(dataSourceName, "id"),
 					resource.TestCheckResourceAttrSet(dataSourceName, "account_name"),
 					resource.TestCheckResourceAttrSet(dataSourceName, "account_number"),
+					resource.TestCheckResourceAttrSet(dataSourceName, "account_type_id"),
 					resource.TestCheckResourceAttrSet(dataSourceName, "payer_id"),
 				),
 			},
@@ -38,16 +39,17 @@ func TestAccKionAccountCacheDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccAccountCacheDataSourceConfig_basic(rName string, payerID string, awsAccountNumber string) string {
+func testAccAccountCacheDataSourceConfig_basic(rName string, payerID string, unmanagedAwsAccountNumber string) string {
 	return fmt.Sprintf(`
 resource "kion_account_cache" "test" {
   account_name = "%[1]s"
   account_number = "%[3]s"
+  account_type_id = 1
   payer_id = %[2]s
 }
 
 data "kion_account_cache" "test" {
   id = kion_account_cache.test.id
 }
-`, rName, payerID, awsAccountNumber)
+`, rName, payerID, unmanagedAwsAccountNumber)
 }

@@ -43,6 +43,12 @@ type rawOp struct {
 	// schema's Value type to know the sub-fields, and the wire names are the
 	// API's, not necessarily the attribute's.
 	Objects []rawObject `yaml:"objects"`
+
+	// ImportPath (raw_create only) is a second create route, taken when the
+	// ImportWhen attribute is set: Kion separates "import this existing account"
+	// from "create a new one" by URL alone, and the same resource covers both.
+	ImportPath string `yaml:"import_path"`
+	ImportWhen string `yaml:"import_when"`
 }
 
 // rawObject is one nested attribute in a raw request body.

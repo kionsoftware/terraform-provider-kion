@@ -49,7 +49,7 @@ resource "kion_account_cache" "example" {
 
 - `account_alias` (String) Alias of the account in the application.
 - `account_email` (String) Root email of the account if created inside the application, otherwise it will be an empty string. Note: If an account placeholder email (e.g. `jdoe+%s@example.com`) has been set, account_email MUST be empty. In this case, account_email will be set to the account placeholder email formatted with the account_name field (e.g. `jdoe+account_name@example.com`). Otherwise, account_email is required.
-- `account_number` (String) The account number.
+- `account_number` (String) The account number. When set, the existing AWS account is imported into the account cache, and account_type_id is required. When omitted, Kion creates a new AWS account through the payer's AWS Organization.
 - `account_type_id` (Number) AccountTypeID is used to specify the AWS Account Type being created. If not explicitly set, the partition that Kion is running in will be used.
 For AWS Commercial accounts, this value is 1.
 For AWS Government accounts, this value is 2.

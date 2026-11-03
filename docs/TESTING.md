@@ -76,7 +76,7 @@ EOF
 
 | Resource | Variables |
 |---|---|
-| `kion_account_cache` | `KION_ACC_PAYER_ID`, `KION_ACC_AWS_ACCOUNT_NUMBER` |
+| `kion_account_cache` | `KION_ACC_PAYER_ID`, `KION_ACC_UNMANAGED_AWS_ACCOUNT_NUMBER` (an account in the payer's AWS Organization that Kion does not manage yet) |
 | `kion_account_linkage` | `KION_ACC_AZURE_PAYER_ID` |
 | `kion_ami` | `KION_ACC_ACCOUNT_ID`, `KION_ACC_AWS_AMI_ID` |
 | `kion_azure_account` | `KION_ACC_AZURE_PAYER_ID`, `KION_ACC_AZURE_SUBSCRIPTION_UUID` |

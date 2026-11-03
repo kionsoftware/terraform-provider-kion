@@ -450,6 +450,19 @@ func (g *generator) generateResource(root, name string, ops resOps, ds dsOps, id
 				return 0, fmt.Errorf("%s raw_create: %w", name, err)
 			}
 			rm.RawCreate = &rawCreateData{Method: verb, Path: rc.Path, Fields: fields, Objects: objs, IDGo: idGo}
+			if (rc.ImportPath == "") != (rc.ImportWhen == "") {
+				return 0, fmt.Errorf("%s raw_create: import_path and import_when go together", name)
+			}
+			if rc.ImportPath != "" {
+				for _, mf := range model {
+					if mf.TFSDK == rc.ImportWhen {
+						rm.RawCreate.ImportPath, rm.RawCreate.ImportWhenGo = rc.ImportPath, mf.GoName
+					}
+				}
+				if rm.RawCreate.ImportWhenGo == "" {
+					return 0, fmt.Errorf("%s raw_create: import_when attribute %q is not in the model", name, rc.ImportWhen)
+				}
+			}
 		}
 		for _, tfName := range entityArch.Rewritten {
 			var goName string

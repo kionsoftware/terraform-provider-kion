@@ -169,3 +169,13 @@ func (c *KionClient) RawPatch(ctx context.Context, path string, body []byte) ([]
 func (c *KionClient) RawPut(ctx context.Context, path string, body []byte) ([]byte, error) {
 	return c.rawRequest(ctx, http.MethodPut, path, body)
 }
+
+// PathUnless returns path, or alt when the condition holds. A raw create with
+// two routes passes both through it, primary first, so kconfig, which reads
+// the first path literal in a raw call, still derives the primary route.
+func PathUnless(cond bool, path, alt string) string {
+	if cond {
+		return alt
+	}
+	return path
+}

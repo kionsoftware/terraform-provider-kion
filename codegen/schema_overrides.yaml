@@ -462,10 +462,12 @@ resources:
       account_number:
         type: string
         computed_optional_required: computed_optional
-        description: The account number.
+        description: "The account number. When set, the existing AWS account is imported into the account cache, and account_type_id is required. When omitted, Kion creates a new AWS account through the payer's AWS Organization."
         plan_modifiers:
           - stringplanmodifier.UseStateForUnknown()
           - framework.CreateOnlyString()
+        validators:
+          - stringvalidator.AlsoRequires(path.MatchRoot("account_type_id"))
       car_external_id:
         type: string
         computed_optional_required: computed

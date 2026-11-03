@@ -574,6 +574,24 @@ func blockAttrNames(b rsschema.Block) []string {
 // The validators are run rather than introspected: stringvalidator's concrete
 // types are unexported and its descriptions do not reliably carry the pattern,
 // but every validator is directly callable, which is exact.
+// acceptsSample runs one validator against a bare sample value. A validator
+// that relates attributes (stringvalidator.AlsoRequires) reads the whole
+// configuration, which a lone sample has none of, so it panics; it says nothing
+// about the value itself, so it counts as accepting.
+func acceptsSample(ctx context.Context, v validator.String, cand string) (ok bool) {
+	defer func() {
+		if recover() != nil {
+			ok = true
+		}
+	}()
+	resp := &validator.StringResponse{}
+	v.ValidateString(ctx, validator.StringRequest{
+		Path:        path.Root("x"),
+		ConfigValue: types.StringValue(cand),
+	}, resp)
+	return !resp.Diagnostics.HasError()
+}
+
 func sampleSatisfying(a rsschema.Attribute) string {
 	sa, ok := a.(rsschema.StringAttribute)
 	if !ok || len(sa.Validators) == 0 {
@@ -583,12 +601,7 @@ func sampleSatisfying(a rsschema.Attribute) string {
 	for _, cand := range patternCandidates {
 		okAll := true
 		for _, v := range sa.Validators {
-			resp := &validator.StringResponse{}
-			v.ValidateString(ctx, validator.StringRequest{
-				Path:        path.Root("x"),
-				ConfigValue: types.StringValue(cand),
-			}, resp)
-			if resp.Diagnostics.HasError() {
+			if !acceptsSample(ctx, v, cand) {
 				okAll = false
 				break
 			}

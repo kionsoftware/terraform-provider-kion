@@ -46,7 +46,7 @@ No modules.
 | payer\_id | ID of the payer where the application can find the billing data for the account. | `number` | n/a | yes |
 | account\_alias | Alias of the account in the application. | `string` | `null` | no |
 | account\_email | Root email of the account if created inside the application, otherwise it will be an empty string. Note: If an account placeholder email (e.g. `jdoe+%s@example.com`) has been set, account\_email MUST be empty. In this case, account\_email will be set to the account placeholder email formatted with the account\_name field (e.g. `jdoe+account_name@example.com`). Otherwise, account\_email is required. | `string` | `null` | no |
-| account\_number | The account number. | `string` | `null` | no |
+| account\_number | The account number. When set, the existing AWS account is imported into the account cache, and account\_type\_id is required. When omitted, Kion creates a new AWS account through the payer's AWS Organization. | `string` | `null` | no |
 | account\_type\_id | AccountTypeID is used to specify the AWS Account Type being created. If not explicitly set, the partition that Kion is running in will be used. For AWS Commercial accounts, this value is 1. For AWS Government accounts, this value is 2. For AWS C2S accounts, this value is 4. For AWS SC2S accounts, this value is 5. | `number` | `null` | no |
 | commercial\_account\_name | Name of the Commercial Account in the application. If none is provided, a default value of "{Name} - Commercial" will be used instead. If include\_linked\_account\_spend is set to true, this value will be ignored. | `string` | `null` | no |
 | create\_govcloud | CreateGovcloud determines if this account should be created in govcloud. The default value is false. | `bool` | `null` | no |

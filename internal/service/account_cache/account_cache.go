@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	generated "github.com/kionsoftware/kion-sdk-go/generated/v3_17"
 
+	"terraform-provider-kion/internal/conns"
 	"terraform-provider-kion/internal/errs"
 	"terraform-provider-kion/internal/flex"
 	"terraform-provider-kion/internal/framework"
@@ -88,7 +89,10 @@ func (r *account_cacheResource) Create(ctx context.Context, req resource.CreateR
 		resp.Diagnostics.AddError(fmt.Sprintf("creating %s", ResNameAccountCache), err.Error())
 		return
 	}
-	rawOut, err := r.Meta().RawPost(ctx, "/v3/account-cache/create?account-type=aws", rawBody)
+	// Kion creates a new account on one route and imports an existing one on
+	// another; a configured AccountNumber means the latter.
+	importing := !plan.AccountNumber.IsNull() && !plan.AccountNumber.IsUnknown() && plan.AccountNumber.ValueString() != ""
+	rawOut, err := r.Meta().RawPost(ctx, conns.PathUnless(importing, "/v3/account-cache/create?account-type=aws", "/v3/account-cache?account-type=aws"), rawBody)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("creating %s", ResNameAccountCache), err.Error())
 		return

@@ -1,0 +1,8 @@
+kind: BUG FIXES
+body: >-
+  kion_account_cache with an account_number now imports that existing AWS account into the account cache. It always
+  called Kion's create route, which makes a new AWS account through the payer's AWS Organization, so applying a
+  configuration that named an existing account created a different, new one wherever account creation was enabled
+  (and failed where it was not). account_number now requires account_type_id, which the import route needs. Without
+  account_number the resource still creates a new account, as the 0.3.x kion_aws_account did.
+time: 2026-11-03T21:50:21Z

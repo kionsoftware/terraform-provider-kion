@@ -266,6 +266,12 @@ account_cache:
   raw_create:
     method: POST
     path: /v3/account-cache/create?account-type=aws
+    # The create route makes a NEW AWS account through Organizations. With an
+    # account_number the resource names an existing account, which goes to the
+    # import route instead, as the 0.3.x kion_aws_account did. Without this
+    # every apply created a real AWS account, account_number or not.
+    import_path: /v3/account-cache?account-type=aws
+    import_when: account_number
     objects:
       - tf: organizational_unit
         subs: [name, org_unit_id]

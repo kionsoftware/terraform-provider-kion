@@ -21,7 +21,8 @@ import (
 	{{end}}	"github.com/hashicorp/terraform-plugin-framework/types"
 	{{.SDKAlias}} "{{.SDKImport}}"
 
-	"terraform-provider-kion/internal/errs"
+	{{if and .RawCreate .RawCreate.ImportPath}}"terraform-provider-kion/internal/conns"
+	{{end}}"terraform-provider-kion/internal/errs"
 	"terraform-provider-kion/internal/flex"
 	"terraform-provider-kion/internal/framework"
 	{{- if .HasAccountMove}}
@@ -160,7 +161,12 @@ func (r *{{.Pkg}}Resource) Create(ctx context.Context, req resource.CreateReques
 		resp.Diagnostics.AddError(fmt.Sprintf("creating %s", {{.ResConst}}), err.Error())
 		return
 	}
-	rawOut, err := r.Meta().{{.RawCreate.Method}}(ctx, "{{.RawCreate.Path}}", rawBody)
+{{- if .RawCreate.ImportPath}}
+	// Kion creates a new account on one route and imports an existing one on
+	// another; a configured {{.RawCreate.ImportWhenGo}} means the latter.
+	importing := !plan.{{.RawCreate.ImportWhenGo}}.IsNull() && !plan.{{.RawCreate.ImportWhenGo}}.IsUnknown() && plan.{{.RawCreate.ImportWhenGo}}.ValueString() != ""
+{{- end}}
+	rawOut, err := r.Meta().{{.RawCreate.Method}}(ctx, {{if .RawCreate.ImportPath}}conns.PathUnless(importing, "{{.RawCreate.Path}}", "{{.RawCreate.ImportPath}}"){{else}}"{{.RawCreate.Path}}"{{end}}, rawBody)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("creating %s", {{.ResConst}}), err.Error())
 		return

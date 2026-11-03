@@ -829,6 +829,9 @@ type rawCreateData struct {
 	Fields  []rawField
 	Objects []rawCreateObject // nested attributes, declared in the archetype
 	IDGo    string            // model field holding the id
+	// ImportPath replaces Path when the ImportWhenGo string attribute is set.
+	ImportPath   string
+	ImportWhenGo string
 }
 
 // rawCreateObject is a nested attribute rendered as a nested wire struct.

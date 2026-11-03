@@ -18,7 +18,7 @@ variable "account_name" {
 }
 
 variable "account_number" {
-  description = "The account number."
+  description = "The account number. When set, the existing AWS account is imported into the account cache, and account_type_id is required. When omitted, Kion creates a new AWS account through the payer's AWS Organization."
   type        = string
   default     = null
 }

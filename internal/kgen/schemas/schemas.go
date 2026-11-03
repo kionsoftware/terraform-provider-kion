@@ -1154,9 +1154,15 @@ func applyAttrOverride(attr map[string]any, ao attributeOverride) error {
 			if err != nil {
 				return err
 			}
+			imports := []any{map[string]any{"path": imp}}
+			// A validator naming another attribute takes a path expression
+			// (stringvalidator.AlsoRequires(path.MatchRoot("x"))).
+			if strings.Contains(v, "path.") {
+				imports = append(imports, map[string]any{"path": frameworkPathImport})
+			}
 			vs = append(vs, map[string]any{
 				"custom": map[string]any{
-					"imports":           []any{map[string]any{"path": imp}},
+					"imports":           imports,
 					"schema_definition": v,
 				},
 			})
@@ -1276,6 +1282,9 @@ func planModifierImport(call string) (string, error) {
 // packages (stringvalidator, int64validator, ...). They live in a separate
 // module from the plan modifiers, which is the only difference.
 const validatorBase = "github.com/hashicorp/terraform-plugin-framework-validators/"
+
+// frameworkPathImport is imported for a validator call that uses path.
+const frameworkPathImport = "github.com/hashicorp/terraform-plugin-framework/path"
 
 func validatorImport(call string) (string, error) {
 	dot := strings.IndexByte(call, '.')
