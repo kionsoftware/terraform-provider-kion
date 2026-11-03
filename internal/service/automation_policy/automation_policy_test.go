@@ -42,7 +42,7 @@ func TestAccKionAutomationPolicy_basic(t *testing.T) {
 					// template; assert it survived the envelope round trip rather
 					// than only that the record exists.
 					resource.TestCheckResourceAttr(resourceName, "cloud_provider_policies.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "cloud_provider_policies.0.resources.0", "ec2"),
+					resource.TestCheckResourceAttr(resourceName, "cloud_provider_policies.0.resources.0", "aws.ec2"),
 				),
 			},
 			{
@@ -176,12 +176,11 @@ func testAccCheckAutomationPolicyDestroy(ctx context.Context) resource.TestCheck
 	}
 }
 
-// The policy body is Cloud Custodian YAML. It is never executed by these tests --
-// nothing schedules the policy against an account -- so it only has to be a
-// well-formed document the backend accepts.
-const testAccAutomationPolicyBody = `policies:
-  - name: test-acc-noop
-    resource: ec2
+// The policy body for engine 0 (Kion): only the policy's logic. Kion prepends
+// name and resource itself, one document per entry in resources, so the body
+// must not set either. It is never executed by these tests.
+const testAccAutomationPolicyBody = `filters: []
+actions: []
 `
 
 func testAccAutomationPolicyConfig_basic(rName string) string {
@@ -198,7 +197,7 @@ resource "kion_automation_policy" "test" {
     cloud_provider_id    = 1
     apply_to_all_regions = true
     policy               = %[2]q
-    resources            = ["ec2"]
+    resources            = ["aws.ec2"]
     regions              = []
   }]
 }
@@ -219,6 +218,7 @@ resource "kion_automation_policy" "test" {
 
   scheduled_frequency = {
     type                 = 0
+    days_of_week         = [1, 2, 3, 4, 5]
     hour                 = %[3]d
     minute               = 0
     time_zone_identifier = %[4]q
@@ -228,7 +228,7 @@ resource "kion_automation_policy" "test" {
     cloud_provider_id    = 1
     apply_to_all_regions = true
     policy               = %[2]q
-    resources            = ["ec2"]
+    resources            = ["aws.ec2"]
     regions              = []
   }]
 }

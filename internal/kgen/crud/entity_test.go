@@ -175,3 +175,26 @@ func TestIDOptKind(t *testing.T) {
 		}
 	}
 }
+
+// list_order_keys marks the read's nested list for reordering, and a key that
+// names no flattened list or no element attribute fails generation.
+func TestBuildEntityData_listOrderKeys(t *testing.T) {
+	rm := labelResourceModel(t)
+	rm.ReadNested.Arrs = []arrFlat{{ModelGo: "Tags", TFSDK: "tags", Subs: []flatSub{{TF: "tag_key"}, {TF: "tag_value"}}}}
+
+	rm.ListOrderKeys = map[string]string{"tags": "tag_key"}
+	d, err := buildEntityData(rm)
+	if err != nil {
+		t.Fatalf("buildEntityData: %v", err)
+	}
+	if got := d.RespArrFlats[0].OrderKey; got != "tag_key" {
+		t.Errorf("OrderKey = %q, want tag_key", got)
+	}
+
+	for _, keys := range []map[string]string{{"tags": "nope"}, {"other": "tag_key"}} {
+		rm.ListOrderKeys = keys
+		if _, err := buildEntityData(rm); err == nil {
+			t.Errorf("list_order_keys %v was accepted", keys)
+		}
+	}
+}

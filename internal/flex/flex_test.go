@@ -177,6 +177,22 @@ func TestStringSliceToFramework(t *testing.T) {
 	assert.True(t, result.IsNull())
 }
 
+// Kion's [""] and null both mean "no elements", and must read as an empty set.
+func TestStringSliceToFrameworkSetOrEmpty(t *testing.T) {
+	ctx := context.Background()
+
+	for _, in := range [][]string{nil, {""}} {
+		result, diags := flex.StringSliceToFrameworkSetOrEmpty(ctx, in)
+		assert.False(t, diags.HasError())
+		assert.False(t, result.IsNull())
+		assert.Empty(t, result.Elements())
+	}
+
+	result, diags := flex.StringSliceToFrameworkSetOrEmpty(ctx, []string{"us-east-1", ""})
+	assert.False(t, diags.HasError())
+	assert.Len(t, result.Elements(), 1)
+}
+
 // unknown lists and element-type mismatches exercise the branches the basic
 // value/null cases above don't reach.
 func TestUint64SliceFromFramework_unknownAndError(t *testing.T) {

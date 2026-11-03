@@ -68,3 +68,26 @@ func TestRawListIDs(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []int64{4}, got)
 }
+
+// OAuth client ids are strings; a numeric id still compares as its text.
+func TestRawKeyListed(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name, body, key string
+		want            bool
+	}{
+		{"string id, present", `{"data":[{"id":"c73a"},{"id":"1bfa"}]}`, "1bfa", true},
+		{"string id, absent", `{"data":[{"id":"c73a"}]}`, "1bfa", false},
+		{"numeric id", `{"data":{"items":[{"id":12}]}}`, "12", true},
+		{"empty list", `{"data":[]}`, "1bfa", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := listClient(t, http.StatusOK, tc.body).RawKeyListed(t.Context(), "/v3/oauth2/clients", tc.key)
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+	_, err := listClient(t, http.StatusInternalServerError, `{}`).RawKeyListed(t.Context(), "/v3/oauth2/clients", "x")
+	assert.Error(t, err)
+}

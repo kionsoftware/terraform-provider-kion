@@ -4,6 +4,7 @@
 package automation_policy
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -114,4 +115,19 @@ func TestFetchAll_walksMultiplePages(t *testing.T) {
 	require.False(t, diags.HasError(), "%v", diags)
 	require.Len(t, got, paging.DefaultPageSize*2+5)
 	require.Len(t, d.urls, 3)
+}
+
+// Kion answers a create with the bare id; an id read as zero would leave
+// the new policy in Kion with nothing in state to delete it.
+func TestCreateEnvelope_id(t *testing.T) {
+	for body, want := range map[string]int64{
+		`{"status":201,"data":5}`:                         5,
+		`{"data":{"automation_policy":{"id":6}}}`:         6,
+		`{"record_id":7}`:                                 7,
+		`{"data":"unexpected"}`:                           0,
+	} {
+		var e automation_policyCreateEnvelope
+		require.NoError(t, json.Unmarshal([]byte(body), &e), body)
+		require.Equal(t, want, e.id(), body)
+	}
 }

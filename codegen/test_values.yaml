@@ -31,6 +31,9 @@
 #              entry when the issue closes.
 #   create_only_unset  create_only attributes (crud_archetypes.yaml) this config
 #              does not produce. Every other one is asserted set after create.
+#   import_unrecoverable  list of {attr, reason}: attributes the read cannot
+#              restore, so an import leaves them null. Each is left out of the
+#              import step's verification, with its reason as a comment.
 #
 # A value prefixed "hcl:" is an expression, not a literal: emitted unquoted and
 # asserted only for presence, since a reference like kion_project.test.id has no
@@ -164,18 +167,23 @@ resources:
       ou_id: "hcl:kion_ou.test_ou.id"
       start_datecode: "2026-01"
   cft:
+    import_unrecoverable:
+      - attr: tags
+        reason: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
     create:
       policy: "hcl:jsonencode({ AWSTemplateFormatVersion = \"2010-09-09\", Description = \"test-acc\", Resources = { Topic = { Type = \"AWS::SNS::Topic\" } } })"
       description: "test-acc CFT"
       name: "%[1]s"
       owner_user_ids: "hcl:[1]"
       regions: "hcl:[\"us-east-1\"]"
+      tags: "hcl:[{ tag_key = \"team\", tag_value = \"test-acc\" }, { tag_key = \"env\", tag_value = \"test\" }]"
     update:
       policy: "hcl:jsonencode({ AWSTemplateFormatVersion = \"2010-09-09\", Description = \"test-acc\", Resources = { Topic = { Type = \"AWS::SNS::Topic\" } } })"
       description: "test-acc CFT updated"
       name: "%[1]s"
       owner_user_ids: "hcl:[1]"
       regions: "hcl:[\"us-east-1\"]"
+      tags: "hcl:[{ tag_key = \"env\", tag_value = \"test\" }, { tag_key = \"team\", tag_value = \"test-acc\" }]"
   cloud_rule:
     create:
       name: "%[1]s"
@@ -199,6 +207,7 @@ resources:
       name: "%[1]s"
       owner_user_ids: "hcl:[1]"
       severity_type_id: "4"
+      regions: "hcl:[]"
   compliance_family:
     prereqs: |
       resource "kion_compliance_program" "test_program" {
@@ -471,7 +480,7 @@ resources:
         owner_user_ids       = [1]
       }
     create:
-      amount: "1000.00"
+      amount: "1000"
       end_datecode: "2026-12"
       name: "%[1]s"
       ou_id: "hcl:kion_ou.test_ou.id"
@@ -479,7 +488,7 @@ resources:
       permission_scheme_id: "hcl:kion_permission_scheme.test_fs_perm.id"
       start_datecode: "2026-01"
     update:
-      amount: "2000.00"
+      amount: "2000"
       description: "test-acc-updated"
       end_datecode: "2027-12"
       name: "%[1]s"
@@ -569,16 +578,21 @@ resources:
         permission_scheme_id = kion_permission_scheme.test_perm.id
         owner_user_ids       = [1]
       }
+    import_unrecoverable:
+      - attr: aws_session_tags
+        reason: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
     create:
       name: "%[1]s"
       ou_id: "hcl:kion_ou.test_ou.id"
       short_term_access_keys: "true"
+      aws_session_tags: "hcl:[{ tag_key = \"env\", tag_value = \"test\" }, { tag_key = \"team\", tag_value = \"test-acc\" }]"
       user_ids: "hcl:[1]"
       web_access: "true"
     update:
       name: "%[1]s"
       ou_id: "hcl:kion_ou.test_ou.id"
       short_term_access_keys: "false"
+      aws_session_tags: "hcl:[{ tag_key = \"team\", tag_value = \"test-acc\" }, { tag_key = \"env\", tag_value = \"test\" }]"
       user_ids: "hcl:[1]"
       web_access: "true"
   ou_note:
@@ -653,10 +667,14 @@ resources:
         permission_scheme_id = kion_permission_scheme.test_perm_project.id
         owner_user_ids       = [1]
       }
+    import_unrecoverable:
+      - attr: aws_session_tags
+        reason: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
     create:
       apply_to_all_accounts: "true"
       name: "%[1]s"
       project_id: "hcl:kion_project.test_project.id"
+      aws_session_tags: "hcl:[{ tag_key = \"env\", tag_value = \"test\" }, { tag_key = \"team\", tag_value = \"test-acc\" }]"
       short_term_access_keys: "true"
       user_ids: "hcl:[1]"
       web_access: "true"
@@ -664,6 +682,7 @@ resources:
       apply_to_all_accounts: "true"
       name: "%[1]s"
       project_id: "hcl:kion_project.test_project.id"
+      aws_session_tags: "hcl:[{ tag_key = \"team\", tag_value = \"test-acc\" }, { tag_key = \"env\", tag_value = \"test\" }]"
       short_term_access_keys: "false"
       user_ids: "hcl:[1]"
       web_access: "true"
@@ -751,6 +770,9 @@ resources:
         }]
       }
     extra_args: ["acctest.ShortName(rName, 16)"]
+    import_unrecoverable:
+      - attr: criteria
+        reason: a create-time seed for the scope's first criteria record, which Kion expands and kion_scope_criteria then manages; the scope read does not return it
     create:
       alias: "%[2]s"
       criteria: "hcl:jsonencode({})"

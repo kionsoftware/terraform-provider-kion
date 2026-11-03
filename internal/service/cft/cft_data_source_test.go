@@ -44,6 +44,7 @@ resource "kion_cft" "test" {
   owner_user_ids = [1]
   policy = jsonencode({ AWSTemplateFormatVersion = "2010-09-09", Description = "test-acc", Resources = { Topic = { Type = "AWS::SNS::Topic" } } })
   regions = ["us-east-1"]
+  tags = [{ tag_key = "team", tag_value = "test-acc" }, { tag_key = "env", tag_value = "test" }]
 }
 
 data "kion_cft" "test" {

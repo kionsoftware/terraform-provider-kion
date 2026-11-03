@@ -48,6 +48,7 @@ func TestAccKionComplianceControl_basic(t *testing.T) {
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
+				ImportStateIdFunc: testAccComplianceControlImportID(resourceName),
 				ImportStateVerify: true,
 			},
 		},
@@ -100,10 +101,23 @@ func TestAccKionComplianceControl_update(t *testing.T) {
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
+				ImportStateIdFunc: testAccComplianceControlImportID(resourceName),
 				ImportStateVerify: true,
 			},
 		},
 	})
+}
+
+// testAccComplianceControlImportID builds the compound "program_id/id" import id
+// from state: the read cannot recover the parent from the record id alone.
+func testAccComplianceControlImportID(name string) resource.ImportStateIdFunc {
+	return func(s *terraform.State) (string, error) {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return "", fmt.Errorf("not found: %s", name)
+		}
+		return rs.Primary.Attributes["program_id"] + "/" + rs.Primary.ID, nil
+	}
 }
 
 func testAccCheckComplianceControlExists(_ context.Context, name string) resource.TestCheckFunc {

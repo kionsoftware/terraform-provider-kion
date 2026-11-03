@@ -51,11 +51,17 @@ type archetype struct {
 	DeleteRetains bool     `yaml:"delete_retains"`
 	JSONFields    []string `yaml:"json_fields"`
 	// EmptyCollections are attributes whose empty value the API stores and
-	// returns as null, so null and empty are one state on the wire. The read
+	// returns as null (or, for strings, as [""]), so null and empty are one
+	// state on the wire. The read
 	// collapses both to an empty collection; keeping them distinct makes a
 	// configured `[]` diff for ever, and fails the apply outright when the
 	// attribute is Required or explicitly set.
 	EmptyCollections []string `yaml:"empty_collections"`
+	// ListOrderKeys maps a nested-object list to the element attribute that
+	// identifies an element. The API returns such a list in an order of its
+	// own, so the read puts its elements back in the prior state's order,
+	// matched on that attribute, rather than failing the apply.
+	ListOrderKeys map[string]string `yaml:"list_order_keys"`
 	// Asymmetric 2-param delete (kind: entity). See ResourceModel.DeleteRecordParam.
 	DeleteRecordParam string `yaml:"delete_record_param"`
 	DeleteExtraParam  string `yaml:"delete_extra_param"`
@@ -73,6 +79,10 @@ type archetype struct {
 	// unknown, so the read finds the one whose confirm_listed list holds the
 	// record and sets create_parent_field from it.
 	ConfirmParents string `yaml:"confirm_parents"`
+	// MissingViaList (kind: entity) is a list path consulted when the by-id read
+	// answers a 500: an id the list omits is treated as deleted. For reads that
+	// answer a missing record with a 500 rather than a 404.
+	MissingViaList string `yaml:"missing_via_list"`
 	// CreateViaUpdate (kind: parent_list) lists attributes only the update body
 	// carries; a configured value is applied by an update right after create.
 	CreateViaUpdate []string `yaml:"create_via_update"`

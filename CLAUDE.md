@@ -170,7 +170,7 @@ wrappers, and `no_read` resources that import as empty shells).
 GitHub Actions only; there is no `.gitlab-ci.yml`. `.github/workflows/ci.yml` runs on pull requests and pushes to `main`: `fmt`, `vet`, `lint`, `test-unit` (race detector + coverage), `acctest-config` (test HCL matches provider schema), `docs` (docs/examples drift gate), `modules` (drift + `terraform validate`/`test` over every module), `align-check` (`kalign check` against the two-way ratchet in `codegen/align_baseline.yaml`; `make align-baseline` rewrites it, keeping reasons), `internal-refs`, `secrets`, `codeql`, and a `ci` aggregator job for branch protection. `.github/workflows/release.yml` runs goreleaser on a `v*` tag; the tag is the version — nothing in the repo records it. No kion-sdk-go checkout is needed anywhere: the module proxy resolves the version `go.mod` requires (do not reintroduce a clone step in workflows — it would silently override the pin). Local `make ci` covers every job except `codeql`. See `.github/workflows/README.md`.
 
 Acceptance tests are generated from `codegen/test_values.yaml` (see its header
-for `env_args`/`require_env`/`known_issues`/`prereqs`/`fixtures`/`extra_args`/`hcl:`). Every resource that
+for `env_args`/`require_env`/`known_issues`/`import_unrecoverable`/`prereqs`/`fixtures`/`extra_args`/`hcl:`). Every resource that
 can have one has one — 74 of 75, `gcp_regions` being data-source-only. The
 entity, parent_list, blended, association, raw_http and no_read archetypes
 derive them, each probing the API the way that archetype reads (get by id,

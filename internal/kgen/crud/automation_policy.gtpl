@@ -64,8 +64,9 @@ type wireCore struct {
 // wireNullTime writes the sql.NullTime object form the backend decodes into
 // (domain/util.NullTime declares no UnmarshalJSON, so a bare timestamp string
 // fails to parse server-side) while accepting either rendering on the way back.
+// An unset date omits Time: "" is no time.Time either, and Kion answers it 422.
 type wireNullTime struct {
-	Time  string `json:"Time"`
+	Time  string `json:"Time,omitempty"`
 	Valid bool   `json:"Valid"`
 }
 
@@ -132,22 +133,30 @@ type automation_policyReadEnvelope struct {
 }
 
 type automation_policyCreateEnvelope struct {
-	RecordID int64 `json:"record_id"`
-	Data     struct {
-		AutomationPolicy struct {
-			ID int64 `json:"id"`
-		} `json:"automation_policy"`
-	} `json:"data"`
+	RecordID int64           `json:"record_id"`
+	Data     json.RawMessage `json:"data"`
 }
 
-// id returns whichever of the two shapes carried the new record's id. The
-// create answers with the whole augmented policy rather than the {"record_id":…}
-// the public v3 creates use, so record_id alone would always read as zero.
+// id returns whichever shape carried the new record's id: Kion answers
+// with the bare id ("data": 5), but record_id and an augmented-policy object
+// are accepted too. Anything else reads as zero, which RawCreatedID rejects.
 func (e automation_policyCreateEnvelope) id() int64 {
 	if e.RecordID > 0 {
 		return e.RecordID
 	}
-	return e.Data.AutomationPolicy.ID
+	var bare int64
+	if json.Unmarshal(e.Data, &bare) == nil {
+		return bare
+	}
+	var obj struct {
+		AutomationPolicy struct {
+			ID int64 `json:"id"`
+		} `json:"automation_policy"`
+	}
+	if json.Unmarshal(e.Data, &obj) == nil {
+		return obj.AutomationPolicy.ID
+	}
+	return 0
 }
 
 func (r *automation_policyResource) wireFromModel(ctx context.Context, plan *AutomationPolicyModel) (automation_policyWire, diag.Diagnostics) {

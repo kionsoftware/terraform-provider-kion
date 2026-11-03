@@ -36,6 +36,7 @@ func TestAccKionOuCloudAccessRole_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckOuCloudAccessRoleExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "aws_session_tags.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttrSet(resourceName, "ou_id"),
 					resource.TestCheckResourceAttr(resourceName, "short_term_access_keys", "true"),
@@ -47,6 +48,8 @@ func TestAccKionOuCloudAccessRole_basic(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// aws_session_tags: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
+				ImportStateVerifyIgnore: []string{"aws_session_tags"},
 			},
 		},
 	})
@@ -71,6 +74,7 @@ func TestAccKionOuCloudAccessRole_update(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckOuCloudAccessRoleExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "aws_session_tags.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttrSet(resourceName, "ou_id"),
 					resource.TestCheckResourceAttr(resourceName, "short_term_access_keys", "true"),
@@ -83,6 +87,7 @@ func TestAccKionOuCloudAccessRole_update(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckOuCloudAccessRoleExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "aws_session_tags.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttrSet(resourceName, "ou_id"),
 					resource.TestCheckResourceAttr(resourceName, "short_term_access_keys", "false"),
@@ -94,6 +99,8 @@ func TestAccKionOuCloudAccessRole_update(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// aws_session_tags: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
+				ImportStateVerifyIgnore: []string{"aws_session_tags"},
 			},
 		},
 	})
@@ -179,6 +186,7 @@ resource "kion_ou" "test_ou" {
 }
 
 resource "kion_ou_cloud_access_role" "test" {
+  aws_session_tags = [{ tag_key = "env", tag_value = "test" }, { tag_key = "team", tag_value = "test-acc" }]
   name = "%[1]s"
   ou_id = kion_ou.test_ou.id
   short_term_access_keys = true
@@ -202,6 +210,7 @@ resource "kion_ou" "test_ou" {
 }
 
 resource "kion_ou_cloud_access_role" "test" {
+  aws_session_tags = [{ tag_key = "team", tag_value = "test-acc" }, { tag_key = "env", tag_value = "test" }]
   name = "%[1]s"
   ou_id = kion_ou.test_ou.id
   short_term_access_keys = false

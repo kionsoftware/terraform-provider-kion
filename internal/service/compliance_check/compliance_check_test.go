@@ -90,6 +90,7 @@ func TestAccKionComplianceCheck_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", "test-acc compliance check updated"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttr(resourceName, "owner_user_ids.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "regions.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "severity_type_id", "4"),
 				),
 			},
@@ -189,6 +190,7 @@ resource "kion_compliance_check" "test" {
   description = "test-acc compliance check updated"
   name = "%[1]s"
   owner_user_ids = [1]
+  regions = []
   severity_type_id = 4
 }
 `, rName)

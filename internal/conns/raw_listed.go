@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 )
 
 // RawIDListed reports whether the collection at path lists a record with id.
@@ -33,6 +34,54 @@ func (c *KionClient) RawIDListed(ctx context.Context, path string, id int64) (bo
 	return false, nil
 }
 
+// RawKeyListed is RawIDListed for a record whose id is a string (an OAuth
+// client's), compared as text so a numeric id matches too.
+func (c *KionClient) RawKeyListed(ctx context.Context, path, key string) (bool, error) {
+	body, err := c.RawGet(ctx, path)
+	if err != nil {
+		if IsRawNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	recs, err := listRecords[keyRecord](path, body)
+	if err != nil {
+		return false, err
+	}
+	return slices.ContainsFunc(recs, func(r keyRecord) bool {
+		var s string
+		if json.Unmarshal(r.ID, &s) == nil {
+			return s == key
+		}
+		return string(r.ID) == key
+	}), nil
+}
+
+type keyRecord struct {
+	ID json.RawMessage `json:"id"`
+}
+
+// listRecords decodes either list envelope: {"data":[…]} or {"data":{"items":[…]}}.
+func listRecords[T any](path string, body []byte) ([]T, error) {
+	var env struct {
+		Data json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(body, &env); err != nil {
+		return nil, fmt.Errorf("decoding %s: %w", path, err)
+	}
+	var recs []T
+	if err := json.Unmarshal(env.Data, &recs); err != nil {
+		var paged struct {
+			Items []T `json:"items"`
+		}
+		if perr := json.Unmarshal(env.Data, &paged); perr != nil {
+			return nil, fmt.Errorf("decoding %s: data is neither a list nor {items}", path)
+		}
+		recs = paged.Items
+	}
+	return recs, nil
+}
+
 // RawListIDs returns the ids of every record the collection at path lists,
 // from either list envelope: {"data":[…]} or {"data":{"items":[…]}}.
 func (c *KionClient) RawListIDs(ctx context.Context, path string) ([]int64, error) {
@@ -40,24 +89,11 @@ func (c *KionClient) RawListIDs(ctx context.Context, path string) ([]int64, erro
 	if err != nil {
 		return nil, err
 	}
-	var env struct {
-		Data json.RawMessage `json:"data"`
-	}
-	if err := json.Unmarshal(body, &env); err != nil {
-		return nil, fmt.Errorf("decoding %s: %w", path, err)
-	}
-	type rec struct {
+	recs, err := listRecords[struct {
 		ID int64 `json:"id"`
-	}
-	var recs []rec
-	if err := json.Unmarshal(env.Data, &recs); err != nil {
-		var paged struct {
-			Items []rec `json:"items"`
-		}
-		if perr := json.Unmarshal(env.Data, &paged); perr != nil {
-			return nil, fmt.Errorf("decoding %s: data is neither a list nor {items}", path)
-		}
-		recs = paged.Items
+	}](path, body)
+	if err != nil {
+		return nil, err
 	}
 	ids := make([]int64, len(recs))
 	for i, r := range recs {

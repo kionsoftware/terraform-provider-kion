@@ -82,7 +82,7 @@ resource "kion_automation_policy" "test" {
     cloud_provider_id    = 1
     apply_to_all_regions = true
     policy               = %[2]q
-    resources            = ["ec2"]
+    resources            = ["aws.ec2"]
     regions              = []
   }]
 }

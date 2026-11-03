@@ -38,7 +38,7 @@ func TestAccKionBillingSourceGcp_basic(t *testing.T) {
 					testAccCheckBillingSourceGcpExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "account_type_id", "15"),
-					resource.TestCheckResourceAttrSet(resourceName, "gcp_billing_account_create"),
+					resource.TestCheckResourceAttrSet(resourceName, "gcp_billing_account_create.%"),
 				),
 			},
 			{

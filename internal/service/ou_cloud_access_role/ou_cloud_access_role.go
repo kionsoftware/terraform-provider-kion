@@ -405,6 +405,9 @@ func flattenOuCloudAccessRole(ctx context.Context, apiObject any, model *OuCloud
 			}
 			aWSSessionTagsValsList, aWSSessionTagsValsLD := types.ListValueFrom(ctx, AwsSessionTagsValue{}.Type(ctx), aWSSessionTagsValsElems)
 			diags.Append(aWSSessionTagsValsLD...)
+			// list_order_keys: Kion returns these in an order of its own.
+			aWSSessionTagsValsList, aWSSessionTagsValsLD = flex.OrderLikePrior(ctx, model.AwsSessionTags, aWSSessionTagsValsList, "tag_key")
+			diags.Append(aWSSessionTagsValsLD...)
 			model.AwsSessionTags = aWSSessionTagsValsList
 			var aWSIamPoliciesIDs []int64
 			for _, elem := range v.Data.Value.AWSIamPolicies.Value {

@@ -342,6 +342,9 @@ func flattenCft(ctx context.Context, apiObject any, model *CftModel) diag.Diagno
 			}
 			tagsValsList, tagsValsLD := types.ListValueFrom(ctx, TagsValue{}.Type(ctx), tagsValsElems)
 			diags.Append(tagsValsLD...)
+			// list_order_keys: Kion returns these in an order of its own.
+			tagsValsList, tagsValsLD = flex.OrderLikePrior(ctx, model.Tags, tagsValsList, "tag_key")
+			diags.Append(tagsValsLD...)
 			model.Tags = tagsValsList
 			var ownerUserGroupsIDs []int64
 			for _, elem := range v.Data.Value.OwnerUserGroups.Value {

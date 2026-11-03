@@ -41,12 +41,15 @@ func TestAccKionCft_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "owner_user_ids.#", "1"),
 					resource.TestCheckResourceAttrSet(resourceName, "policy"),
 					resource.TestCheckResourceAttr(resourceName, "regions.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "tags.#", "2"),
 				),
 			},
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// tags: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
+				ImportStateVerifyIgnore: []string{"tags"},
 			},
 		},
 	})
@@ -76,6 +79,7 @@ func TestAccKionCft_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "owner_user_ids.#", "1"),
 					resource.TestCheckResourceAttrSet(resourceName, "policy"),
 					resource.TestCheckResourceAttr(resourceName, "regions.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "tags.#", "2"),
 				),
 			},
 			{
@@ -88,12 +92,15 @@ func TestAccKionCft_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "owner_user_ids.#", "1"),
 					resource.TestCheckResourceAttrSet(resourceName, "policy"),
 					resource.TestCheckResourceAttr(resourceName, "regions.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "tags.#", "2"),
 				),
 			},
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// tags: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
+				ImportStateVerifyIgnore: []string{"tags"},
 			},
 		},
 	})
@@ -173,6 +180,7 @@ resource "kion_cft" "test" {
   owner_user_ids = [1]
   policy = jsonencode({ AWSTemplateFormatVersion = "2010-09-09", Description = "test-acc", Resources = { Topic = { Type = "AWS::SNS::Topic" } } })
   regions = ["us-east-1"]
+  tags = [{ tag_key = "team", tag_value = "test-acc" }, { tag_key = "env", tag_value = "test" }]
 }
 `, rName)
 }
@@ -185,6 +193,7 @@ resource "kion_cft" "test" {
   owner_user_ids = [1]
   policy = jsonencode({ AWSTemplateFormatVersion = "2010-09-09", Description = "test-acc", Resources = { Topic = { Type = "AWS::SNS::Topic" } } })
   regions = ["us-east-1"]
+  tags = [{ tag_key = "env", tag_value = "test" }, { tag_key = "team", tag_value = "test-acc" }]
 }
 `, rName)
 }

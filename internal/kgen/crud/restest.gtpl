@@ -57,8 +57,10 @@ func TestAccKion{{.Pascal}}_basic(t *testing.T) {
 			},
 			{
 				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,{{if .ImportVerifyIgnore}}
+				ImportState:       true,{{if .ImportParentTF}}
+				ImportStateIdFunc: testAcc{{.Pascal}}ImportID(resourceName),{{end}}
+				ImportStateVerify: true,{{range .ImportUnrecoverable}}
+				// {{.Attr}}: {{.Reason}}{{end}}{{if .ImportVerifyIgnore}}
 				ImportStateVerifyIgnore: []string{ {{- range $i, $a := .ImportVerifyIgnore}}{{if $i}}, {{end}}{{printf "%q" $a}}{{end -}} },{{end}}
 			},
 		},
@@ -112,12 +114,26 @@ func TestAccKion{{.Pascal}}_update(t *testing.T) {
 			},
 			{
 				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,{{if .ImportVerifyIgnore}}
+				ImportState:       true,{{if .ImportParentTF}}
+				ImportStateIdFunc: testAcc{{.Pascal}}ImportID(resourceName),{{end}}
+				ImportStateVerify: true,{{range .ImportUnrecoverable}}
+				// {{.Attr}}: {{.Reason}}{{end}}{{if .ImportVerifyIgnore}}
 				ImportStateVerifyIgnore: []string{ {{- range $i, $a := .ImportVerifyIgnore}}{{if $i}}, {{end}}{{printf "%q" $a}}{{end -}} },{{end}}
 			},
 		},
 	})
+}
+{{end}}{{if .ImportParentTF}}
+// testAcc{{.Pascal}}ImportID builds the compound "{{.ImportParentTF}}/id" import id
+// from state: the read cannot recover the parent from the record id alone.
+func testAcc{{.Pascal}}ImportID(name string) resource.ImportStateIdFunc {
+	return func(s *terraform.State) (string, error) {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return "", fmt.Errorf("not found: %s", name)
+		}
+		return rs.Primary.Attributes["{{.ImportParentTF}}"] + "/" + rs.Primary.ID, nil
+	}
 }
 {{end}}
 func testAccCheck{{.Pascal}}Exists(_ context.Context, name string) resource.TestCheckFunc {
@@ -178,6 +194,14 @@ func testAccCheck{{.Pascal}}Destroy(_ context.Context) resource.TestCheckFunc {
 			if err != nil {
 				return fmt.Errorf("reading {{.ResourceType}} ({{.IDFormat}}): %w", id, err)
 			}
+			{{- if .MissingViaList}}
+			// The read answers a deleted record with a 500; the list omits it.
+			if errs.IsInternalServerError(out) {
+				if listed, lerr := conn.{{if eq .IDParamType "string"}}RawKeyListed{{else}}RawIDListed{{end}}(ctx, "{{.MissingViaList}}", {{if eq .IDParamType "string"}}id{{else}}int64(id){{end}}); lerr == nil && !listed {
+					continue
+				}
+			}
+			{{- end}}
 			{{- if .ConfirmListed}}
 			// The by-id read serves soft-deleted records; the parent list does not.
 			path := strings.Replace("{{.ConfirmListed}}", "{id}", rs.Primary.Attributes["{{.ConfirmListedTF}}"], 1)

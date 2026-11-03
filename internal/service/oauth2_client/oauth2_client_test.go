@@ -157,6 +157,12 @@ func testAccCheckOauth2ClientDestroy(_ context.Context) resource.TestCheckFunc {
 			if err != nil {
 				return fmt.Errorf("reading kion_oauth2_client (%s): %w", id, err)
 			}
+			// The read answers a deleted record with a 500; the list omits it.
+			if errs.IsInternalServerError(out) {
+				if listed, lerr := conn.RawKeyListed(ctx, "/v3/oauth2/clients", id); lerr == nil && !listed {
+					continue
+				}
+			}
 
 			return fmt.Errorf("kion_oauth2_client (%s) still exists", id)
 		}

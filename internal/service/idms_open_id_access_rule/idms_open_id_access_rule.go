@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -122,6 +123,38 @@ func (r *idms_open_id_access_ruleResource) Read(ctx context.Context, req resourc
 	if errs.IsNotFound(out) {
 		resp.State.RemoveResource(ctx)
 		return
+	}
+
+	// The by-id read serves soft-deleted records; the parent list does not.
+	// On import the parent is unknown and the read does not return it, so find
+	// the parent whose list holds the record; none means it was deleted.
+	if state.OpenIdId.IsNull() || state.OpenIdId.IsUnknown() {
+		parents, perr := r.Meta().RawListIDs(ctx, "/v3/idms")
+		if perr != nil {
+			resp.Diagnostics.AddError(fmt.Sprintf("finding the parent of %s (ID: %d)", ResNameIdmsOpenIdAccessRule, idInt), perr.Error())
+			return
+		}
+		for _, pid := range parents {
+			if listed, lerr := r.Meta().RawIDListed(ctx, strings.Replace("/v4/idms/open-id/{id}/access-rule", "{id}", strconv.FormatInt(pid, 10), 1), idInt); lerr == nil && listed {
+				state.OpenIdId = types.Int64Value(pid)
+				break
+			}
+		}
+		if state.OpenIdId.IsNull() || state.OpenIdId.IsUnknown() {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+	}
+	if parent := state.OpenIdId; !parent.IsNull() && !parent.IsUnknown() {
+		listed, lerr := r.Meta().RawIDListed(ctx, strings.Replace("/v4/idms/open-id/{id}/access-rule", "{id}", strconv.FormatInt(parent.ValueInt64(), 10), 1), idInt)
+		if lerr != nil {
+			resp.Diagnostics.AddError(fmt.Sprintf("listing %s (ID: %d)", ResNameIdmsOpenIdAccessRule, idInt), lerr.Error())
+			return
+		}
+		if !listed {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 	}
 
 	resp.Diagnostics.Append(flattenIdmsOpenIdAccessRule(out, &state)...)

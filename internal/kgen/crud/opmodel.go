@@ -154,6 +154,8 @@ type ResourceModel struct {
 	ImportParentTF   string
 	// EmptyCollections: see archetype.EmptyCollections.
 	EmptyCollections []string
+	// ListOrderKeys: see archetype.ListOrderKeys.
+	ListOrderKeys map[string]string
 	// Renames maps this resource's API attribute names to its provider ones.
 	Renames map[string]string
 	Pascal  string       // "Label"
@@ -202,6 +204,7 @@ type ResourceModel struct {
 	ConfirmListed   string
 	ConfirmListedTF string
 	ConfirmParents  string
+	MissingViaList  string // see the archetype field
 	// Nested-object fields: create/update body objects expanded to SDK structs,
 	// read-payload objects flattened into tfplugingen Value types.
 	CreateNested nestedResult

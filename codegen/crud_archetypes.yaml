@@ -30,6 +30,14 @@
 #                and Update keep state's value. An entry that is not a string
 #                attribute, or not a string field on the create response,
 #                fails generation.
+#
+#   missing_via_list  list path consulted when the by-id read answers a 500:
+#                an id the list omits is treated as deleted.
+#
+#   list_order_keys  nested-object list -> element attribute identifying an
+#                element. The read keeps the prior state's order, matched on it,
+#                for a list the API returns in an order of its own. A list the
+#                read does not flatten, or a missing attribute, fails generation.
 
 scope_criteria:
   kind: compound_key_parent_read
@@ -105,6 +113,29 @@ webhook:
   empty_collections:
     - owner_user_group_ids
     - owner_user_ids
+
+# Kion returns session tags (and stack tags) in creation order, and an update
+# keeps a tag it already has, so reordering them failed the apply with "Provider
+# produced inconsistent result". The read keeps the configured order instead.
+project_cloud_access_role:
+  kind: entity
+  list_order_keys:
+    aws_session_tags: tag_key
+ou_cloud_access_role:
+  kind: entity
+  list_order_keys:
+    aws_session_tags: tag_key
+cft:
+  kind: entity
+  list_order_keys:
+    tags: tag_key
+
+compliance_check:
+  kind: entity
+  # Kion stores an empty region list as [""], so a configured `[]` read back
+  # with one blank element and failed the apply.
+  empty_collections:
+    - regions
 
 compliance_control:
   kind: entity
@@ -382,6 +413,10 @@ idms_open_id_access_rule:
   kind: entity
   create_parent_param: ID
   create_parent_field: open_id_id
+  # The by-id read omits open_id_id, so import recovers it from the parent
+  # lists, as group-association below does.
+  confirm_listed: /v4/idms/open-id/{id}/access-rule
+  confirm_parents: /v3/idms
 idms_open_id_group_association:
   kind: entity
   create_parent_param: ID
@@ -451,3 +486,5 @@ automation_policy:
 oauth2_client:
   kind: entity
   create_only: [secret]
+  # GET /v3/oauth2/clients/{id} answers a deleted or unknown id with a 500.
+  missing_via_list: /v3/oauth2/clients

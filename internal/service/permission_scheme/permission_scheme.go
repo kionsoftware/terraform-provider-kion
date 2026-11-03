@@ -73,6 +73,11 @@ func (r *permission_schemeResource) read(ctx context.Context, id int64) (permiss
 		if conns.IsRawNotFound(err) {
 			return permission_schemeWire{}, false, nil
 		}
+		// This read answers a missing record with a 500, not a 404; the list
+		// omits deleted records, so absence there means deleted.
+		if listed, lerr := r.Meta().RawIDListed(ctx, "/v3/permission-scheme", id); lerr == nil && !listed {
+			return permission_schemeWire{}, false, nil
+		}
 		return permission_schemeWire{}, false, err
 	}
 	var w permission_schemeWire

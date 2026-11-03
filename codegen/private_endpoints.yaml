@@ -175,6 +175,8 @@ resources:
     reason: public read omits the roles mapping; private /v2/app-policy has it
     create: { method: POST,   path: "/v3/permission-scheme",      spec: public }
     read:   { method: GET,    path: "/v2/app-policy/{id}",        spec: private }
+    # The read answers a deleted scheme with a 500; the public list omits it.
+    missing_via_list: /v3/permission-scheme
     update: { method: PUT,    path: "/v3/permission-scheme/{id}", spec: public }
     delete: { method: DELETE, path: "/v3/permission-scheme/{id}", spec: public }
     read_shape:

@@ -526,6 +526,8 @@ type arrFlat struct {
 	Var       string // "tags"
 	SrcPath   string // "v.Data.Value.Tags.Value" (the []SDKElem to iterate)
 	Subs      []flatSub
+	TFSDK     string // model attribute, matched against list_order_keys
+	OrderKey  string // element attribute to restore the prior order by; "" keeps the API's
 }
 
 // idProjFlat flattens a response struct-array into a plain list/set of int64
@@ -698,7 +700,7 @@ func resolveNestedFlatten(src Source, schemaGen string, fields []Field, byTF map
 			if strings.HasPrefix(f.Type, "Opt") {
 				src += ".Value" // unwrap the OptNil<T>Array
 			}
-			res.Arrs = append(res.Arrs, arrFlat{ModelGo: mf.GoName, ValueType: valueType, Var: lowerFirst(f.GoName) + "Vals", SrcPath: src, Subs: subs})
+			res.Arrs = append(res.Arrs, arrFlat{ModelGo: mf.GoName, ValueType: valueType, Var: lowerFirst(f.GoName) + "Vals", SrcPath: src, Subs: subs, TFSDK: mf.TFSDK})
 			res.Names[f.JSONName] = true
 			continue
 		}
