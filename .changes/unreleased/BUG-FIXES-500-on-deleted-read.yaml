@@ -1,6 +1,0 @@
-kind: BUG FIXES
-body: >-
-  kion_oauth2_client, kion_permission_scheme: a record deleted outside Terraform no longer fails every refresh with
-  "API returned status 500". Kion answers a by-id read of a deleted record with a 500 rather than a 404; the read now
-  checks the record's list and drops it from state when the list omits it, as kion_app_role already did.
-time: 2026-11-03T15:22:36Z

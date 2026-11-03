@@ -1,6 +1,0 @@
-kind: BUG FIXES
-body: >-
-  kion_project_cloud_access_role, kion_ou_cloud_access_role, kion_cft: reordering aws_session_tags (tags on kion_cft)
-  no longer fails the apply with "Provider produced inconsistent result". Kion returns tags in creation order and keeps
-  a tag it already has, so the read now keeps the configured order, matched on tag_key.
-time: 2026-11-03T14:55:46Z
