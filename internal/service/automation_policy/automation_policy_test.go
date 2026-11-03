@@ -42,7 +42,7 @@ func TestAccKionAutomationPolicy_basic(t *testing.T) {
 					// template; assert it survived the envelope round trip rather
 					// than only that the record exists.
 					resource.TestCheckResourceAttr(resourceName, "cloud_provider_policies.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "cloud_provider_policies.0.resources.0", "ec2"),
+					resource.TestCheckResourceAttr(resourceName, "cloud_provider_policies.0.resources.0", "aws.ec2"),
 				),
 			},
 			{
@@ -181,7 +181,7 @@ func testAccCheckAutomationPolicyDestroy(ctx context.Context) resource.TestCheck
 // well-formed document the backend accepts.
 const testAccAutomationPolicyBody = `policies:
   - name: test-acc-noop
-    resource: ec2
+    resource: aws.ec2
 `
 
 func testAccAutomationPolicyConfig_basic(rName string) string {
@@ -198,7 +198,7 @@ resource "kion_automation_policy" "test" {
     cloud_provider_id    = 1
     apply_to_all_regions = true
     policy               = %[2]q
-    resources            = ["ec2"]
+    resources            = ["aws.ec2"]
     regions              = []
   }]
 }
@@ -228,7 +228,7 @@ resource "kion_automation_policy" "test" {
     cloud_provider_id    = 1
     apply_to_all_regions = true
     policy               = %[2]q
-    resources            = ["ec2"]
+    resources            = ["aws.ec2"]
     regions              = []
   }]
 }
