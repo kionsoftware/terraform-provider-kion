@@ -441,6 +441,8 @@ func flattenProjectCloudAccessRole(ctx context.Context, apiObject any, model *Pr
 			accountsIDs = flex.DedupeInt64(accountsIDs)
 			accountsIDsColl, accountsIDsCD := types.SetValueFrom(ctx, types.Int64Type, accountsIDs)
 			diags.Append(accountsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			accountsIDsColl = flex.SetEmptyLikePrior(ctx, model.AccountIds, accountsIDsColl)
 			model.AccountIds = accountsIDsColl
 			var aWSIamPoliciesIDs []int64
 			for _, elem := range v.Data.Value.AWSIamPolicies.Value {
@@ -453,6 +455,8 @@ func flattenProjectCloudAccessRole(ctx context.Context, apiObject any, model *Pr
 			aWSIamPoliciesIDs = flex.DedupeInt64(aWSIamPoliciesIDs)
 			aWSIamPoliciesIDsColl, aWSIamPoliciesIDsCD := types.SetValueFrom(ctx, types.Int64Type, aWSIamPoliciesIDs)
 			diags.Append(aWSIamPoliciesIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			aWSIamPoliciesIDsColl = flex.SetEmptyLikePrior(ctx, model.AwsIamPolicies, aWSIamPoliciesIDsColl)
 			model.AwsIamPolicies = aWSIamPoliciesIDsColl
 			var azureRoleDefinitionsIDs []int64
 			for _, elem := range v.Data.Value.AzureRoleDefinitions.Value {
@@ -465,6 +469,8 @@ func flattenProjectCloudAccessRole(ctx context.Context, apiObject any, model *Pr
 			azureRoleDefinitionsIDs = flex.DedupeInt64(azureRoleDefinitionsIDs)
 			azureRoleDefinitionsIDsColl, azureRoleDefinitionsIDsCD := types.SetValueFrom(ctx, types.Int64Type, azureRoleDefinitionsIDs)
 			diags.Append(azureRoleDefinitionsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			azureRoleDefinitionsIDsColl = flex.SetEmptyLikePrior(ctx, model.AzureRoleDefinitions, azureRoleDefinitionsIDsColl)
 			model.AzureRoleDefinitions = azureRoleDefinitionsIDsColl
 			var gcpIamRolesIDs []int64
 			for _, elem := range v.Data.Value.GcpIamRoles.Value {
@@ -477,6 +483,8 @@ func flattenProjectCloudAccessRole(ctx context.Context, apiObject any, model *Pr
 			gcpIamRolesIDs = flex.DedupeInt64(gcpIamRolesIDs)
 			gcpIamRolesIDsColl, gcpIamRolesIDsCD := types.SetValueFrom(ctx, types.Int64Type, gcpIamRolesIDs)
 			diags.Append(gcpIamRolesIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			gcpIamRolesIDsColl = flex.SetEmptyLikePrior(ctx, model.GcpIamRoles, gcpIamRolesIDsColl)
 			model.GcpIamRoles = gcpIamRolesIDsColl
 			var userGroupsIDs []int64
 			for _, elem := range v.Data.Value.UserGroups.Value {
@@ -489,6 +497,8 @@ func flattenProjectCloudAccessRole(ctx context.Context, apiObject any, model *Pr
 			userGroupsIDs = flex.DedupeInt64(userGroupsIDs)
 			userGroupsIDsColl, userGroupsIDsCD := types.SetValueFrom(ctx, types.Int64Type, userGroupsIDs)
 			diags.Append(userGroupsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			userGroupsIDsColl = flex.SetEmptyLikePrior(ctx, model.UserGroupIds, userGroupsIDsColl)
 			model.UserGroupIds = userGroupsIDsColl
 			var usersIDs []int64
 			for _, elem := range v.Data.Value.Users.Value {
@@ -501,6 +511,8 @@ func flattenProjectCloudAccessRole(ctx context.Context, apiObject any, model *Pr
 			usersIDs = flex.DedupeInt64(usersIDs)
 			usersIDsColl, usersIDsCD := types.SetValueFrom(ctx, types.Int64Type, usersIDs)
 			diags.Append(usersIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			usersIDsColl = flex.SetEmptyLikePrior(ctx, model.UserIds, usersIDsColl)
 			model.UserIds = usersIDsColl
 			if v.Data.Value.AWSIamPermissionsBoundary.Set {
 				model.AwsIamPermissionsBoundary = types.Int64Value(int64(v.Data.Value.AWSIamPermissionsBoundary.Value.ID.Value))

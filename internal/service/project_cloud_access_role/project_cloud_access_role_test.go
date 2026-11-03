@@ -91,9 +91,11 @@ func TestAccKionProjectCloudAccessRole_update(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "apply_to_all_accounts", "true"),
 					resource.TestCheckResourceAttr(resourceName, "aws_session_tags.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "gcp_iam_roles.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttrSet(resourceName, "project_id"),
 					resource.TestCheckResourceAttr(resourceName, "short_term_access_keys", "false"),
+					resource.TestCheckResourceAttr(resourceName, "user_group_ids.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "user_ids.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "web_access", "true"),
 				),
@@ -236,9 +238,11 @@ resource "kion_project" "test_project" {
 resource "kion_project_cloud_access_role" "test" {
   apply_to_all_accounts = true
   aws_session_tags = [{ tag_key = "team", tag_value = "test-acc" }, { tag_key = "env", tag_value = "test" }]
+  gcp_iam_roles = []
   name = "%[1]s"
   project_id = kion_project.test_project.id
   short_term_access_keys = false
+  user_group_ids = []
   user_ids = [1]
   web_access = true
 }

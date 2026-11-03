@@ -332,6 +332,8 @@ func flattenComplianceCheck(ctx context.Context, apiObject any, model *Complianc
 			ownerUserGroupsIDs = flex.DedupeInt64(ownerUserGroupsIDs)
 			ownerUserGroupsIDsColl, ownerUserGroupsIDsCD := types.SetValueFrom(ctx, types.Int64Type, ownerUserGroupsIDs)
 			diags.Append(ownerUserGroupsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			ownerUserGroupsIDsColl = flex.SetEmptyLikePrior(ctx, model.OwnerUserGroupIds, ownerUserGroupsIDsColl)
 			model.OwnerUserGroupIds = ownerUserGroupsIDsColl
 			var ownerUsersIDs []int64
 			for _, elem := range v.Data.Value.OwnerUsers.Value {
@@ -344,6 +346,8 @@ func flattenComplianceCheck(ctx context.Context, apiObject any, model *Complianc
 			ownerUsersIDs = flex.DedupeInt64(ownerUsersIDs)
 			ownerUsersIDsColl, ownerUsersIDsCD := types.SetValueFrom(ctx, types.Int64Type, ownerUsersIDs)
 			diags.Append(ownerUsersIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			ownerUsersIDsColl = flex.SetEmptyLikePrior(ctx, model.OwnerUserIds, ownerUsersIDsColl)
 			model.OwnerUserIds = ownerUsersIDsColl
 		}
 		return diags

@@ -82,6 +82,20 @@ budget:
 # (#68). Both are readable elsewhere -- the owners from the permission mapping's
 # owner-role row, the scheme from the private /v2 route behind the UI's
 # permissions tab -- which is what funding_source_read.gtpl does.
+# Kion stores an AWS policy document as compact JSON with sorted keys, so a
+# pretty-printed policy (a file() of a .json, say) failed the apply with
+# "Provider produced inconsistent result": .policy: was "{\n  \"Version\"...",
+# but now "{\"Statement\":[...],\"Version\":...}". jsonencode() output already
+# matches Kion's form, which is why the generated tests never hit it.
+iam_policy:
+  kind: entity
+  rewritten:
+    - policy
+service_control_policy:
+  kind: entity
+  rewritten:
+    - policy
+
 azure_role:
   kind: entity
   # Kion parses role_permissions into Azure's Permissions struct and re-marshals

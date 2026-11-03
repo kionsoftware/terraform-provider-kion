@@ -34,7 +34,9 @@ func TestGenerateLoopFailsOnlyTheBrokenResource(t *testing.T) {
 	var cfg strings.Builder
 	cfg.WriteString("resources:\n")
 	for _, n := range []string{"alpha", "bravo", "charlie"} {
-		cfg.WriteString("  " + n + ":\n" +
+		cfg.WriteString("  ")
+		cfg.WriteString(n)
+		cfg.WriteString(":\n" +
 			"    create: {path: /v3/label, method: POST}\n" +
 			"    read: {path: '/v3/label/{id}', method: GET}\n" +
 			"    update: {path: '/v3/label/{id}', method: PATCH}\n" +

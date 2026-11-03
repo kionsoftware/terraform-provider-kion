@@ -334,6 +334,8 @@ func flattenAzureRole(ctx context.Context, apiObject any, model *AzureRoleModel)
 			carRestrictedUsersIDs = flex.DedupeInt64(carRestrictedUsersIDs)
 			carRestrictedUsersIDsColl, carRestrictedUsersIDsCD := types.SetValueFrom(ctx, types.Int64Type, carRestrictedUsersIDs)
 			diags.Append(carRestrictedUsersIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			carRestrictedUsersIDsColl = flex.SetEmptyLikePrior(ctx, model.CarRestrictedUserIds, carRestrictedUsersIDsColl)
 			model.CarRestrictedUserIds = carRestrictedUsersIDsColl
 			var ownerUserGroupsIDs []int64
 			for _, elem := range v.Data.Value.OwnerUserGroups.Value {
@@ -346,6 +348,8 @@ func flattenAzureRole(ctx context.Context, apiObject any, model *AzureRoleModel)
 			ownerUserGroupsIDs = flex.DedupeInt64(ownerUserGroupsIDs)
 			ownerUserGroupsIDsColl, ownerUserGroupsIDsCD := types.SetValueFrom(ctx, types.Int64Type, ownerUserGroupsIDs)
 			diags.Append(ownerUserGroupsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			ownerUserGroupsIDsColl = flex.SetEmptyLikePrior(ctx, model.OwnerUserGroupIds, ownerUserGroupsIDsColl)
 			model.OwnerUserGroupIds = ownerUserGroupsIDsColl
 			var ownerUsersIDs []int64
 			for _, elem := range v.Data.Value.OwnerUsers.Value {
@@ -358,6 +362,8 @@ func flattenAzureRole(ctx context.Context, apiObject any, model *AzureRoleModel)
 			ownerUsersIDs = flex.DedupeInt64(ownerUsersIDs)
 			ownerUsersIDsColl, ownerUsersIDsCD := types.SetValueFrom(ctx, types.Int64Type, ownerUsersIDs)
 			diags.Append(ownerUsersIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			ownerUsersIDsColl = flex.SetEmptyLikePrior(ctx, model.OwnerUserIds, ownerUsersIDsColl)
 			model.OwnerUserIds = ownerUsersIDsColl
 		}
 		return diags

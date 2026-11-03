@@ -48,6 +48,8 @@ func TestAccKionAzureRole_basic(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// role_permissions: an import has no configured text to keep, so it reads Kion's canonical JSON, which is equivalent to but not textually the configured value
+				ImportStateVerifyIgnore: []string{"role_permissions"},
 			},
 		},
 	})
@@ -87,6 +89,7 @@ func TestAccKionAzureRole_update(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "car_restricted_user_group_ids.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
+					resource.TestCheckResourceAttr(resourceName, "owner_user_group_ids.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "owner_user_ids.#", "1"),
 					resource.TestCheckResourceAttrSet(resourceName, "role_permissions"),
 				),
@@ -95,6 +98,8 @@ func TestAccKionAzureRole_update(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// role_permissions: an import has no configured text to keep, so it reads Kion's canonical JSON, which is equivalent to but not textually the configured value
+				ImportStateVerifyIgnore: []string{"role_permissions"},
 			},
 		},
 	})
@@ -181,6 +186,7 @@ func testAccAzureRoleConfig_update(rName string) string {
 resource "kion_azure_role" "test" {
   car_restricted_user_group_ids = []
   name = "%[1]s"
+  owner_user_group_ids = []
   owner_user_ids = [1]
   role_permissions = jsonencode({ actions = ["Microsoft.Resources/subscriptions/resourceGroups/read"], notActions = [] })
 }

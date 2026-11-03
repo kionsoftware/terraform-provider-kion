@@ -525,6 +525,8 @@ func flattenCloudRule(ctx context.Context, apiObject any, model *CloudRuleModel)
 			azureArmTemplateDefinitionsIDs = flex.DedupeInt64(azureArmTemplateDefinitionsIDs)
 			azureArmTemplateDefinitionsIDsColl, azureArmTemplateDefinitionsIDsCD := types.SetValueFrom(ctx, types.Int64Type, azureArmTemplateDefinitionsIDs)
 			diags.Append(azureArmTemplateDefinitionsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			azureArmTemplateDefinitionsIDsColl = flex.SetEmptyLikePrior(ctx, model.AzureArmTemplateDefinitionIds, azureArmTemplateDefinitionsIDsColl)
 			model.AzureArmTemplateDefinitionIds = azureArmTemplateDefinitionsIDsColl
 			var azurePolicyDefinitionsIDs []int64
 			for _, elem := range v.Data.Value.AzurePolicyDefinitions.Value {
@@ -537,6 +539,8 @@ func flattenCloudRule(ctx context.Context, apiObject any, model *CloudRuleModel)
 			azurePolicyDefinitionsIDs = flex.DedupeInt64(azurePolicyDefinitionsIDs)
 			azurePolicyDefinitionsIDsColl, azurePolicyDefinitionsIDsCD := types.SetValueFrom(ctx, types.Int64Type, azurePolicyDefinitionsIDs)
 			diags.Append(azurePolicyDefinitionsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			azurePolicyDefinitionsIDsColl = flex.SetEmptyLikePrior(ctx, model.AzurePolicyDefinitionIds, azurePolicyDefinitionsIDsColl)
 			model.AzurePolicyDefinitionIds = azurePolicyDefinitionsIDsColl
 			var azureRoleDefinitionsIDs []int64
 			for _, elem := range v.Data.Value.AzureRoleDefinitions.Value {
@@ -549,6 +553,8 @@ func flattenCloudRule(ctx context.Context, apiObject any, model *CloudRuleModel)
 			azureRoleDefinitionsIDs = flex.DedupeInt64(azureRoleDefinitionsIDs)
 			azureRoleDefinitionsIDsColl, azureRoleDefinitionsIDsCD := types.SetValueFrom(ctx, types.Int64Type, azureRoleDefinitionsIDs)
 			diags.Append(azureRoleDefinitionsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			azureRoleDefinitionsIDsColl = flex.SetEmptyLikePrior(ctx, model.AzureRoleDefinitionIds, azureRoleDefinitionsIDsColl)
 			model.AzureRoleDefinitionIds = azureRoleDefinitionsIDsColl
 			var complianceStandardsIDs []int64
 			for _, elem := range v.Data.Value.ComplianceStandards.Value {
@@ -561,6 +567,8 @@ func flattenCloudRule(ctx context.Context, apiObject any, model *CloudRuleModel)
 			complianceStandardsIDs = flex.DedupeInt64(complianceStandardsIDs)
 			complianceStandardsIDsColl, complianceStandardsIDsCD := types.SetValueFrom(ctx, types.Int64Type, complianceStandardsIDs)
 			diags.Append(complianceStandardsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			complianceStandardsIDsColl = flex.SetEmptyLikePrior(ctx, model.ComplianceStandardIds, complianceStandardsIDsColl)
 			model.ComplianceStandardIds = complianceStandardsIDsColl
 			var gcpIamRolesIDs []int64
 			for _, elem := range v.Data.Value.GcpIamRoles.Value {
@@ -573,6 +581,8 @@ func flattenCloudRule(ctx context.Context, apiObject any, model *CloudRuleModel)
 			gcpIamRolesIDs = flex.DedupeInt64(gcpIamRolesIDs)
 			gcpIamRolesIDsColl, gcpIamRolesIDsCD := types.SetValueFrom(ctx, types.Int64Type, gcpIamRolesIDs)
 			diags.Append(gcpIamRolesIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			gcpIamRolesIDsColl = flex.SetEmptyLikePrior(ctx, model.GcpIamRoleIds, gcpIamRolesIDsColl)
 			model.GcpIamRoleIds = gcpIamRolesIDsColl
 			var ousIDs []int64
 			for _, elem := range v.Data.Value.Ous.Value {
@@ -585,6 +595,8 @@ func flattenCloudRule(ctx context.Context, apiObject any, model *CloudRuleModel)
 			ousIDs = flex.DedupeInt64(ousIDs)
 			ousIDsColl, ousIDsCD := types.SetValueFrom(ctx, types.Int64Type, ousIDs)
 			diags.Append(ousIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			ousIDsColl = flex.SetEmptyLikePrior(ctx, model.OuIds, ousIDsColl)
 			model.OuIds = ousIDsColl
 			var ownerUserGroupsIDs []int64
 			for _, elem := range v.Data.Value.OwnerUserGroups.Value {
@@ -597,6 +609,8 @@ func flattenCloudRule(ctx context.Context, apiObject any, model *CloudRuleModel)
 			ownerUserGroupsIDs = flex.DedupeInt64(ownerUserGroupsIDs)
 			ownerUserGroupsIDsColl, ownerUserGroupsIDsCD := types.SetValueFrom(ctx, types.Int64Type, ownerUserGroupsIDs)
 			diags.Append(ownerUserGroupsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			ownerUserGroupsIDsColl = flex.SetEmptyLikePrior(ctx, model.OwnerUserGroupIds, ownerUserGroupsIDsColl)
 			model.OwnerUserGroupIds = ownerUserGroupsIDsColl
 			var ownerUsersIDs []int64
 			for _, elem := range v.Data.Value.OwnerUsers.Value {
@@ -609,6 +623,8 @@ func flattenCloudRule(ctx context.Context, apiObject any, model *CloudRuleModel)
 			ownerUsersIDs = flex.DedupeInt64(ownerUsersIDs)
 			ownerUsersIDsColl, ownerUsersIDsCD := types.SetValueFrom(ctx, types.Int64Type, ownerUsersIDs)
 			diags.Append(ownerUsersIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			ownerUsersIDsColl = flex.SetEmptyLikePrior(ctx, model.OwnerUserIds, ownerUsersIDsColl)
 			model.OwnerUserIds = ownerUsersIDsColl
 			var projectsIDs []int64
 			for _, elem := range v.Data.Value.Projects.Value {
@@ -621,6 +637,8 @@ func flattenCloudRule(ctx context.Context, apiObject any, model *CloudRuleModel)
 			projectsIDs = flex.DedupeInt64(projectsIDs)
 			projectsIDsColl, projectsIDsCD := types.SetValueFrom(ctx, types.Int64Type, projectsIDs)
 			diags.Append(projectsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			projectsIDsColl = flex.SetEmptyLikePrior(ctx, model.ProjectIds, projectsIDsColl)
 			model.ProjectIds = projectsIDsColl
 		}
 		return diags

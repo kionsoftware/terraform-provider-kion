@@ -294,6 +294,8 @@ func flattenUser(ctx context.Context, apiObject any, model *UserModel) diag.Diag
 			userGroupsIDs = flex.DedupeInt64(userGroupsIDs)
 			userGroupsIDsColl, userGroupsIDsCD := types.SetValueFrom(ctx, types.Int64Type, userGroupsIDs)
 			diags.Append(userGroupsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			userGroupsIDsColl = flex.SetEmptyLikePrior(ctx, model.UserGroupIds, userGroupsIDsColl)
 			model.UserGroupIds = userGroupsIDsColl
 		}
 		return diags

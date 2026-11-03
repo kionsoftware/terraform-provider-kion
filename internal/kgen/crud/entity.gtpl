@@ -988,6 +988,10 @@ type {{$.Pkg}}{{.ModelGo}}Wire struct {
 			{{- end}}
 			{{.Var}}Coll, {{.Var}}CD := types.{{.Coll}}ValueFrom(ctx, types.Int64Type, {{.Var}})
 			diags.Append({{.Var}}CD...)
+			{{- if not .OrEmpty}}
+			// Kion returns an empty list as null; a configured [] stays empty.
+			{{.Var}}Coll = flex.{{.Coll}}EmptyLikePrior(ctx, model.{{.ModelGo}}, {{.Var}}Coll)
+			{{- end}}
 			model.{{.ModelGo}} = {{.Var}}Coll
 			{{- end}}
 			{{- range .RespObjIDProjs}}

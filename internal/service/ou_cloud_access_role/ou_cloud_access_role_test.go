@@ -88,6 +88,8 @@ func TestAccKionOuCloudAccessRole_update(t *testing.T) {
 					testAccCheckOuCloudAccessRoleExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "aws_session_tags.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "azure_role_definitions.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "gcp_iam_roles.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttrSet(resourceName, "ou_id"),
 					resource.TestCheckResourceAttr(resourceName, "short_term_access_keys", "false"),
@@ -211,6 +213,8 @@ resource "kion_ou" "test_ou" {
 
 resource "kion_ou_cloud_access_role" "test" {
   aws_session_tags = [{ tag_key = "team", tag_value = "test-acc" }, { tag_key = "env", tag_value = "test" }]
+  azure_role_definitions = []
+  gcp_iam_roles = []
   name = "%[1]s"
   ou_id = kion_ou.test_ou.id
   short_term_access_keys = false

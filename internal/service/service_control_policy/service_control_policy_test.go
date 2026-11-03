@@ -45,6 +45,8 @@ func TestAccKionServiceControlPolicy_basic(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// policy: an import has no configured text to keep, so it reads Kion's canonical JSON, which is equivalent to but not textually the configured value
+				ImportStateVerifyIgnore: []string{"policy"},
 			},
 		},
 	})
@@ -89,6 +91,8 @@ func TestAccKionServiceControlPolicy_update(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// policy: an import has no configured text to keep, so it reads Kion's canonical JSON, which is equivalent to but not textually the configured value
+				ImportStateVerifyIgnore: []string{"policy"},
 			},
 		},
 	})
@@ -176,7 +180,7 @@ resource "kion_service_control_policy" "test" {
   description = "test-acc-updated"
   name = "%[1]s"
   owner_user_ids = [1]
-  policy = jsonencode({ Version = "2012-10-17", Statement = [{ Effect = "Deny", Action = "ec2:*", Resource = "*" }] })
+  policy = "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\"Effect\": \"Deny\", \"Action\": \"ec2:*\", \"Resource\": \"*\"}\n  ]\n}\n"
 }
 `, rName)
 }

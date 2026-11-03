@@ -1,0 +1,9 @@
+kind: BUG FIXES
+body: >-
+  A configured empty list no longer fails the apply with "Provider produced inconsistent result after apply: was
+  cty.SetValEmpty, but now null" on kion_project_cloud_access_role, kion_ou_cloud_access_role, kion_azure_role and the
+  other resources whose read returns an empty membership list as null. kmigrate rewrites an empty dynamic block into
+  exactly that, so a migrated configuration hit it on every such resource. kion_aws_iam_policy, kion_iam_policy and
+  kion_service_control_policy also keep a pretty-printed policy, such as a file() of a .json, instead of failing the
+  apply on Kion's compact rewrite of the same JSON. Both were found by migrating a customer configuration from 0.3.26.
+time: 2026-11-03T19:28:59Z

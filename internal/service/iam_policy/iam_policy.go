@@ -103,11 +103,15 @@ func (r *iam_policyResource) Create(ctx context.Context, req resource.CreateRequ
 		resp.Diagnostics.AddError(fmt.Sprintf("reading %s after creation (ID: %d)", ResNameIamPolicy, id), readErr.Error())
 		return
 	}
+	configuredPolicy := plan.Policy
 
 	resp.Diagnostics.Append(flattenIamPolicy(ctx, readOut, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	// The API canonicalizes this and echoes the rewritten form; keeping the
+	// configured value is what stops an unconvergeable diff. See Rewritten.
+	plan.Policy = configuredPolicy
 
 	resp.Diagnostics.Append(flex.ResolveUnknowns(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -142,10 +146,18 @@ func (r *iam_policyResource) Read(ctx context.Context, req resource.ReadRequest,
 		resp.State.RemoveResource(ctx)
 		return
 	}
+	priorPolicy := state.Policy
 
 	resp.Diagnostics.Append(flattenIamPolicy(ctx, out, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+	// The API returns its own canonical form of this value. Keep what state
+	// already held when the two say the same thing, so a refresh converges;
+	// take the API's when they genuinely differ, so real drift still shows.
+	// Import has no prior value and so always takes the API's. See Rewritten.
+	if !priorPolicy.IsNull() && flex.JSONEquivalent(priorPolicy.ValueString(), state.Policy.ValueString()) {
+		state.Policy = priorPolicy
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -252,11 +264,15 @@ func (r *iam_policyResource) Update(ctx context.Context, req resource.UpdateRequ
 		resp.Diagnostics.AddError(fmt.Sprintf("reading %s after update (ID: %d)", ResNameIamPolicy, idInt), readErr.Error())
 		return
 	}
+	configuredPolicy := plan.Policy
 
 	resp.Diagnostics.Append(flattenIamPolicy(ctx, readOut, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	// The API canonicalizes this and echoes the rewritten form; keeping the
+	// configured value is what stops an unconvergeable diff. See Rewritten.
+	plan.Policy = configuredPolicy
 
 	resp.Diagnostics.Append(flex.ResolveUnknowns(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -326,6 +342,8 @@ func flattenIamPolicy(ctx context.Context, apiObject any, model *IamPolicyModel)
 			ownerUserGroupsIDs = flex.DedupeInt64(ownerUserGroupsIDs)
 			ownerUserGroupsIDsColl, ownerUserGroupsIDsCD := types.SetValueFrom(ctx, types.Int64Type, ownerUserGroupsIDs)
 			diags.Append(ownerUserGroupsIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			ownerUserGroupsIDsColl = flex.SetEmptyLikePrior(ctx, model.OwnerUserGroupIds, ownerUserGroupsIDsColl)
 			model.OwnerUserGroupIds = ownerUserGroupsIDsColl
 			var ownerUsersIDs []int64
 			for _, elem := range v.Data.Value.OwnerUsers.Value {
@@ -338,6 +356,8 @@ func flattenIamPolicy(ctx context.Context, apiObject any, model *IamPolicyModel)
 			ownerUsersIDs = flex.DedupeInt64(ownerUsersIDs)
 			ownerUsersIDsColl, ownerUsersIDsCD := types.SetValueFrom(ctx, types.Int64Type, ownerUsersIDs)
 			diags.Append(ownerUsersIDsCD...)
+			// Kion returns an empty list as null; a configured [] stays empty.
+			ownerUsersIDsColl = flex.SetEmptyLikePrior(ctx, model.OwnerUserIds, ownerUsersIDsColl)
 			model.OwnerUserIds = ownerUsersIDsColl
 		}
 		return diags

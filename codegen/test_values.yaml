@@ -144,6 +144,9 @@ resources:
     require_env:
       - name: KION_ACC_AZURE_PAYER_ID
         reason: an Azure billing source on this install; POST /v3/azure-role returns 500 without one
+    import_unrecoverable:
+      - attr: role_permissions
+        reason: an import has no configured text to keep, so it reads Kion's canonical JSON, which is equivalent to but not textually the configured value
     create:
       name: "%[1]s"
       owner_user_ids: "hcl:[1]"
@@ -151,6 +154,7 @@ resources:
     update:
       car_restricted_user_group_ids: "hcl:[]"
       name: "%[1]s"
+      owner_user_group_ids: "hcl:[]"
       owner_user_ids: "hcl:[1]"
       role_permissions: "hcl:jsonencode({ actions = [\"Microsoft.Resources/subscriptions/resourceGroups/read\"], notActions = [] })"
   budget:
@@ -287,13 +291,16 @@ resources:
       name: "%[1]s"
       unique_id: "test-acc-%[1]s-upd"
   iam_policy:
+    import_unrecoverable:
+      - attr: policy
+        reason: an import has no configured text to keep, so it reads Kion's canonical JSON, which is equivalent to but not textually the configured value
     create:
       policy: "hcl:jsonencode({ Version = \"2012-10-17\", Statement = [{ Effect = \"Deny\", Action = \"s3:*\", Resource = \"*\" }] })"
       description: "test-acc IAM policy"
       name: "%[1]s"
       owner_user_ids: "hcl:[1]"
     update:
-      policy: "hcl:jsonencode({ Version = \"2012-10-17\", Statement = [{ Effect = \"Deny\", Action = \"s3:*\", Resource = \"*\" }] })"
+      policy: 'hcl:"{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\"Effect\": \"Deny\", \"Action\": \"s3:*\", \"Resource\": \"*\"}\n  ]\n}\n"'
       description: "test-acc IAM policy updated"
       name: "%[1]s"
       owner_user_ids: "hcl:[1]"
@@ -346,6 +353,9 @@ resources:
       scopes: "hcl:[\"openid\", \"email\"]"
       username_claim: "sub"
   service_control_policy:
+    import_unrecoverable:
+      - attr: policy
+        reason: an import has no configured text to keep, so it reads Kion's canonical JSON, which is equivalent to but not textually the configured value
     create:
       name: "%[1]s"
       owner_user_ids: "hcl:[1]"
@@ -354,7 +364,7 @@ resources:
       description: "test-acc-updated"
       name: "%[1]s"
       owner_user_ids: "hcl:[1]"
-      policy: "hcl:jsonencode({ Version = \"2012-10-17\", Statement = [{ Effect = \"Deny\", Action = \"ec2:*\", Resource = \"*\" }] })"
+      policy: 'hcl:"{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\"Effect\": \"Deny\", \"Action\": \"ec2:*\", \"Resource\": \"*\"}\n  ]\n}\n"'
   user_group:
     create:
       description: "test-acc user group"
@@ -593,6 +603,8 @@ resources:
       ou_id: "hcl:kion_ou.test_ou.id"
       short_term_access_keys: "false"
       aws_session_tags: "hcl:[{ tag_key = \"team\", tag_value = \"test-acc\" }, { tag_key = \"env\", tag_value = \"test\" }]"
+      azure_role_definitions: "hcl:[]"
+      gcp_iam_roles: "hcl:[]"
       user_ids: "hcl:[1]"
       web_access: "true"
   ou_note:
@@ -684,6 +696,8 @@ resources:
       project_id: "hcl:kion_project.test_project.id"
       aws_session_tags: "hcl:[{ tag_key = \"team\", tag_value = \"test-acc\" }, { tag_key = \"env\", tag_value = \"test\" }]"
       short_term_access_keys: "false"
+      gcp_iam_roles: "hcl:[]"
+      user_group_ids: "hcl:[]"
       user_ids: "hcl:[1]"
       web_access: "true"
   project_line_item:
