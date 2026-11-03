@@ -96,7 +96,8 @@ fi
 if [ "${INTERNAL_REF_SKIP_COMMITS:-0}" != "1" ]; then
   range="${INTERNAL_REF_COMMIT_RANGE:-}"
   if [ -z "$range" ]; then
-    base=$(git rev-parse --verify --quiet origin/main || git rev-parse --verify --quiet main || true)
+    base=$(git rev-parse --verify --quiet '@{upstream}' 2>/dev/null ||
+      git rev-parse --verify --quiet origin/main || git rev-parse --verify --quiet main || true)
     [ -n "$base" ] && range="$base..HEAD"
   fi
   if [ -n "$range" ] && msgs=$(git log --format='%H %s%n%b' "$range" 2>/dev/null) && [ -n "$msgs" ]; then

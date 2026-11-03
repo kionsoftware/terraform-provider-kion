@@ -538,3 +538,31 @@ locals {
 		t.Errorf("actions:\n%s\nwant:\n%s", strings.Join(actions, "\n"), strings.Join(want, "\n"))
 	}
 }
+
+// The same holds for a data source: data.kion_x.y.attr fails the plan when the
+// new data source dropped attr, and kmigrate does not rewrite data sources.
+func TestRewriteFile_reportsDataSourceReferencesToDroppedAttributes(t *testing.T) {
+	src := `output "account" {
+  value = data.kion_account.a.id
+}
+
+output "users" {
+  value = data.kion_project_cloud_access_role.r.users
+}
+
+output "kept" {
+  value = data.kion_account.a.list
+}
+`
+	_, _, actions, err := RewriteFile([]byte(src), map[string]Transform{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"line 2: data.kion_account.a.id: the new kion_account data source has no id; remove the reference",
+		"line 6: data.kion_project_cloud_access_role.r.users: the new kion_project_cloud_access_role data source has no users; remove the reference",
+	}
+	if strings.Join(actions, "\n") != strings.Join(want, "\n") {
+		t.Errorf("actions:\n%s\nwant:\n%s", strings.Join(actions, "\n"), strings.Join(want, "\n"))
+	}
+}

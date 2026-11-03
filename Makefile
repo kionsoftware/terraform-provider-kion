@@ -461,7 +461,7 @@ clean: ## Remove build artifacts (binary, release bin/, coverage files)
 #==============================================================================
 
 .PHONY: ci
-ci: ci-fmt ci-vet ci-lint ci-test ci-acctest-config ci-crud ci-docs ci-modules ci-align ci-internal-refs ci-secrets ## Run every CI check that can run locally (all of ci.yml except CodeQL)
+ci: ci-fmt ci-vet ci-lint ci-test ci-acctest-config ci-crud ci-docs ci-modules ci-align ci-schema-snapshot ci-internal-refs ci-secrets ## Run every CI check that can run locally (all of ci.yml except CodeQL)
 	@echo ""
 	@echo "$(GREEN)All CI checks passed$(RESET)"
 	@echo "$(YELLOW)note: CodeQL runs only on GitHub and was not checked here.$(RESET)"
@@ -621,6 +621,36 @@ docs-check: ## Fail if docs/ or examples/ differ from freshly generated output
 		exit 1; \
 	fi
 	@echo "$(GREEN)✓ docs/ and examples/ match generated output$(RESET)"
+
+# codegen/schema_snapshots/new.json is what kmigrate, the state upgraders and
+# the migrate drift tests treat as the new provider's schema. It was refreshed
+# by hand, so a schema change that skipped the refresh left every one of those
+# checks passing against a stale file. schema-snapshot dumps the schema of the
+# provider this tree builds; schema-snapshot-check fails when it differs.
+# old.json is fixed: 0.3.36 is the final 0.3.x release.
+SCHEMA_SNAPSHOT := codegen/schema_snapshots/new.json
+
+.PHONY: schema-snapshot
+schema-snapshot: ## Rewrite codegen/schema_snapshots/new.json from the provider this tree builds
+	@command -v terraform >/dev/null || (echo "$(RED)terraform is required for schema-snapshot$(RESET)" && exit 1)
+	@./scripts/schema-snapshot.sh $(SCHEMA_SNAPSHOT)
+	@echo "$(GREEN)✓ wrote $(SCHEMA_SNAPSHOT)$(RESET)"
+
+.PHONY: schema-snapshot-check
+schema-snapshot-check: ## Fail if codegen/schema_snapshots/new.json differs from the built provider's schema
+	@command -v terraform >/dev/null || (echo "$(RED)terraform is required for schema-snapshot-check$(RESET)" && exit 1)
+	@tmp=$$(mktemp); ./scripts/schema-snapshot.sh $$tmp; \
+	if ! cmp -s $$tmp $(SCHEMA_SNAPSHOT); then \
+		rm -f $$tmp; \
+		echo "$(RED)FAIL: $(SCHEMA_SNAPSHOT) differs from the built provider's schema. Regenerate and commit:$(RESET)"; \
+		echo "  make schema-snapshot"; \
+		echo "then regenerate what reads it: go test ./internal/kgen/migrate/ -run TestRemovedAttrsAreCurrent -update"; \
+		exit 1; \
+	fi; rm -f $$tmp
+	@echo "$(GREEN)✓ $(SCHEMA_SNAPSHOT) matches the built provider$(RESET)"
+
+.PHONY: ci-schema-snapshot
+ci-schema-snapshot: schema-snapshot-check ## Check the new-provider schema snapshot is current (matches the schema-snapshot CI job)
 
 .PHONY: modules-check
 modules-check: ## Fail if modules/ differs from freshly generated output

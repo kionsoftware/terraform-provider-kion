@@ -19,13 +19,15 @@ require the single `ci` check.
 | `modules` | generated Terraform modules build, validate, test, and are not stale | `make modules-check` |
 | `docs` | `docs/` and `examples/` are not stale | `make docs-check` |
 | `acctest-config` | acceptance-test HCL matches the provider schema | `make ci-acctest-config` |
+| `schema-snapshot` | `codegen/schema_snapshots/new.json` matches the built provider's schema | `make ci-schema-snapshot` |
 | `align-check` | no schema/SDK type mismatch or missing flex converter beyond `codegen/align_baseline.yaml`, and no stale entry in it | `make align-check` |
 | `internal-refs` | no internal paths/hostnames in tracked files | `scripts/check-no-internal-refs.sh` |
 | `secrets` | credential scan over the tree | `make ci-secrets` |
 | `codeql` | GitHub CodeQL analysis for Go | GitHub only |
 
-`make ci` runs the first four plus `acctest-config` locally. The Lefthook pre-push hook runs it
-before every push, so CI should rarely be the first place a failure appears.
+`make ci` runs every job above except `codeql` locally. The Lefthook pre-push hook runs the
+first four and `internal-refs` before every push, so CI should rarely be the first place a
+failure appears.
 
 ### The `modules` job
 

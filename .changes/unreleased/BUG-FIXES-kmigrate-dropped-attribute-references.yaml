@@ -1,7 +1,7 @@
 kind: BUG FIXES
 body: >-
   kmigrate now reports references to attributes the new schema dropped, such as an output reading
-  kion_azure_role.this.last_updated or system_managed_policy, with the file, the line and the replacement when the
-  attribute was renamed. It rewrote resource blocks but said nothing about these, so a configuration it migrated
+  kion_azure_role.this.last_updated or system_managed_policy, or to a data source attribute such as
+  data.kion_account.a.id, with the file, the line and the replacement when the attribute was renamed. It rewrote resource blocks but said nothing about these, so a configuration it migrated
   cleanly still failed terraform plan with "Unsupported attribute".
 time: 2026-11-03T19:39:32Z

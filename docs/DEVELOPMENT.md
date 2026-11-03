@@ -163,6 +163,7 @@ Runs on pull requests and pushes to `main`. Every job runs in parallel, and the 
 | `lint` | `golangci-lint` v2 | `make ci-lint` |
 | `test-unit` | Unit tests, race detector, coverage | `make ci-test` |
 | `acctest-config` | Acceptance-test HCL matches the provider schema | `make ci-acctest-config` |
+| `schema-snapshot` | `codegen/schema_snapshots/new.json` matches the built provider's schema | `make ci-schema-snapshot` |
 | `docs` | `docs/` and `examples/` are not stale | `make ci-docs` |
 | `modules` | Generated modules build, validate, test, and are not stale | `make ci-modules` |
 | `internal-refs` | No internal paths or hostnames in tracked files | `make ci-internal-refs` |

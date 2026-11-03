@@ -725,8 +725,9 @@ func setVersionInObject(toks hclwrite.Tokens, want string) (hclwrite.Tokens, str
 	return toks, "", false
 }
 
-// droppedAttrRefs reports each `kion_<type>.<name>.<attr>` reference, anywhere in
-// the file, whose attribute the new schema dropped (RemovedAttrs). Nothing in a
+// droppedAttrRefs reports each `kion_<type>.<name>.<attr>` reference, and each
+// `data.kion_<type>.<name>.<attr>`, anywhere in the file, whose attribute the new
+// schema dropped (RemovedAttrs, RemovedDataSourceAttrs). Nothing in a
 // resource block points at such a reference, an output or a local does, and
 // `terraform plan` fails on it with "Unsupported attribute". A renamed attribute
 // names its replacement; any other is for the practitioner to remove.
@@ -763,21 +764,37 @@ func droppedAttrRefs(name string, src []byte, ups map[string]Transform) []string
 	// The visitor never returns diagnostics, so VisitAll's are always empty.
 	visitDiags := hclsyntax.VisitAll(body, func(n hclsyntax.Node) hcl.Diagnostics {
 		e, ok := n.(*hclsyntax.ScopeTraversalExpr)
-		if !ok || len(e.Traversal) < 3 {
-			return nil
-		}
-		rtype := e.Traversal.RootName()
-		dropped, ok := RemovedAttrs[rtype]
 		if !ok {
 			return nil
 		}
-		label, ok := e.Traversal[1].(hcl.TraverseAttr)
+		// kion_x.name.attr, or data.kion_x.name.attr for a data source.
+		steps, prefix, kind, table := e.Traversal, "", "", RemovedAttrs
+		if steps.RootName() == "data" {
+			if len(steps) < 2 {
+				return nil
+			}
+			dt, ok := steps[1].(hcl.TraverseAttr)
+			if !ok {
+				return nil
+			}
+			steps = append(hcl.Traversal{hcl.TraverseRoot{Name: dt.Name}}, steps[2:]...)
+			prefix, kind, table = "data.", " data source", RemovedDataSourceAttrs
+		}
+		if len(steps) < 3 {
+			return nil
+		}
+		rtype := steps.RootName()
+		dropped, ok := table[rtype]
+		if !ok {
+			return nil
+		}
+		label, ok := steps[1].(hcl.TraverseAttr)
 		if !ok {
 			return nil
 		}
 		// kion_x.this[0].attr: step past the index to the attribute.
 		var attr string
-		for _, step := range e.Traversal[2:] {
+		for _, step := range steps[2:] {
 			if a, ok := step.(hcl.TraverseAttr); ok {
 				attr = a.Name
 				break
@@ -787,17 +804,18 @@ func droppedAttrRefs(name string, src []byte, ups map[string]Transform) []string
 			return nil
 		}
 		line := e.SrcRange.Start.Line
-		key := fmt.Sprintf("%d %s.%s.%s", line, rtype, label.Name, attr)
+		ref0 := fmt.Sprintf("%s%s.%s.%s", prefix, rtype, label.Name, attr)
+		key := fmt.Sprintf("%d %s", line, ref0)
 		if seen[key] {
 			return nil
 		}
 		seen[key] = true
 		hint := "remove the reference"
-		if newA := renamed[rtype][attr]; newA != "" {
+		if newA := renamed[rtype][attr]; newA != "" && prefix == "" {
 			hint = "it is now " + newA
 		}
-		refs = append(refs, ref{line, fmt.Sprintf("line %d: %s.%s.%s: the new %s has no %s; %s",
-			line, rtype, label.Name, attr, rtype, attr, hint)})
+		refs = append(refs, ref{line, fmt.Sprintf("line %d: %s: the new %s%s has no %s; %s",
+			line, ref0, rtype, kind, attr, hint)})
 		return nil
 	})
 	if visitDiags.HasErrors() {

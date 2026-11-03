@@ -139,8 +139,8 @@ A resource that mixes literal and dynamic blocks of the same name gets a
 convert, a dynamic block missing the field the projection reads for instance,
 as a follow-up rather than guessing. It also lists every reference, in an
 output, a local or anywhere else, to an attribute the new schema dropped, such
-as `kion_azure_role.this.last_updated`, naming the replacement when the
-attribute was renamed. Run `terraform fmt` afterward.
+as `kion_azure_role.this.last_updated` or `data.kion_account.a.id`, naming the
+replacement when a resource attribute was renamed. Run `terraform fmt` afterward.
 
 The back-compat aliases `kion_aws_iam_policy` and `kion_aws_cloudformation_template`
 keep working under the new provider. Both their state and config migrate

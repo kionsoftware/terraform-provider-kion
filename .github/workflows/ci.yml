@@ -23,6 +23,9 @@ on:
   push:
     branches:
       - main
+      # Pre-cutover work is pushed straight to this branch with no PR, so it
+      # would otherwise get no CI at all.
+      - feat/new-provider
 
 permissions:
   contents: read
@@ -361,6 +364,31 @@ jobs:
 
       - run: go run ./scripts/acctestconfig
 
+  # codegen/schema_snapshots/new.json is the new provider's schema as kmigrate,
+  # the state upgraders and the migrate drift tests see it. Refreshed by hand, it
+  # could fall behind a schema change and leave all of them passing against a
+  # stale file. This dumps the built provider's schema and fails on a difference.
+  schema-snapshot:
+    name: Schema snapshot
+    runs-on: ubuntu-latest
+    env:
+      TF_IN_AUTOMATION: 'true'
+      TF_VERSION: 1.15.9
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - run: make schema-snapshot-check
+
   # kalign compares each schema model to the SDK struct it aligns to. A type
   # mismatch or a missing flex converter fails unless codegen/align_baseline.yaml
   # records why it is accepted; an entry that no longer occurs fails too. Needs
@@ -470,6 +498,7 @@ jobs:
       - crud
       - docs
       - acctest-config
+      - schema-snapshot
       - align-check
       - internal-refs
       - secrets

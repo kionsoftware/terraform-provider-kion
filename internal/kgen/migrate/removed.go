@@ -27,3 +27,17 @@ var RemovedAttrs = map[string][]string{
 	"kion_service_control_policy":      {"aws_managed_policy", "created_by_user_id", "last_updated", "owner_user_groups", "owner_users", "system_managed_policy"},
 	"kion_user_group":                  {"owner_groups", "owner_users", "users"},
 }
+
+// RemovedDataSourceAttrs is RemovedAttrs for data sources, top-level only.
+var RemovedDataSourceAttrs = map[string][]string{
+	"kion_account":                           {"id"},
+	"kion_app_config":                        {"forecasting_enabled", "idms_groups_as_viewers_default", "saml_debug"},
+	"kion_aws_iam_policy":                    {"page", "page_size", "policy_type", "query"},
+	"kion_custom_variable_override":          {"id"},
+	"kion_funding_source_permission_mapping": {"id"},
+	"kion_global_permission_mapping":         {"id"},
+	"kion_ou_cloud_access_role":              {"aws_iam_permissions_boundary", "aws_iam_policies", "aws_session_tags", "aws_trusted_account_numbers", "aws_trusted_services", "azure_role_definitions", "gcp_iam_roles", "user_groups", "users"},
+	"kion_ou_permission_mapping":             {"id"},
+	"kion_project_cloud_access_role":         {"accounts", "aws_iam_permissions_boundary", "aws_iam_policies", "aws_session_tags", "aws_trusted_account_numbers", "aws_trusted_services", "azure_role_definitions", "gcp_iam_roles", "user_groups", "users"},
+	"kion_webhook":                           {"owner_user_group_ids", "owner_user_ids"},
+}
