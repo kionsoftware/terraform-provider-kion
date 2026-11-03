@@ -123,7 +123,10 @@ Each baseline entry ends in one of four decisions:
   move endpoint (`kion_ou`, the azure/gcp/custom accounts). A completed move is
   written to state at once, so a later failure cannot leave state naming the old
   parent. An attribute only the update body carries is applied right after create
-  with `create_via_update` (parent_list) or the resource's own template.
+  with `create_via_update` (parent_list) or the resource's own template. On an
+  entity, `create_via_update` covers an attribute the create body carries but
+  Kion ignores (`kion_project_cloud_access_role`'s `apply_to_all_accounts`): an
+  update follows only when the read-back differs from the plan.
 - **`RequiresReplace`** (`schema_overrides.yaml`) when the API fixes it at create
   and recreating is what the change means. This removes it from the update side.
 - **Remove it** when it is not an input at all, such as a list endpoint's filter

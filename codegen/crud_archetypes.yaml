@@ -135,6 +135,12 @@ project_cloud_access_role:
   kind: entity
   list_order_keys:
     aws_session_tags: tag_key
+  # Kion's create stores apply_to_all_accounts = true whatever it is sent; the
+  # update honors false. Creating a role with false failed the apply with
+  # "Provider produced inconsistent result" (found creating a customer
+  # configuration from scratch: 472 of 475 roles).
+  create_via_update:
+    - apply_to_all_accounts
 ou_cloud_access_role:
   kind: entity
   list_order_keys:
@@ -359,10 +365,16 @@ billing_source_oci:
 # the PARENT id, not a literal discriminator, so it is declared create-under-
 # parent. Otherwise the resolver reads the trailing static "govcloud" segment
 # as a __qs__ discriminator value and emits ID: "govcloud" into a uint64 field.
+# The GovCloud settings are a singleton under their billing source: every
+# route is /v3/billing-source/{billing source id}/govcloud, and the record's
+# own id is accepted by none of them. Reading by it read billing source 1's
+# empty settings, so the create failed with "inconsistent result" and every
+# refresh would have zeroed the resource.
 billing_source_govcloud:
   kind: entity
   create_parent_param: ID
   create_parent_field: payer_id
+  id_is_parent: true
 
 # AWS billing source: public create + shared delete, no update endpoint at all,
 # and no public by-id read. The private /v1/payer read nests under aws_payer.

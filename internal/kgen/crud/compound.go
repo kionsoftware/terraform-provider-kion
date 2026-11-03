@@ -75,6 +75,11 @@ type archetype struct {
 	// create_parent_field's value. A record the by-id read returns but this list
 	// omits is treated as deleted: for by-id reads that serve soft-deleted rows.
 	ConfirmListed string `yaml:"confirm_listed"`
+	// IDIsParent (kind: entity, with create_parent_field): the record is a
+	// singleton under its parent and every by-id route takes the parent's id
+	// (/v3/billing-source/{id}/govcloud). The resource id is the parent id, and a
+	// read answering an empty record (parent 0) means it was deleted.
+	IDIsParent bool `yaml:"id_is_parent"`
 	// ConfirmParents lists every possible parent. On import the parent id is
 	// unknown, so the read finds the one whose confirm_listed list holds the
 	// record and sets create_parent_field from it.
@@ -83,8 +88,11 @@ type archetype struct {
 	// answers a 500: an id the list omits is treated as deleted. For reads that
 	// answer a missing record with a 500 rather than a 404.
 	MissingViaList string `yaml:"missing_via_list"`
-	// CreateViaUpdate (kind: parent_list) lists attributes only the update body
-	// carries; a configured value is applied by an update right after create.
+	// CreateViaUpdate lists attributes the create does not apply. On parent_list
+	// the create body cannot carry them, so a configured value is applied by an
+	// update right after create. On entity the create body carries them but the
+	// API ignores them (Kion stores apply_to_all_accounts true whatever the
+	// create sends), so an update follows only when the read-back differs.
 	CreateViaUpdate []string `yaml:"create_via_update"`
 	// Moves (kind: entity) are attributes the update body cannot carry, changed
 	// through a dedicated endpoint before the PATCH.

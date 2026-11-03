@@ -19,7 +19,7 @@ module "funding_source_permission_mapping" {
 
 | Name | Version |
 | ---- | ------- |
-| terraform | >= 1.0 |
+| terraform | >= 1.4 |
 | kion | >= 1.0.0 |
 
 ## Providers

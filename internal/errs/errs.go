@@ -2,6 +2,7 @@
 package errs
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -68,6 +69,29 @@ func RawCreatedStringID(id string) (string, diag.Diagnostics) {
 func IsInternalServerError(res any) bool {
 	_, ok := res.(*generated.InternalServerErrorResponse)
 	return ok
+}
+
+// IsEmptyRecord reports a success response whose record id is 0. Kion answers
+// a by-parent route with nothing behind it (/v3/billing-source/{id}/govcloud
+// after a delete) with 200 and an all-zero record rather than a 404.
+func IsEmptyRecord(res any) bool {
+	m, ok := res.(json.Marshaler)
+	if !ok {
+		return false
+	}
+	b, err := m.MarshalJSON()
+	if err != nil {
+		return false
+	}
+	var env struct {
+		Data *struct {
+			ID *int64 `json:"id"`
+		} `json:"data"`
+	}
+	if json.Unmarshal(b, &env) != nil || env.Data == nil {
+		return false
+	}
+	return env.Data.ID == nil || *env.Data.ID == 0
 }
 
 // IsNotFound returns true if the response is a *NotFoundResponse.

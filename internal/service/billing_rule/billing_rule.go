@@ -78,6 +78,11 @@ func (r *billing_ruleResource) read(ctx context.Context, id int64) (billing_rule
 		if conns.IsRawNotFound(err) {
 			return billing_ruleWire{}, false, nil
 		}
+		// This read answers a missing record with a 500, not a 404; the list
+		// omits deleted records, so absence there means deleted.
+		if listed, lerr := r.Meta().RawIDListed(ctx, "/v3/billing-rule", id); lerr == nil && !listed {
+			return billing_ruleWire{}, false, nil
+		}
 		return billing_ruleWire{}, false, err
 	}
 	var w billing_ruleWire

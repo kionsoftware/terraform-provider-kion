@@ -330,9 +330,12 @@ func outputsTF(typeName string, outputs []output) string {
 // the ">= <release>" kion-import writes into the same root.
 const DefaultProviderConstraint = ">= 1.0.0"
 
+// Terraform before 1.4 plans a computed attribute inside a nested list as
+// unknown on every run (an aws_session_tags id, say), so a cloud access role
+// never converges; 1.4 is the earliest that passes the acceptance tests.
 func versionsTF(providerVersion string) string {
 	return fmt.Sprintf(`%sterraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.4"
 
   required_providers {
     kion = {

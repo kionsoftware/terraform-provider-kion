@@ -202,6 +202,7 @@ type ResourceModel struct {
 	// ConfirmListed: see the archetype field. ConfirmListedTF is the parent
 	// attribute's tfsdk name, for the acceptance test's destroy check.
 	ConfirmListed   string
+	IDIsParent      bool // see the archetype field
 	ConfirmListedTF string
 	ConfirmParents  string
 	MissingViaList  string // see the archetype field
@@ -221,6 +222,9 @@ type ResourceModel struct {
 	// Rewritten holds model field names whose configured value Create and Update
 	// restore after the read-back; see the archetype's Rewritten.
 	Rewritten []string
+	// CreateViaUpdate holds model field names the create ignores; see the
+	// archetype's CreateViaUpdate.
+	CreateViaUpdate []string
 	// CreateOnly are attributes captured from the create response and never
 	// flattened; see the archetype's CreateOnly.
 	CreateOnly []createOnlyAttr

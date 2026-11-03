@@ -202,6 +202,12 @@ func testAccCheck{{.Pascal}}Destroy(_ context.Context) resource.TestCheckFunc {
 				}
 			}
 			{{- end}}
+			{{- if .IDIsParent}}
+			// The route answers a deleted record with an all-zero one, not a 404.
+			if errs.IsEmptyRecord(out) {
+				continue
+			}
+			{{- end}}
 			{{- if .ConfirmListed}}
 			// The by-id read serves soft-deleted records; the parent list does not.
 			path := strings.Replace("{{.ConfirmListed}}", "{id}", rs.Primary.Attributes["{{.ConfirmListedTF}}"], 1)

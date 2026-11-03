@@ -75,6 +75,8 @@ func (r *billing_source_govcloudResource) Create(ctx context.Context, req resour
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	// id_is_parent: every by-id route takes the parent's id, not the record's.
+	id = plan.PayerId.ValueInt64()
 
 	plan.Id = types.StringValue(strconv.FormatInt(id, 10))
 
@@ -89,6 +91,7 @@ func (r *billing_source_govcloudResource) Create(ctx context.Context, req resour
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	billing_source_govcloudIDFromParent(&plan)
 
 	resp.Diagnostics.Append(flex.ResolveUnknowns(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -128,6 +131,12 @@ func (r *billing_source_govcloudResource) Read(ctx context.Context, req resource
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	// An empty record (parent 0) is how this route answers a deleted one.
+	if state.PayerId.ValueInt64() == 0 {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	billing_source_govcloudIDFromParent(&state)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -182,6 +191,7 @@ func (r *billing_source_govcloudResource) Update(ctx context.Context, req resour
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	billing_source_govcloudIDFromParent(&plan)
 
 	resp.Diagnostics.Append(flex.ResolveUnknowns(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -242,4 +252,10 @@ func flattenBillingSourceGovcloud(apiObject any, model *BillingSourceGovcloudMod
 	default:
 		return errs.ResponseDiagnostics("reading "+ResNameBillingSourceGovcloud, apiObject)
 	}
+}
+
+// billing_source_govcloudIDFromParent sets the id from the parent: flatten maps the payload's
+// own record id, which no route accepts. See id_is_parent.
+func billing_source_govcloudIDFromParent(m *BillingSourceGovcloudModel) {
+	m.Id = types.StringValue(strconv.FormatInt(m.PayerId.ValueInt64(), 10))
 }

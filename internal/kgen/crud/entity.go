@@ -103,6 +103,7 @@ type entityData struct {
 	CreateParentField string
 	CreateParentCast  string
 	ConfirmListed     string // see ResourceModel.ConfirmListed
+	IDIsParent        bool   // see ResourceModel.IDIsParent
 	ConfirmParents    string // see ResourceModel.ConfirmParents
 	MissingViaList    string // see ResourceModel.MissingViaList
 	// Create id source: "created" uses errs.CreatedID (a *CreatedResponse);
@@ -169,6 +170,9 @@ type entityData struct {
 	// and echoes back rewritten; Create and Update restore the configured value
 	// after the read-back. See archetype's Rewritten.
 	Rewritten []string
+	// CreateViaUpdate: model fields the create ignores, re-applied by an update
+	// when the read-back differs. See archetype's CreateViaUpdate.
+	CreateViaUpdate []string
 	// CreateOnly are captured from the create response before the read-back
 	// and restored after it; Update carries state's value. Never flattened.
 	CreateOnly    []createOnlyBind
@@ -276,6 +280,7 @@ func buildEntityData(rm ResourceModel) (entityData, error) {
 		SchemaVersion:    rm.SchemaVersion,
 		ReadCompanion:    rm.ReadCompanion,
 		Rewritten:        rm.Rewritten,
+		CreateViaUpdate:  rm.CreateViaUpdate,
 		RawCreate:        rm.RawCreate,
 	}
 	for _, m := range rm.Moves {
@@ -296,6 +301,7 @@ func buildEntityData(rm ResourceModel) (entityData, error) {
 		d.CreateParentParam = rm.CreateParentParam
 		d.CreateParentField = rm.CreateParentField
 		d.ConfirmListed = rm.ConfirmListed
+		d.IDIsParent = rm.IDIsParent
 		d.ConfirmParents = rm.ConfirmParents
 		d.CreateParentCast = rm.CreateParentCast
 	} else if rm.Create.Method.ParamsType != "" && !strings.Contains(rm.Create.Method.Path, qsPathMarker) {
@@ -506,7 +512,41 @@ func buildEntityData(rm ResourceModel) (entityData, error) {
 	}
 	d.RawValueHelpers = mergeRawValues(d.CreateRawValues, d.UpdateRawValues)
 	setIDShape(&d)
+	if rm.IDIsParent && (d.CreateParentField == "" || d.IDParamType == "string") {
+		return d, fmt.Errorf("%s: id_is_parent needs create_parent_field and an integer id", rm.Name)
+	}
+	if err := checkCreateViaUpdate(d); err != nil {
+		return d, fmt.Errorf("%s: %w", rm.Name, err)
+	}
 	return d, nil
+}
+
+// checkCreateViaUpdate refuses a create_via_update the generated Create could
+// not honor: the follow-up reuses the update body and its idInt, so each
+// attribute must be a scalar that body carries and the id must be an integer.
+func checkCreateViaUpdate(d entityData) error {
+	if len(d.CreateViaUpdate) == 0 {
+		return nil
+	}
+	if !d.HasUpdate {
+		return fmt.Errorf("create_via_update needs an update operation")
+	}
+	if d.IDParamType == "string" {
+		return fmt.Errorf("create_via_update needs an integer id")
+	}
+	for _, goName := range d.CreateViaUpdate {
+		found := false
+		for _, b := range d.UpdateBinds {
+			if b.ModelGo == goName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("create_via_update attribute %s is not a scalar the update body carries", goName)
+		}
+	}
+	return nil
 }
 
 // entityCreateOnly binds the create_only attributes to the create response's

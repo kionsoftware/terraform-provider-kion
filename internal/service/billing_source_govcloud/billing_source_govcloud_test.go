@@ -155,6 +155,10 @@ func testAccCheckBillingSourceGovcloudDestroy(_ context.Context) resource.TestCh
 			if err != nil {
 				return fmt.Errorf("reading kion_billing_source_govcloud (%d): %w", id, err)
 			}
+			// The route answers a deleted record with an all-zero one, not a 404.
+			if errs.IsEmptyRecord(out) {
+				continue
+			}
 
 			return fmt.Errorf("kion_billing_source_govcloud (%d) still exists", id)
 		}

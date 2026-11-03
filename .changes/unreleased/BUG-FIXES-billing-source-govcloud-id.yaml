@@ -1,0 +1,7 @@
+kind: BUG FIXES
+body: >-
+  kion_billing_source_govcloud now works: its id is the billing source's id. Every GovCloud route is keyed by the
+  billing source, but the provider read, updated and deleted by the GovCloud record's own id, so the create failed
+  with "Provider produced inconsistent result", a refresh read another billing source's empty settings, and a
+  delete left the settings in Kion. An existing resource must be re-imported by its payer_id.
+time: 2026-11-03T20:59:50Z

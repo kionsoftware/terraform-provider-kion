@@ -1,0 +1,7 @@
+kind: BUG FIXES
+body: >-
+  kion_project_cloud_access_role: creating a role with apply_to_all_accounts = false no longer fails the apply with
+  "Provider produced inconsistent result". Kion's create stores true whatever it is sent; the provider now follows
+  the create with an update when the read-back differs, as Kion's update honors false. Creating a customer
+  configuration from scratch failed 472 of its 475 roles on this.
+time: 2026-11-03T20:59:50Z

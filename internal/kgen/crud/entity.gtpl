@@ -250,6 +250,10 @@ func (r *{{.Pkg}}Resource) Create(ctx context.Context, req resource.CreateReques
 	if resp.Diagnostics.HasError() {
 		return
 	}{{end}}{{end}}
+{{- if .IDIsParent}}
+	// id_is_parent: every by-id route takes the parent's id, not the record's.
+	id = plan.{{.CreateParentField}}.ValueInt64()
+{{- end}}
 
 	plan.{{.IDGo}} = types.StringValue({{if eq .IDParamType "string"}}id{{else}}strconv.FormatInt(id, 10){{end}})
 {{- range .CreateOnly}}
@@ -300,11 +304,52 @@ func (r *{{.Pkg}}Resource) Create(ctx context.Context, req resource.CreateReques
 {{- range .Rewritten}}
 	configured{{.}} := plan.{{.}}
 {{- end}}
+{{- range .CreateViaUpdate}}
+	planned{{.}} := plan.{{.}}
+{{- end}}
 
 	resp.Diagnostics.Append(flatten{{.Pascal}}({{if or .HasRespSlices .HasNestedFlat .HasIDProj .RespRawValues}}ctx, {{end}}readOut, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+{{- if .IDIsParent}}
+	{{.Pkg}}IDFromParent(&plan)
+{{- end}}
+{{- if .CreateViaUpdate}}
+
+	// create_via_update: the create ignores these (Kion stores
+	// apply_to_all_accounts true whatever it is sent), so an update applies a
+	// configured value the read-back does not show.
+	if {{range $i, $f := .CreateViaUpdate}}{{if $i}} || {{end}}(!planned{{$f}}.IsNull() && !planned{{$f}}.IsUnknown() && !planned{{$f}}.Equal(plan.{{$f}})){{end}} {
+		{{- range .CreateViaUpdate}}
+		plan.{{.}} = planned{{.}}
+		{{- end}}
+		idInt := id
+		{{template "entityUpdateBody" .}}
+
+		out, err := conn.{{.UpdateMethod}}(ctx, input, {{.SDKAlias}}.{{.UpdateParams}}{ {{.UpdateIDParam}}: {{.UpdateIDExpr}}})
+		if err != nil && !errs.IsUndeclaredSuccess(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("updating %s after creation (ID: {{.IDFormat}})", {{.ResConst}}, id), err.Error())
+			return
+		}
+		resp.Diagnostics.Append(errs.ResponseDiagnostics(fmt.Sprintf("updating %s after creation", {{.ResConst}}), out)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		readOut, readErr = conn.{{.ReadMethod}}(ctx, {{.SDKAlias}}.{{.ReadParams}}{ {{.ReadIDParam}}: {{if eq .IDParamType "uint64"}}uint64(id){{else}}id{{end}}})
+		if readErr != nil {
+			resp.Diagnostics.AddError(fmt.Sprintf("reading %s after creation (ID: {{.IDFormat}})", {{.ResConst}}, id), readErr.Error())
+			return
+		}
+		resp.Diagnostics.Append(flatten{{.Pascal}}({{if or .HasRespSlices .HasNestedFlat .HasIDProj .RespRawValues}}ctx, {{end}}readOut, &plan)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+{{- if .IDIsParent}}
+		{{.Pkg}}IDFromParent(&plan)
+{{- end}}
+	}
+{{- end}}
 {{- if .ReadCompanion}}
 
 	resp.Diagnostics.Append({{.ReadCompanion}}(ctx, r.Meta(), id, &plan)...)
@@ -420,6 +465,14 @@ func (r *{{.Pkg}}Resource) Read(ctx context.Context, req resource.ReadRequest, r
 	if resp.Diagnostics.HasError() {
 		return
 	}
+{{- if .IDIsParent}}
+	// An empty record (parent 0) is how this route answers a deleted one.
+	if state.{{.CreateParentField}}.ValueInt64() == 0 {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	{{.Pkg}}IDFromParent(&state)
+{{- end}}
 {{- range .Rewritten}}
 	// The API returns its own canonical form of this value. Keep what state
 	// already held when the two say the same thing, so a refresh converges;
@@ -553,80 +606,7 @@ func (r *{{.Pkg}}Resource) Update(ctx context.Context, req resource.UpdateReques
 	}
 {{- end}}
 
-	{{range .UpdateObjBinds}}{{.Var}} := {{$.SDKAlias}}.{{.SDKType}}{
-		{{- range .Subs}}
-		{{.SDKField}}: {{.Expr}},
-		{{- end}}
-	}
-	{{end}}{{range .UpdateArrBinds}}var {{.Var}} []{{$.SDKAlias}}.{{.ElemType}}
-	var {{.Var}}Src []{{.ValueType}}
-	// Guarded like the flex slice helpers: ElementsAs cannot convert a null or
-	// unknown collection into a concrete slice, and an Optional+Computed
-	// attribute the config omits is unknown at create.
-	if !plan.{{.ModelGo}}.IsNull() && !plan.{{.ModelGo}}.IsUnknown() {
-		resp.Diagnostics.Append(plan.{{.ModelGo}}.ElementsAs(ctx, &{{.Var}}Src, false)...)
-	}
-	for _, elem := range {{.Var}}Src {
-		{{.Var}} = append({{.Var}}, {{$.SDKAlias}}.{{.ElemType}}{
-			{{- range .Subs}}
-			{{.SDKField}}: {{.Expr}},
-			{{- end}}
-		})
-	}
-	{{end}}{{range .UpdateRawValues}}{{.Var}}, {{.Var}}Diags := {{.Func}}(ctx, &plan)
-	resp.Diagnostics.Append({{.Var}}Diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	{{end}}{{if or .UpdateSliceBinds .UpdateArrBinds}}{{range .UpdateSliceBinds}}{{.Var}}, {{.Var}}Diags := {{.Func}}(ctx, plan.{{.ModelGo}})
-	resp.Diagnostics.Append({{.Var}}Diags...)
-	{{end}}if resp.Diagnostics.HasError() {
-		return
-	}
-
-	{{end}}input := {{if .UpdateBodyPtr}}&{{.SDKAlias}}.{{.UpdateBody}}{
-		{{- range .UpdateBinds}}
-		{{.SDKField}}: {{.Converter}}(plan.{{.ModelGo}}),
-		{{- end}}
-		{{- range .UpdateSliceBinds}}
-		{{.SDKField}}: {{if .Wrap}}{{$.SDKAlias}}.{{.Wrap}}{Value: {{.Var}}, Set: !plan.{{.ModelGo}}.IsUnknown()}{{else}}{{.Var}}{{end}},
-		{{- end}}
-		{{- range .UpdateObjBinds}}
-		{{.SDKField}}: {{if .Guard}}{{.Var}}Opt{{else if .OptType}}{{$.SDKAlias}}.{{.OptType}}{Value: {{.Var}}, Set: true}{{else if .Ptr}}&{{.Var}}{{else}}{{.Var}}{{end}},
-		{{- end}}
-		{{- range .UpdateArrBinds}}
-		{{.SDKField}}: {{if .Wrap}}{{$.SDKAlias}}.{{.Wrap}}{Value: {{.Var}}, Set: !plan.{{.ModelGo}}.IsUnknown()}{{else}}{{.Var}}{{end}},
-		{{- end}}
-		{{- range .UpdateFlatSubs}}
-		{{.SDKField}}: {{.Expr}},
-		{{- end}}
-		{{- range .UpdateRawValues}}
-		{{.SDKField}}: {{.Var}},
-		{{- end}}
-	}{{else}}{{.SDKAlias}}.{{.UpdateBodyOpt}}{
-		Value: {{.SDKAlias}}.{{.UpdateBody}}{
-			{{- range .UpdateBinds}}
-			{{.SDKField}}: {{.Converter}}(plan.{{.ModelGo}}),
-			{{- end}}
-			{{- range .UpdateSliceBinds}}
-			{{.SDKField}}: {{if .Wrap}}{{$.SDKAlias}}.{{.Wrap}}{Value: {{.Var}}, Set: !plan.{{.ModelGo}}.IsUnknown()}{{else}}{{.Var}}{{end}},
-			{{- end}}
-			{{- range .UpdateObjBinds}}
-			{{.SDKField}}: {{if .Guard}}{{.Var}}Opt{{else if .OptType}}{{$.SDKAlias}}.{{.OptType}}{Value: {{.Var}}, Set: true}{{else if .Ptr}}&{{.Var}}{{else}}{{.Var}}{{end}},
-			{{- end}}
-			{{- range .UpdateArrBinds}}
-			{{.SDKField}}: {{if .Wrap}}{{$.SDKAlias}}.{{.Wrap}}{Value: {{.Var}}, Set: !plan.{{.ModelGo}}.IsUnknown()}{{else}}{{.Var}}{{end}},
-			{{- end}}
-			{{- range .UpdateFlatSubs}}
-			{{.SDKField}}: {{.Expr}},
-			{{- end}}
-			{{- range .UpdateRawValues}}
-			{{.SDKField}}: {{.Var}},
-			{{- end}}
-		},
-		Set: true,
-	}{{end}}
+	{{template "entityUpdateBody" .}}
 
 	out, err := conn.{{.UpdateMethod}}(ctx, input, {{.SDKAlias}}.{{.UpdateParams}}{ {{.UpdateIDParam}}: {{.UpdateIDExpr}}})
 	// A 2xx the spec does not declare arrives as a decode error even though the
@@ -736,6 +716,9 @@ func (r *{{.Pkg}}Resource) Update(ctx context.Context, req resource.UpdateReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
+{{- if .IDIsParent}}
+	{{.Pkg}}IDFromParent(&plan)
+{{- end}}
 {{- if .ReadCompanion}}
 
 	resp.Diagnostics.Append({{.ReadCompanion}}(ctx, r.Meta(), idInt, &plan)...)
@@ -1149,3 +1132,89 @@ func {{.Func}}(ctx context.Context, raw jx.Raw, model *{{$.Model}}) diag.Diagnos
 	return diags
 }
 {{end}}
+
+{{- if .IDIsParent}}
+
+// {{.Pkg}}IDFromParent sets the id from the parent: flatten maps the payload's
+// own record id, which no route accepts. See id_is_parent.
+func {{.Pkg}}IDFromParent(m *{{.Model}}) {
+	m.{{.IDGo}} = types.StringValue(strconv.FormatInt(m.{{.CreateParentField}}.ValueInt64(), 10))
+}
+{{- end}}
+
+{{- /* The update request body built from plan: Update sends it, and Create
+     sends it again for create_via_update. */ -}}
+{{define "entityUpdateBody"}}{{range .UpdateObjBinds}}{{.Var}} := {{$.SDKAlias}}.{{.SDKType}}{
+		{{- range .Subs}}
+		{{.SDKField}}: {{.Expr}},
+		{{- end}}
+	}
+	{{end}}{{range .UpdateArrBinds}}var {{.Var}} []{{$.SDKAlias}}.{{.ElemType}}
+	var {{.Var}}Src []{{.ValueType}}
+	// Guarded like the flex slice helpers: ElementsAs cannot convert a null or
+	// unknown collection into a concrete slice, and an Optional+Computed
+	// attribute the config omits is unknown at create.
+	if !plan.{{.ModelGo}}.IsNull() && !plan.{{.ModelGo}}.IsUnknown() {
+		resp.Diagnostics.Append(plan.{{.ModelGo}}.ElementsAs(ctx, &{{.Var}}Src, false)...)
+	}
+	for _, elem := range {{.Var}}Src {
+		{{.Var}} = append({{.Var}}, {{$.SDKAlias}}.{{.ElemType}}{
+			{{- range .Subs}}
+			{{.SDKField}}: {{.Expr}},
+			{{- end}}
+		})
+	}
+	{{end}}{{range .UpdateRawValues}}{{.Var}}, {{.Var}}Diags := {{.Func}}(ctx, &plan)
+	resp.Diagnostics.Append({{.Var}}Diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	{{end}}{{if or .UpdateSliceBinds .UpdateArrBinds}}{{range .UpdateSliceBinds}}{{.Var}}, {{.Var}}Diags := {{.Func}}(ctx, plan.{{.ModelGo}})
+	resp.Diagnostics.Append({{.Var}}Diags...)
+	{{end}}if resp.Diagnostics.HasError() {
+		return
+	}
+
+	{{end}}input := {{if .UpdateBodyPtr}}&{{.SDKAlias}}.{{.UpdateBody}}{
+		{{- range .UpdateBinds}}
+		{{.SDKField}}: {{.Converter}}(plan.{{.ModelGo}}),
+		{{- end}}
+		{{- range .UpdateSliceBinds}}
+		{{.SDKField}}: {{if .Wrap}}{{$.SDKAlias}}.{{.Wrap}}{Value: {{.Var}}, Set: !plan.{{.ModelGo}}.IsUnknown()}{{else}}{{.Var}}{{end}},
+		{{- end}}
+		{{- range .UpdateObjBinds}}
+		{{.SDKField}}: {{if .Guard}}{{.Var}}Opt{{else if .OptType}}{{$.SDKAlias}}.{{.OptType}}{Value: {{.Var}}, Set: true}{{else if .Ptr}}&{{.Var}}{{else}}{{.Var}}{{end}},
+		{{- end}}
+		{{- range .UpdateArrBinds}}
+		{{.SDKField}}: {{if .Wrap}}{{$.SDKAlias}}.{{.Wrap}}{Value: {{.Var}}, Set: !plan.{{.ModelGo}}.IsUnknown()}{{else}}{{.Var}}{{end}},
+		{{- end}}
+		{{- range .UpdateFlatSubs}}
+		{{.SDKField}}: {{.Expr}},
+		{{- end}}
+		{{- range .UpdateRawValues}}
+		{{.SDKField}}: {{.Var}},
+		{{- end}}
+	}{{else}}{{.SDKAlias}}.{{.UpdateBodyOpt}}{
+		Value: {{.SDKAlias}}.{{.UpdateBody}}{
+			{{- range .UpdateBinds}}
+			{{.SDKField}}: {{.Converter}}(plan.{{.ModelGo}}),
+			{{- end}}
+			{{- range .UpdateSliceBinds}}
+			{{.SDKField}}: {{if .Wrap}}{{$.SDKAlias}}.{{.Wrap}}{Value: {{.Var}}, Set: !plan.{{.ModelGo}}.IsUnknown()}{{else}}{{.Var}}{{end}},
+			{{- end}}
+			{{- range .UpdateObjBinds}}
+			{{.SDKField}}: {{if .Guard}}{{.Var}}Opt{{else if .OptType}}{{$.SDKAlias}}.{{.OptType}}{Value: {{.Var}}, Set: true}{{else if .Ptr}}&{{.Var}}{{else}}{{.Var}}{{end}},
+			{{- end}}
+			{{- range .UpdateArrBinds}}
+			{{.SDKField}}: {{if .Wrap}}{{$.SDKAlias}}.{{.Wrap}}{Value: {{.Var}}, Set: !plan.{{.ModelGo}}.IsUnknown()}{{else}}{{.Var}}{{end}},
+			{{- end}}
+			{{- range .UpdateFlatSubs}}
+			{{.SDKField}}: {{.Expr}},
+			{{- end}}
+			{{- range .UpdateRawValues}}
+			{{.SDKField}}: {{.Var}},
+			{{- end}}
+		},
+		Set: true,
+	}{{end}}{{end}}

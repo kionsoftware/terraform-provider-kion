@@ -302,6 +302,8 @@ type acctestData struct {
 	ImportUnrecoverable []importUnrecoverable
 	// MissingViaList: a 500 from the read is "gone" when this list omits the id.
 	MissingViaList string
+	// IDIsParent: the route answers a deleted record with an all-zero one.
+	IDIsParent bool
 	// ImportParentTF is the parent attribute a compound "<parent>/<id>" import
 	// id carries; the test builds that id from state.
 	ImportParentTF string
@@ -331,6 +333,7 @@ func buildAcctestData(rm ResourceModel, tv testValues) (acctestData, error) {
 		ConfirmListedTF: rm.ConfirmListedTF,
 		ImportParentTF:  rm.ImportParentTF,
 		MissingViaList:  rm.MissingViaList,
+		IDIsParent:      rm.IDIsParent,
 	}
 	d.CreateAttrs = sortAttrs(tv.Create, rm)
 	d.UpdateAttrs = sortAttrs(tv.Update, rm)

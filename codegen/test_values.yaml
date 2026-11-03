@@ -683,7 +683,7 @@ resources:
       - attr: aws_session_tags
         reason: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
     create:
-      apply_to_all_accounts: "true"
+      apply_to_all_accounts: "false"
       name: "%[1]s"
       project_id: "hcl:kion_project.test_project.id"
       aws_session_tags: "hcl:[{ tag_key = \"env\", tag_value = \"test\" }, { tag_key = \"team\", tag_value = \"test-acc\" }]"
@@ -1019,14 +1019,14 @@ resources:
       description: "test-acc billing rule"
       name: "%[1]s"
       rule_type: "2"
-      rule_value: "5.0"
+      rule_value: "5"
       start_month: "202501"
     update:
       billing_source_ids: "hcl:[%[2]s]"
       description: "test-acc billing rule updated"
       name: "%[1]s"
       rule_type: "2"
-      rule_value: "10.0"
+      rule_value: "10"
       start_month: "202501"
   permission_scheme:
     create:

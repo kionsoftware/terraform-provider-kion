@@ -1,0 +1,6 @@
+kind: BUG FIXES
+body: >-
+  kion_billing_rule: a rule deleted outside Terraform no longer fails every refresh with "API returned status 500".
+  Kion answers a by-id read of a deleted rule with a 500; the read now checks the rule list and drops the rule from
+  state when the list omits it, as kion_oauth2_client and kion_permission_scheme do.
+time: 2026-11-03T20:59:50Z

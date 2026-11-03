@@ -156,6 +156,8 @@ resources:
     # Only the read. Create, update and delete have usable typed models and stay
     # on the SDK; declaring a path here is what makes an op raw.
     read:   { method: GET,    path: "/v3/billing-rule/{id}", spec: public, raw: true }
+    # A deleted (or unknown) rule's by-id read answers 500; the list omits it.
+    missing_via_list: /v3/billing-rule
     read_shape:
       scalars:
         - { tf: id,          from: id,          kind: id }

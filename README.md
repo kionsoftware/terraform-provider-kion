@@ -20,7 +20,7 @@ read and delete resources, and look up existing ones with data sources.
 
 ## Quick Start
 
-Requires [Terraform](https://developer.hashicorp.com/terraform/install) 1.0 or later.
+Requires [Terraform](https://developer.hashicorp.com/terraform/install) 1.4 or later.
 
 ```hcl
 terraform {

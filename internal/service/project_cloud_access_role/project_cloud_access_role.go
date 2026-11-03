@@ -163,10 +163,81 @@ func (r *project_cloud_access_roleResource) Create(ctx context.Context, req reso
 		resp.Diagnostics.AddError(fmt.Sprintf("reading %s after creation (ID: %d)", ResNameProjectCloudAccessRole, id), readErr.Error())
 		return
 	}
+	plannedApplyToAllAccounts := plan.ApplyToAllAccounts
 
 	resp.Diagnostics.Append(flattenProjectCloudAccessRole(ctx, readOut, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// create_via_update: the create ignores these (Kion stores
+	// apply_to_all_accounts true whatever it is sent), so an update applies a
+	// configured value the read-back does not show.
+	if !plannedApplyToAllAccounts.IsNull() && !plannedApplyToAllAccounts.IsUnknown() && !plannedApplyToAllAccounts.Equal(plan.ApplyToAllAccounts) {
+		plan.ApplyToAllAccounts = plannedApplyToAllAccounts
+		idInt := id
+		var aWSSessionTags []generated.AWSSessionTag
+		var aWSSessionTagsSrc []AwsSessionTagsValue
+		// Guarded like the flex slice helpers: ElementsAs cannot convert a null or
+		// unknown collection into a concrete slice, and an Optional+Computed
+		// attribute the config omits is unknown at create.
+		if !plan.AwsSessionTags.IsNull() && !plan.AwsSessionTags.IsUnknown() {
+			resp.Diagnostics.Append(plan.AwsSessionTags.ElementsAs(ctx, &aWSSessionTagsSrc, false)...)
+		}
+		for _, elem := range aWSSessionTagsSrc {
+			aWSSessionTags = append(aWSSessionTags, generated.AWSSessionTag{
+				CloudAccessRoleID:   flex.OptNilUint64FromFramework(elem.CloudAccessRoleId),
+				ID:                  flex.OptUint64FromFramework(elem.Id),
+				OuCloudAccessRoleID: flex.OptNilUint64FromFramework(elem.OuCloudAccessRoleId),
+				TagKey:              flex.OptStringFromFramework(elem.TagKey),
+				TagValue:            flex.OptStringFromFramework(elem.TagValue),
+			})
+		}
+		aWSTrustedAccountNumbers, aWSTrustedAccountNumbersDiags := flex.StringSliceFromFramework(ctx, plan.AwsTrustedAccountNumbers)
+		resp.Diagnostics.Append(aWSTrustedAccountNumbersDiags...)
+		aWSTrustedServices, aWSTrustedServicesDiags := flex.StringSliceFromFramework(ctx, plan.AwsTrustedServices)
+		resp.Diagnostics.Append(aWSTrustedServicesDiags...)
+		cloudProviderIds, cloudProviderIdsDiags := flex.Uint64SliceFromFrameworkSet(ctx, plan.CloudProviderIds)
+		resp.Diagnostics.Append(cloudProviderIdsDiags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		input := &generated.ProjectCloudAccessRoleUpdate{
+			AWSCreateInstanceProfile:  flex.OptNilBoolFromFramework(plan.AwsCreateInstanceProfile),
+			AWSIamPermissionsBoundary: flex.OptNilUint64FromFramework(plan.AwsIamPermissionsBoundary),
+			AWSIamRoleTrustPolicy:     flex.OptStringFromFramework(plan.AwsIamRoleTrustPolicy),
+			AWSPartition:              flex.OptStringFromFramework(plan.AwsPartition),
+			ApplyToAllAccounts:        flex.OptNilBoolFromFramework(plan.ApplyToAllAccounts),
+			FutureAccounts:            flex.OptNilBoolFromFramework(plan.FutureAccounts),
+			LongTermAccessKeys:        flex.OptNilBoolFromFramework(plan.LongTermAccessKeys),
+			Name:                      flex.StringValueFromFramework(plan.Name),
+			ShortTermAccessKeys:       flex.OptNilBoolFromFramework(plan.ShortTermAccessKeys),
+			WebAccess:                 flex.OptNilBoolFromFramework(plan.WebAccess),
+			AWSTrustedAccountNumbers:  generated.OptNilStringArray{Value: aWSTrustedAccountNumbers, Set: !plan.AwsTrustedAccountNumbers.IsUnknown()},
+			AWSTrustedServices:        generated.OptNilStringArray{Value: aWSTrustedServices, Set: !plan.AwsTrustedServices.IsUnknown()},
+			CloudProviderIds:          generated.OptNilUint64Array{Value: cloudProviderIds, Set: !plan.CloudProviderIds.IsUnknown()},
+			AWSSessionTags:            generated.OptNilAWSSessionTagArray{Value: aWSSessionTags, Set: !plan.AwsSessionTags.IsUnknown()},
+		}
+
+		out, err := conn.PatchProjectCloudAccessRole(ctx, input, generated.PatchProjectCloudAccessRoleParams{ID: idInt})
+		if err != nil && !errs.IsUndeclaredSuccess(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("updating %s after creation (ID: %d)", ResNameProjectCloudAccessRole, id), err.Error())
+			return
+		}
+		resp.Diagnostics.Append(errs.ResponseDiagnostics(fmt.Sprintf("updating %s after creation", ResNameProjectCloudAccessRole), out)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		readOut, readErr = conn.GetProjectCloudAccessRole(ctx, generated.GetProjectCloudAccessRoleParams{ID: id})
+		if readErr != nil {
+			resp.Diagnostics.AddError(fmt.Sprintf("reading %s after creation (ID: %d)", ResNameProjectCloudAccessRole, id), readErr.Error())
+			return
+		}
+		resp.Diagnostics.Append(flattenProjectCloudAccessRole(ctx, readOut, &plan)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	resp.Diagnostics.Append(flex.ResolveUnknowns(ctx, &plan)...)

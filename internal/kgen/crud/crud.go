@@ -465,6 +465,19 @@ func (g *generator) generateResource(root, name string, ops resOps, ds dsOps, id
 			}
 			rm.Rewritten = append(rm.Rewritten, goName)
 		}
+		for _, tfName := range entityArch.CreateViaUpdate {
+			var goName string
+			for _, mf := range model {
+				if mf.TFSDK == tfName {
+					goName = mf.GoName
+					break
+				}
+			}
+			if goName == "" {
+				return 0, fmt.Errorf("%s: create_via_update attribute %q is not in the model", name, tfName)
+			}
+			rm.CreateViaUpdate = append(rm.CreateViaUpdate, goName)
+		}
 		if rm.CreateOnly, err = resolveCreateOnly(name, *entityArch, model); err != nil {
 			return 0, err
 		}
@@ -501,6 +514,7 @@ func (g *generator) generateResource(root, name string, ops resOps, ds dsOps, id
 		rm.CreateParentParam = entityArch.CreateParentParam
 		rm.CreateParentField = mf.GoName
 		rm.ConfirmListed = entityArch.ConfirmListed
+		rm.IDIsParent = entityArch.IDIsParent
 		rm.ConfirmListedTF = entityArch.CreateParentField
 		rm.ConfirmParents = entityArch.ConfirmParents
 		if rm.Create.Params != nil {

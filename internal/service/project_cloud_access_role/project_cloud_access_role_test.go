@@ -36,7 +36,7 @@ func TestAccKionProjectCloudAccessRole_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckProjectCloudAccessRoleExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "apply_to_all_accounts", "true"),
+					resource.TestCheckResourceAttr(resourceName, "apply_to_all_accounts", "false"),
 					resource.TestCheckResourceAttr(resourceName, "aws_session_tags.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttrSet(resourceName, "project_id"),
@@ -75,7 +75,7 @@ func TestAccKionProjectCloudAccessRole_update(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckProjectCloudAccessRoleExists(ctx, resourceName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "apply_to_all_accounts", "true"),
+					resource.TestCheckResourceAttr(resourceName, "apply_to_all_accounts", "false"),
 					resource.TestCheckResourceAttr(resourceName, "aws_session_tags.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttrSet(resourceName, "project_id"),
@@ -201,7 +201,7 @@ resource "kion_project" "test_project" {
 }
 
 resource "kion_project_cloud_access_role" "test" {
-  apply_to_all_accounts = true
+  apply_to_all_accounts = false
   aws_session_tags = [{ tag_key = "env", tag_value = "test" }, { tag_key = "team", tag_value = "test-acc" }]
   name = "%[1]s"
   project_id = kion_project.test_project.id

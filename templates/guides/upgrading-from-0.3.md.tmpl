@@ -20,8 +20,10 @@ upgrade to the new major version.
 
 ## Requirements
 
-- **Terraform 1.0 or later.** The new provider speaks plugin protocol 6, which
-  Terraform 0.x cannot load.
+- **Terraform 1.4 or later.** The new provider speaks plugin protocol 6, which
+  Terraform 0.x cannot load, and before 1.4 Terraform plans the computed
+  fields of a nested list (a cloud access role's session tag ids, for example)
+  as unknown on every run, so those resources never show `No changes`.
 - Upgrade from **0.3.36**, the final 0.3.x release, if you can. The state
   upgraders are written against it. An attribute that a later 0.3.x added and your
   version lacks simply starts empty.
@@ -210,11 +212,11 @@ on the next refresh from the Kion API):
 - `kion_ou_cloud_access_role` / `kion_project_cloud_access_role`:
   `aws_session_tags` is exploded the same way. The tag objects' `id` fields
   start null and the next refresh fills them.
-- `kion_ou_cloud_access_role` / `kion_project_cloud_access_role`:
-  `apply_to_all_accounts = true -> false`. 0.3.x never sent `false`, so Kion
-  kept its default of `true` and the old state recorded it. The first apply
-  sets the value you configured. This changes the role's account scope in
-  Kion, so check the configured value before applying.
+- `kion_project_cloud_access_role`: `apply_to_all_accounts = true -> false`.
+  Kion's create stores `true` whatever it is sent, and 0.3.x never corrected
+  it, so the old state recorded `true`. The first apply sets the value you
+  configured, and the new provider applies it on create too. This changes the
+  role's account scope in Kion, so check the configured value before applying.
 - Empty collections that the old provider stored as null, such as
   `regions = []` on `kion_compliance_check` or `owner_user_group_ids = []` on
   `kion_webhook` and `kion_custom_variable`, show `+ ... = []` once.

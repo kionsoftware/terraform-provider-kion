@@ -40,7 +40,7 @@ func TestAccKionBillingRule_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", "test-acc billing rule"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttr(resourceName, "rule_type", "2"),
-					resource.TestCheckResourceAttr(resourceName, "rule_value", "5.0"),
+					resource.TestCheckResourceAttr(resourceName, "rule_value", "5"),
 					resource.TestCheckResourceAttr(resourceName, "start_month", "202501"),
 				),
 			},
@@ -77,7 +77,7 @@ func TestAccKionBillingRule_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", "test-acc billing rule"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttr(resourceName, "rule_type", "2"),
-					resource.TestCheckResourceAttr(resourceName, "rule_value", "5.0"),
+					resource.TestCheckResourceAttr(resourceName, "rule_value", "5"),
 					resource.TestCheckResourceAttr(resourceName, "start_month", "202501"),
 				),
 			},
@@ -90,7 +90,7 @@ func TestAccKionBillingRule_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", "test-acc billing rule updated"),
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%[1]s", rName)),
 					resource.TestCheckResourceAttr(resourceName, "rule_type", "2"),
-					resource.TestCheckResourceAttr(resourceName, "rule_value", "10.0"),
+					resource.TestCheckResourceAttr(resourceName, "rule_value", "10"),
 					resource.TestCheckResourceAttr(resourceName, "start_month", "202501"),
 				),
 			},
@@ -163,6 +163,10 @@ func testAccCheckBillingRuleDestroy(_ context.Context) resource.TestCheckFunc {
 			if conns.IsRawNotFound(err) {
 				continue
 			}
+			// The by-id read answers a deleted record with a 500; see the resource.
+			if listed, lerr := conn.RawIDListed(ctx, "/v3/billing-rule", id); err != nil && lerr == nil && !listed {
+				continue
+			}
 			if err != nil {
 				return fmt.Errorf("reading kion_billing_rule (%d): %w", id, err)
 			}
@@ -181,7 +185,7 @@ resource "kion_billing_rule" "test" {
   description = "test-acc billing rule"
   name = "%[1]s"
   rule_type = 2
-  rule_value = 5.0
+  rule_value = 5
   start_month = 202501
 }
 `, rName, billingSourceID)
@@ -194,7 +198,7 @@ resource "kion_billing_rule" "test" {
   description = "test-acc billing rule updated"
   name = "%[1]s"
   rule_type = 2
-  rule_value = 10.0
+  rule_value = 10
   start_month = 202501
 }
 `, rName, billingSourceID)

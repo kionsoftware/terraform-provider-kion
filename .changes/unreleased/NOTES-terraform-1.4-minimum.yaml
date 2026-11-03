@@ -1,0 +1,7 @@
+kind: NOTES
+body: >-
+  The minimum Terraform version is now documented as 1.4, and every module in modules/ requires it. The provider
+  loads on 1.0 to 1.3, but those versions plan the computed fields of a nested list as unknown on every run, so a
+  resource such as kion_project_cloud_access_role never reaches "No changes". 1.4 is the earliest version the
+  acceptance tests pass on; 1.0.11 and 1.3.10 fail them.
+time: 2026-11-03T20:55:07Z
