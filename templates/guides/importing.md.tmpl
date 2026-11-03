@@ -26,9 +26,9 @@ to fetch — and so a binary can never be paired with a manifest from a differen
 commit.
 
 ```sh
-# macOS on Apple silicon; substitute your platform
-# (darwin/linux/windows x amd64/arm64)
-V=1.1.1
+# Set V to the provider release you are using. macOS on Apple silicon
+# shown; substitute your platform (darwin/linux/windows x amd64/arm64).
+V=X.Y.Z
 curl -fsSLO "https://github.com/kionsoftware/terraform-provider-kion/releases/download/v${V}/kion-import_${V}_darwin_arm64.zip"
 unzip -j "kion-import_${V}_darwin_arm64.zip" kion-import && chmod +x kion-import
 ```
@@ -176,7 +176,8 @@ under that parent, and a managed exemption refreshes as deleted.
 
 Earlier releases read `/v1/{ou,project}/{id}/cloud-access-role-exemption`
 instead. That route lists a different, cloud-rule-linked exemption kind, so an
-exemption created through these resources was never found there (#80).
+exemption created through these resources was never found there
+([#80](https://github.com/bshutterkion/terraform-provider-kion/issues/80)).
 
 ## Rewrite into module calls
 
@@ -282,8 +283,8 @@ The rewritten config is at .import-check/main.tf
 
 It is plan-only and needs no credentials — the provider is never contacted.
 The mirror exists because `terraform init` skips `dev_overrides`, and
-validating a module call requires init. It also needs no published provider,
-which matters while this provider is not on the registry.
+validating a module call requires init. It also needs no published provider:
+the check uses the provider built from your working tree.
 
 `make import-modules` does the rewrite alone, without the check.
 
