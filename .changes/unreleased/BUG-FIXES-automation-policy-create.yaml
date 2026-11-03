@@ -1,0 +1,7 @@
+kind: BUG FIXES
+body: >-
+  kion_automation_policy: create no longer fails after Kion has already made the policy, which left it in Kion with
+  nothing in state. Kion answers a create with the bare id, which the provider could not decode. A policy with a
+  scheduled_frequency but no start_date or end_date is no longer rejected with a bare 422: the unset dates were
+  sent as an empty timestamp Kion cannot parse.
+time: 2026-11-03T17:18:14Z
