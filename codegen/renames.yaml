@@ -1,0 +1,60 @@
+# Attribute renames applied to the provider code spec between tfplugingen-openapi
+# and tfplugingen-framework (see `kgen schemas` / internal/kgen/schemas).
+#
+# tfplugingen's own `aliases` only rename operation PARAMETERS, not response or
+# request BODY properties, so this handles body-attribute renames, e.g. Kion's
+# generic envelope field `data`. Renaming a generated attribute to match an
+# existing (old-provider) name is also how you migrate a resource onto a
+# generated schema without breaking state.
+#
+# Keyed by resource / data-source name -> { oas_attribute_name: terraform_name }.
+# Top-level attributes only.
+
+gcp_regions:
+  data: regions
+
+# custom_variable_override abstracts account/ou/project behind a generic
+# entity_id/entity_type. The account-variant path param account_id is the
+# representative entity id; rename it so the generated schema matches the
+# resource's entity-agnostic model.
+custom_variable_override:
+  account_id: entity_id
+
+# Association mappings: the path param {id} is the parent entity's id, not the
+# resource's synthetic id. Rename it so the composite key reads correctly; the
+# synthetic string `id` is added back in schema_overrides.yaml.
+ou_permission_mapping:
+  id: ou_id
+project_permission_mapping:
+  id: project_id
+funding_source_permission_mapping:
+  id: funding_source_id
+
+# The enforcement create body names the user-group list `ugroup_ids`; the model
+# uses the consistent user_group_ids.
+project_enforcement:
+  ugroup_ids: user_group_ids
+ou_enforcement:
+  ugroup_ids: user_group_ids
+funding_source_enforcement:
+  ugroup_ids: user_group_ids
+
+# aws_account's create body uses account_email/account_name/organizational_unit;
+# the resource model uses email/name/aws_organizational_unit.
+aws_account: &cloud_account_renames
+  account_email: email
+  account_name: name
+  organizational_unit: aws_organizational_unit
+
+# account renders the same template as aws_account and so must rename identically.
+account: *cloud_account_renames
+
+# The custom_variable record's own id comes through as custom_variable_id; the
+# generator (and Terraform convention) want a plain string `id`.
+custom_variable:
+  custom_variable_id: id
+
+# The body and model say update_on_login; the read payload says
+# should_update_on_login. Mapped so the read sets it, and import keeps it.
+idms_open_id_group_association:
+  should_update_on_login: update_on_login

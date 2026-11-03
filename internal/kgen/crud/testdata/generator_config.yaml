@@ -1,0 +1,36 @@
+provider:
+  name: kion
+
+resources:
+  # commented-out incomplete resource must be skipped by the loader
+  # account: INCOMPLETE — missing create (supply via codegen/config_overrides.yaml)
+  label:
+    create:
+      path: /v3/label
+      method: POST
+    read:
+      path: /v3/label/{id}
+      method: GET
+    update:
+      path: /v3/label/{id}
+      method: PATCH
+    delete:
+      path: /v3/label/{id}
+      method: DELETE
+    schema:
+      ignores: [status, record_id, data]
+  guessed:  # heuristic — verify
+    create:
+      path: /v3/guessed
+      method: POST
+    read:
+      path: /v3/guessed/{id}
+      method: GET
+
+data_sources:
+  label:
+    read:
+      path: /v3/label
+      method: GET
+    schema:
+      ignores: [status, record_id]

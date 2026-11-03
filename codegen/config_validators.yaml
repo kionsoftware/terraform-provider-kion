@@ -1,0 +1,179 @@
+# Cross-field constraints the Kion API enforces and the schema cannot express.
+#
+# Guarded by: TestConfigValidatorsMatchDeclaration (declaration <-> generated
+#             code, both directions) and TestConfigValidatorAttributesExist.
+#
+# `at_least_one_of` becomes framework.AtLeastOneOfOnCreate, so a configuration
+# CREATING a resource with none of the listed attributes fails at PLAN time
+# naming the Terraform attributes, instead of at apply time with an API
+# validation error naming a field the user never wrote. It is create-only: Kion
+# holds existing records with none of them (built-ins), and those must import.
+# `required_when` makes attributes required for one value of another, and
+# `required_together` lists groups that must be set all or none
+# (resourcevalidator.RequiredTogether).
+#
+# Authored, not derived. The OpenAPI spec carries almost no constraints -- 3
+# enums, 16 patterns and 5 maxLength across 474 schemas -- so none of this comes
+# from it; each entry records the request body the API validates, so a reviewer
+# can check it against the API's documented behaviour.
+#
+# Attribute names are the PROVIDER's, resolved per package: they do not always
+# match the request body's spelling (see #84), and a validator naming an
+# attribute the schema lacks is a runtime panic rather than a compile error.
+ami:
+  body: AMICreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+azure_arm_template:
+  body: AzureARMTemplateDefinitionCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+azure_policy:
+  body: AzurePolicyCreate
+  at_least_one_of:
+    - owner_user_groups
+    - owner_users
+
+azure_role:
+  body: AzureRoleCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+cft:
+  body: CFTCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+cloud_rule:
+  body: CloudRuleCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+compliance_check:
+  body: ComplianceCheckCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+compliance_standard:
+  body: ComplianceStandardCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+funding_source:
+  body: FundingSourceCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+funding_source_enforcement:
+  body: FundingSourceEnforcementCreate
+  at_least_one_of:
+    - user_group_ids
+    - user_ids
+
+gcp_iam_role:
+  body: GCPRoleCreate
+  at_least_one_of:
+    - role_denials
+    - role_permissions
+
+iam_policy:
+  body: IAMPolicyCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+ou:
+  body: OUCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+ou_enforcement:
+  body: OUEnforcementCreate
+  at_least_one_of:
+    - user_group_ids
+    - user_ids
+
+project:
+  body: ProjectCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+project_enforcement:
+  body: ProjectEnforcementCreate
+  at_least_one_of:
+    - user_group_ids
+    - user_ids
+
+service_catalog:
+  body: ServiceCatalogPortfolioCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+service_control_policy:
+  body: ServiceControlPolicyCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+user_group:
+  body: UGroupCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+webhook:
+  body: WebhookCreate
+  at_least_one_of:
+    - owner_user_group_ids
+    - owner_user_ids
+
+# Cloud access role types. Each non-User type needs the field that describes who
+# may assume the role; the API rejects the create without it. 1 = User (needs
+# nothing extra), 2 = Custom Trust, 3 = Account, 4 = Service.
+ou_cloud_access_role:
+  body: OUCloudAccessRoleCreate
+  required_when:
+    - attribute: cloud_access_role_type_id
+      equals: 2
+      require: [aws_iam_role_trust_policy]
+    - attribute: cloud_access_role_type_id
+      equals: 3
+      require: [aws_trusted_account_numbers]
+    - attribute: cloud_access_role_type_id
+      equals: 4
+      require: [aws_trusted_services]
+
+project_cloud_access_role:
+  body: ProjectCloudAccessRoleCreate
+  required_when:
+    - attribute: cloud_access_role_type_id
+      equals: 2
+      require: [aws_iam_role_trust_policy]
+    - attribute: cloud_access_role_type_id
+      equals: 3
+      require: [aws_trusted_account_numbers]
+    - attribute: cloud_access_role_type_id
+      equals: 4
+      require: [aws_trusted_services]
+
+# The API keeps an access key pair only as a pair: it authenticates with the
+# stored keys when both are set and silently falls back to the billing role
+# otherwise, and an update that sends one without the other keeps the stored
+# keys. A configuration naming one alone would be accepted and ignored.
+billing_source_aws:
+  body: AWSBillingSourceCreateWithValidation
+  required_together:
+    - [key_id, key_secret]

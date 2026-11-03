@@ -1,18 +1,24 @@
+// Package main is the entry point for the Kion Terraform provider.
+//
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate -provider-name kion
 package main
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"github.com/kionsoftware/terraform-provider-kion/kion"
+	"context"
+	"log"
+
+	"terraform-provider-kion/internal/provider"
+
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
-// Generate docs for website
-//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
-
 func main() {
-	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: func() *schema.Provider {
-			return kion.Provider()
-		},
-	})
+	opts := providerserver.ServeOpts{
+		Address: "registry.terraform.io/kionsoftware/kion",
+	}
+
+	err := providerserver.Serve(context.Background(), provider.New(), opts)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }

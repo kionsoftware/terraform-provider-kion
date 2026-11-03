@@ -1,0 +1,485 @@
+name: CI
+
+# Ported from the GitLab pipeline this repo used before GitHub became the
+# source of truth. Job-for-job equivalents:
+#
+#   quality:fmt      -> fmt
+#   quality:vet      -> vet
+#   quality:lint     -> lint
+#   test:unit        -> test-unit
+#   test:modules     -> modules
+#   sast             -> codeql
+#   secret_detection -> secrets
+#
+# plus `internal-refs`, which has no GitLab counterpart: this repo is public,
+# and scripts/check-no-internal-refs.sh fails if internal references reappear.
+#
+# kion-sdk-go resolves from the module proxy at the version go.mod requires.
+# The GitLab jobs cloned it as a sibling checkout with a job token; that is
+# obsolete, so no job here clones anything but this repo.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# A new push supersedes the previous run on the same PR. Runs on main are left
+# alone so every commit on the default branch keeps a result.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # quality:fmt: gofmt -s -d, fail if it printed anything.
+  fmt:
+    name: gofmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: gofmt -s -d
+        run: |
+          diff=$(gofmt -s -d .)
+          if [ -n "$diff" ]; then
+            echo "Code is not formatted. Run 'gofmt -s -w .'"
+            echo "$diff"
+            exit 1
+          fi
+
+  # quality:vet
+  vet:
+    name: go vet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download modules
+        run: go mod download
+
+      - run: go vet ./...
+
+  # quality:lint: config in .golangci.yml (golangci-lint v2).
+  lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download modules
+        run: go mod download
+
+      # `latest` mirrors what GitLab ran and what `make ci-lint` installs, so a
+      # local `make ci` and this job resolve to the same linter build.
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+
+  # test:unit
+  test-unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download modules
+        run: go mod download
+
+      - name: go test
+        run: go test -v -race -count=1 -parallel=4 -coverprofile=coverage.out ./internal/...
+
+      # GitLab scraped the total out of the log with a `coverage:` regex. The
+      # equivalent here is the job summary, which shows on the run page.
+      - name: Coverage report
+        if: always()
+        run: |
+          test -f coverage.out || exit 0
+          go tool cover -html=coverage.out -o coverage.html
+          go tool cover -func=coverage.out | tee /tmp/cover.txt
+          {
+            echo '### Coverage'
+            echo
+            echo '```'
+            tail -n 1 /tmp/cover.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage
+          path: |
+            coverage.out
+            coverage.html
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # test:modules generates the per-resource Terraform modules and validates
+  # them against the provider built from this commit. Regenerating into a
+  # scratch dir means a schema change that breaks generation fails here rather
+  # than downstream, and the diff against modules/ catches a hand edit that
+  # would otherwise pass review.
+  modules:
+    name: Terraform modules
+    runs-on: ubuntu-latest
+    env:
+      TF_IN_AUTOMATION: 'true'
+      TF_CLI_CONFIG_FILE: ${{ github.workspace }}/.tfdev/dev.tfrc
+      TFDOCS_VERSION: 0.24.0
+      # Referenced by setup-terraform below. Without it the input is empty and
+      # the action installs whatever is latest, so a Terraform release could
+      # break this job with no change to the repo.
+      TF_VERSION: 1.15.9
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # terraform_wrapper: false so the loops below capture terraform's output
+      # and grep it for "Success!"; the wrapper rewrites stdout and would break
+      # that matching.
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Install terraform-docs
+        run: |
+          ARCH=$(dpkg --print-architecture)
+          curl -fsSL -o /tmp/tfdocs.tar.gz \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/v${TFDOCS_VERSION}/terraform-docs-v${TFDOCS_VERSION}-linux-${ARCH}.tar.gz"
+          tar -xzf /tmp/tfdocs.tar.gz -C /tmp
+          sudo install -m 0755 /tmp/terraform-docs /usr/local/bin/terraform-docs
+          terraform version
+          terraform-docs --version
+
+      - name: Download modules
+        run: go mod download
+
+      # The provider the generated modules are validated against is the one
+      # built from this commit.
+      - name: Build the provider
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.tfdev"
+          go build -o "$GITHUB_WORKSPACE/.tfdev/terraform-provider-kion" .
+
+      # A filesystem mirror rather than dev_overrides: `terraform test` needs
+      # `terraform init`, which dev_overrides skips.
+      - name: Set up a local provider mirror
+        run: |
+          MIRROR="$GITHUB_WORKSPACE/.tfdev/mirror/registry.terraform.io/kionsoftware/kion/1.0.0/linux_$(dpkg --print-architecture)"
+          mkdir -p "$MIRROR"
+          cp "$GITHUB_WORKSPACE/.tfdev/terraform-provider-kion" "$MIRROR/terraform-provider-kion_v1.0.0"
+          cat > "$GITHUB_WORKSPACE/.tfdev/dev.tfrc" <<EOF
+          provider_installation {
+            filesystem_mirror {
+              path    = "$GITHUB_WORKSPACE/.tfdev/mirror"
+              include = ["registry.terraform.io/kionsoftware/kion"]
+            }
+            direct {
+              exclude = ["registry.terraform.io/kionsoftware/kion"]
+            }
+          }
+          EOF
+
+      # Non-zero exit when an attribute cannot be typed; no output matching.
+      - name: Generate modules
+        run: go run -tags kgendocs ./cmd/kgen module --out "$GITHUB_WORKSPACE/.modules-ci" --force
+
+      # Same docs pass as `make modules`, so the diff below compares like with
+      # like.
+      - name: Inject docs and format
+        run: |
+          for d in "$GITHUB_WORKSPACE/.modules-ci"/*/; do
+            terraform-docs markdown table --output-file README.md --output-mode inject \
+              --anchor=false --html=false --sort-by required "$d" >/dev/null
+          done
+          terraform fmt -recursive "$GITHUB_WORKSPACE/.modules-ci" >/dev/null
+
+      - name: terraform fmt -check
+        run: terraform fmt -recursive -check "$GITHUB_WORKSPACE/.modules-ci"
+
+      # modules/ must be exactly what the generator produces: a hand edit there
+      # would otherwise pass review, since the checks below run on freshly
+      # generated output rather than the committed tree.
+      - name: Check modules/ is not stale
+        run: |
+          if ! diff -r -q \
+               --exclude=.terraform --exclude=.terraform.lock.hcl \
+               "$GITHUB_WORKSPACE/.modules-ci" "$GITHUB_WORKSPACE/modules"; then
+            echo
+            echo "FAIL: modules/ differs from generated output. Regenerate and commit:"
+            echo "  make modules"
+            exit 1
+          fi
+          echo "modules/ matches generated output"
+
+      - name: terraform init
+        run: |
+          for dir in "$GITHUB_WORKSPACE/.modules-ci"/*/; do
+            (cd "$dir" && terraform init -input=false >/dev/null) || { echo "init failed: $dir"; exit 1; }
+          done
+
+      - name: terraform validate
+        run: |
+          pass=0; fail=0
+          for dir in "$GITHUB_WORKSPACE/.modules-ci"/*/; do
+            name=$(basename "$dir")
+            if out=$(cd "$dir" && terraform validate -no-color 2>&1) && echo "$out" | grep -q "Success!"; then
+              pass=$((pass+1))
+            else
+              fail=$((fail+1)); echo "### $name"; echo "$out" | grep -E "^Error|^ *on " | head -5
+            fi
+          done
+          echo "terraform validate: pass=$pass fail=$fail"
+          test "$fail" -eq 0
+
+      # Plan-only tests: the provider is not contacted, so no credentials needed.
+      - name: terraform test
+        run: |
+          pass=0; fail=0
+          for dir in "$GITHUB_WORKSPACE/.modules-ci"/*/; do
+            name=$(basename "$dir")
+            if out=$(cd "$dir" && terraform test -no-color 2>&1) && echo "$out" | grep -q "^Success!"; then
+              pass=$((pass+1))
+            else
+              fail=$((fail+1)); echo "### $name"; echo "$out" | grep -A4 "^Error" | head -6
+            fi
+          done
+          echo "terraform test: pass=$pass fail=$fail"
+          test "$fail" -eq 0
+
+      # Same as the GitLab `when: on_failure` artifact: the generated tree is
+      # what you need to see why the diff or a validate failed.
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: modules-ci
+          path: .modules-ci
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # No GitLab counterpart. This repo is public; the script fails if an internal
+  # path, hostname, repo name or planning doc reappears in a tracked file.
+  # docs/ and examples/ are generated, and until now were the only generated
+  # trees with no drift gate. That is exactly
+  # how v1.0.1 shipped documenting `id` as required on 38 data sources whose
+  # schemas had already made it optional: internal/service/ and modules/ were
+  # regenerated because CI enforced them, docs/ and examples/ were not because
+  # nothing did, and the registry pages described behaviour the release no
+  # longer had.
+  crud:
+    name: Service packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - run: make crud-check
+
+  docs:
+    name: Docs and examples
+    runs-on: ubuntu-latest
+    env:
+      TF_VERSION: 1.15.9
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # tfplugindocs shells out to terraform to format the examples it embeds.
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      # Via the Makefile so the pinned version lives in one place.
+      - run: make install-tfplugindocs
+
+      - run: make docs-check
+
+  # Acceptance tests need a live Kion, so they never run here, which meant
+  # nothing checked that the HCL they feed Terraform even matches the provider's
+  # schema. It did not: twelve configs used an `owner_users` block on resources
+  # whose schema declares an `owner_user_ids` list attribute, and two set a
+  # read-only `id`. All of them would have failed the moment anyone ran the
+  # acceptance suite against a real instance.
+  #
+  # This validates every config against a real provider build via dev_overrides.
+  # No credentials, no API call. `terraform validate` is a schema check.
+  acctest-config:
+    name: Acceptance-test configs
+    runs-on: ubuntu-latest
+    env:
+      TF_IN_AUTOMATION: 'true'
+      TF_VERSION: 1.15.9
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - run: go run ./scripts/acctestconfig
+
+  # kalign compares each schema model to the SDK struct it aligns to. A type
+  # mismatch or a missing flex converter fails unless codegen/align_baseline.yaml
+  # records why it is accepted; an entry that no longer occurs fails too. Needs
+  # only the SDK module, which go.mod already pins.
+  align-check:
+    name: Schema/SDK alignment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - run: make align-check
+
+  internal-refs:
+    name: No internal references
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - run: bash scripts/check-no-internal-refs.sh
+
+  # Replaces the GitLab Secret-Detection template. The pinned binary is used
+  # rather than gitleaks-action because that action requires GITLEAKS_LICENSE
+  # for organization-owned repos.
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.30.1
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install gitleaks
+        run: |
+          curl -fsSL -o /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      # Scans the tracked tree at HEAD, exported so the walker never descends
+      # into .git. That is what publication exposes. To scan history instead,
+      # use `gitleaks git .` with `fetch-depth: 0` on the checkout above.
+      - name: gitleaks
+        run: |
+          scan="$RUNNER_TEMP/scan"
+          mkdir -p "$scan"
+          git archive --format=tar HEAD | tar -x -C "$scan"
+          gitleaks dir "$scan" \
+            --no-banner \
+            --redact=100 \
+            --exit-code 1 \
+            --report-format sarif \
+            --report-path "$RUNNER_TEMP/gitleaks.sarif"
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: gitleaks-report
+          path: ${{ runner.temp }}/gitleaks.sarif
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # Replaces the GitLab SAST template. CodeQL is GitHub's own static analysis
+  # and is free for public repositories.
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: go
+
+      - uses: github/codeql-action/autobuild@v4
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:go
+
+  # Single check to require in branch protection: it fails if any job above
+  # failed or was skipped.
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - fmt
+      - vet
+      - lint
+      - test-unit
+      - modules
+      - crud
+      - docs
+      - acctest-config
+      - align-check
+      - internal-refs
+      - secrets
+      - codeql
+    steps:
+      - name: Check job results
+        run: |
+          echo '${{ toJSON(needs) }}'
+          if echo '${{ toJSON(needs) }}' | grep -q '"result": *"\(failure\|cancelled\|skipped\)"'; then
+            echo "one or more CI jobs did not succeed"
+            exit 1
+          fi
+          echo "all CI jobs succeeded"

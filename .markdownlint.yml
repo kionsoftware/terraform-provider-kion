@@ -1,0 +1,48 @@
+# Markdown linting configuration
+# https://github.com/DavidAnson/markdownlint
+
+default: true
+
+# Line length
+MD013:
+  line_length: 120
+  heading_line_length: 80
+  code_block_line_length: 120
+  code_blocks: false
+  tables: false
+
+# Multiple headings with the same content
+MD024:
+  siblings_only: true
+
+# Inline HTML
+MD033:
+  allowed_elements:
+    - br
+    - details
+    - summary
+    - sup
+    - sub
+
+# Multiple consecutive blank lines
+MD012:
+  maximum: 2
+
+# Hard tabs
+MD010:
+  code_blocks: false
+
+# Trailing spaces
+MD009:
+  br_spaces: 2
+  list_item_empty_lines: false
+  strict: false
+
+# Multiple top-level headings
+MD025: false
+
+# First line in file should be a top-level heading
+MD041: false
+
+# Bare URLs
+MD034: false

@@ -1,65 +1,70 @@
-name: release
+name: Release
 
+# Triggered by pushing a tag: the Terraform Registry keys a release off the git
+# tag, so the tag is the release. Cut one with:
+#   make changelog-release RELEASE_VERSION=1.0.0
+#   git add .changes CHANGELOG.md && git commit -m "release 1.0.0"
+#   git tag -a v1.0.0 -m v1.0.0 && git push origin main v1.0.0
+# (commit -a would skip the new, untracked .changes/1.0.0.md; a tag without -a
+# is lightweight, which --follow-tags does not push)
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Unshallow
-        run: git fetch --prune --unshallow
-
-      - name: Verify Tag and Branch
-        id: verify_tag_branch
-        run: |
-          if [ "${GITHUB_REF_TYPE}" == "tag" ]; then
-            BRANCH=$(git branch -r --contains $GITHUB_REF | grep 'origin/main' || true)
-            if [ -z "$BRANCH" ]; then
-              echo "Tag is not on the main branch. Performing dry run."
-              echo "dry_run=true" >> $GITHUB_ENV
-            else
-              echo "Tag is on the main branch. Proceeding with release."
-              echo "dry_run=false" >> $GITHUB_ENV
-            fi
-          else
-            echo "No tag found. Performing dry run."
-            echo "dry_run=true" >> $GITHUB_ENV
-          fi
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
+      - uses: actions/checkout@v7
         with:
-          go-version: '1.26.8'
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # kion-sdk-go needs no checkout: the module proxy resolves the version
+      # go.mod requires like any other dependency.
+      # A release must build from exactly the SDK version go.mod pins, which a
+      # branch clone would silently override it, so do not reintroduce one.
+
+      # The notes for this tag are the changie version file batched when the
+      # release was cut. Resolve it from the tag itself, NOT from `changie
+      # latest`: that returns the newest *batched* version, so a tag pushed
+      # without batching first resolves to the PREVIOUS release's notes, passes
+      # the existence check, and ships the wrong notes. Keying on the tag makes
+      # the check fail loudly instead, and means changie is not needed here.
+      - name: Resolve release notes
+        id: notes
+        run: |
+          # `changie batch 1.0.0` writes .changes/1.0.0.md, unprefixed, so
+          # strip the tag's leading v to get the filename.
+          version="${GITHUB_REF_NAME#v}"
+          notes=".changes/${version}.md"
+          test -f "$notes" || {
+            echo "no changie version file at $notes. Run:"
+            echo "  make changelog-release RELEASE_VERSION=${version}"
+            echo "and commit it before tagging."
+            exit 1
+          }
+          echo "path=$notes" >> "$GITHUB_OUTPUT"
 
       - name: Import GPG key
-        id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v7
+        id: gpg
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
 
-      - name: Extract Tag Name
-        if: ${{ env.dry_run == 'false' }}
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-
-      - name: Extract Version from Makefile
-        if: ${{ env.dry_run == 'true' }}
-        run: |
-          VERSION=$(grep -E '^VERSION' Makefile | awk -F= '{print $2}' | xargs)
-          echo "VERSION=v$VERSION" >> $GITHUB_ENV
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v7
+      - uses: goreleaser/goreleaser-action@v7
         with:
-          version: '~> v2'
-          args: ${{ env.dry_run == 'true' && 'release --clean --skip=publish,validate' || 'release --clean' }}
+          version: v2.17.1
+          args: release --clean --release-notes=${{ steps.notes.outputs.path }}
         env:
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: ${{ env.VERSION }}
+          GPG_FINGERPRINT: ${{ steps.gpg.outputs.fingerprint }}

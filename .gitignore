@@ -1,76 +1,51 @@
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
-
-# Dependency directories (remove the comment below to include it)
-# vendor/
-
-# OS Generated Files
+# Compiled output.
+# The provider binary is built at the repo root. Terraform's local-install
+# path (`make install`) expects it there. All other tool/release binaries
+# build into ./bin/ (see `make build-tools`, `make release`).
+/terraform-provider-kion
+bin/
+# Safety net for stray root-level tool binaries from a manual `go build`.
+# Every one of these MUST keep its leading slash: a bare `kgen` matches any
+# path component, which would ignore the cmd/kgen and internal/kgen source
+# directories too. (`kconfig` was once unanchored and did exactly that.)
+/kgen
+/kalign
+/kconfig
+/kversions
+/kmigrate
+coverage.out
+coverage.html
 .DS_Store
-.DS_Store?
-._*
-.spotlight-V100
-.Trashes
-Icon?
-ehthumbs.db
-Thumbs.db
-*.swp
-
-# Repository Specific
-# Compiled and apps
-terraform-provider-kion
-bin
-# goreleaser build output
-dist
-.terraform.lock.hcl
 .envrc
+# transient codegen intermediates (make generate-schemas)
+.codegen-work/
 
-# Local .terraform directories
-**/.terraform/*
+# Scratch dir for `make modules-check`
+/.modules-check
+# Scratch tree + provider mirror for `make modules-test`
+/.modules-test
+/.tfdev
+# Scratch tree for `make import-modules-check`; kept on failure for inspection
+/.import-check
 
-# .tfstate files
-*.tfstate
-*.tfstate.*
+# The OpenAPI spec is a local codegen input, never committed: this repo is
+# published for customers and ships the provider, not Kion's interface files.
+# `make refresh-spec` fetches it from the kion-sdk monorepo when regenerating.
+/spec/
 
-# Crash log files
-crash.log
+# goreleaser output
+/dist/
 
-# Ignore any .tfvars files that are generated automatically for each Terraform run. Most
-# .tfvars files are managed as part of configuration and so should be included in
-# version control.
-#
-# example.tfvars
+# AI planning/design notes: working material, not part of the provider.
+docs/superpowers/
 
-# Ignore override files as they are usually used to override resources locally and so
-# are not checked in
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
+# Agent scratch worktrees (Claude Code's EnterWorktree). Each entry is a full
+# checkout of this repo, so leaving it untracked-but-visible buries `git status`.
+# Anchored: only the one at the repo root, not any nested .claude/ we may add.
+/.claude/worktrees/
 
-# Include override files you do wish to add to version control using negated pattern
-#
-# !example_override.tf
+# Private denylist for check-no-internal-refs.sh (see that script's header)
+scripts/.internal-refs-private
 
-# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
-# example: *tfplan*
-
-# Ignore CLI configuration files
-.terraformrc
-terraform.rc
-terraform
-
-importer-script/functions/__pycache__
-importer-script/__pycache__
-CLAUDE.md
-.claude
-terraform-testing
+# Per-checkout Makefile overrides (SDK_SPEC_ROOT, ...)
+local.mk

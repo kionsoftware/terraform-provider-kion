@@ -1,0 +1,42 @@
+# Authored per-attribute version ranges, merged OVER the SDK derivation.
+#
+# The SDK ships one package per Kion MINOR (v3_15, v3_16), so derivation can
+# only ever say "3.15.0". A field released in a patch needs its real floors
+# here, and a field backported to several support lines needs one range per
+# line: Kion patches each line separately, so the floors differ.
+#
+# An entry REPLACES the derived ranges for that attribute. Ranges are
+# `min` inclusive and `before` exclusive; omit either for unbounded.
+#
+# Verify a floor against the release notes before writing it. A floor that is
+# too low is worse than none: the attribute is accepted, the API ignores it,
+# and the practitioner is told the write succeeded.
+
+# resource_floors raises the derived MINIMUM of a resource and its data source
+# to a patch release, e.g. `oauth2_client: "3.17.3"`. Derivation can only
+# say "3.NN.0". A floor below the derived minimum, or naming something that is
+# neither a resource nor a data source, fails generation. It also gates an entry
+# present in every tracked version. Verify against the release notes; a floor
+# that is too low is worse than none.
+resource_floors:
+  # /v3/oauth2/clients: absent from the tracked 3.17.1 spec, present in 3.17.3.
+  oauth2_client: "3.17.3"
+
+resources:
+  # Cloud access role types (3.15.13, 3.16.5 and 3.17.1). The public API
+  # previously created every role as a User role; these six open it to the other
+  # types. 3.17.0 lacks them in the OU and project bodies, so each earlier line's
+  # range closes before its next minor.
+  ou_cloud_access_role: &car_types
+    cloud_access_role_type_id: &car_ranges
+      - { min: "3.15.13", before: "3.16.0" }
+      - { min: "3.16.5", before: "3.17.0" }
+      - { min: "3.17.1" }
+    aws_iam_role_trust_policy: *car_ranges
+    aws_trusted_account_numbers: *car_ranges
+    aws_trusted_services: *car_ranges
+    aws_partition: *car_ranges
+    aws_create_instance_profile: *car_ranges
+
+  # Same six fields, same releases, on the project-scoped resource.
+  project_cloud_access_role: *car_types

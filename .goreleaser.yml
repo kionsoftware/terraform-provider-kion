@@ -1,23 +1,21 @@
-# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
-
-# Visit https://goreleaser.com for documentation on how to customize this
-# behavior.
+# Terraform Registry release layout: per-platform zips, a _SHA256SUMS file, a
+# detached GPG signature of it, and the registry manifest. The Registry rejects
+# a release missing any of these.
 version: 2
-before:
-  hooks:
-    # this is just an example and not a requirement for provider building/publishing
-    - go mod tidy
+
+# Explicit: goreleaser otherwise infers this from the directory name, which is
+# "new-terraform-provider". The Registry requires terraform-provider-kion_*.
+project_name: terraform-provider-kion
+
 builds:
-  - env:
-      # goreleaser does not work with CGO, it could also complicate
-      # usage by users in CI/CD systems like Terraform Cloud where
-      # they are unable to install libraries.
+  - id: provider
+    env:
       - CGO_ENABLED=0
     mod_timestamp: "{{ .CommitTimestamp }}"
     flags:
       - -trimpath
     ldflags:
-      - "-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}"
+      - "-s -w"
     goos:
       - freebsd
       - windows
@@ -31,28 +29,116 @@ builds:
     ignore:
       - goos: darwin
         goarch: "386"
-      - goos: windows
-        goarch: arm64
     binary: "{{ .ProjectName }}_v{{ .Version }}"
+
+  # kmigrate ships in the release so consumers can migrate a configuration
+  # without a source checkout. It cannot be `go install`ed: go.mod declares a
+  # bare module path (`module terraform-provider-kion`, no domain), so there is
+  # no remote path to install from. Fewer platforms than the provider, since this is
+  # a one-shot tool a person runs on a workstation or in CI, not something
+  # Terraform downloads per platform.
+  - id: kmigrate
+    main: ./cmd/kmigrate
+    env:
+      - CGO_ENABLED=0
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - "-s -w -X main.version={{ .Version }}"
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    binary: kmigrate
+
+  # kion-import enumerates a live install into import blocks. Same reasoning and
+  # same platforms as kmigrate: a one-shot tool run against an install, and not
+  # `go install`able for the same bare-module-path reason. It needs no companion
+  # file in the release -- codegen/embed.go compiles import_manifest.json into
+  # the binary, precisely so a shipped binary cannot be paired with a manifest
+  # from a different commit.
+  - id: kion-import
+    main: ./cmd/kion-import
+    env:
+      - CGO_ENABLED=0
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - "-s -w -X main.version={{ .Version }}"
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    binary: kion-import
+
 archives:
-  - formats: [zip]
+  # The Registry matches provider archives by exact filename, so this template
+  # must stay untouched. `ids` is what keeps the other binaries out of it now
+  # that there is more than one build.
+  - id: provider
+    ids: [provider]
+    formats: [zip]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+  - id: kmigrate
+    ids: [kmigrate]
+    formats: [zip]
+    name_template: "kmigrate_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+  - id: kion-import
+    ids: [kion-import]
+    formats: [zip]
+    name_template: "kion-import_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+# SHA256SUMS covers every artifact, so signing it (below) transitively covers
+# kmigrate, kion-import and the state-upgrade config too. The Registry ignores lines that do
+# not match a provider archive name. It already tolerates the manifest entry
+# here, which is the precedent for adding more.
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: "{{ .ProjectName }}_{{ .Version }}_manifest.json"
+    - glob: codegen/state_upgrades.yaml
+      name_template: "state_upgrades_{{ .Version }}.yaml"
+
 signs:
   - artifacts: checksum
     args:
-      # if you are using this in a GitHub action or some other automated pipeline, you
-      # need to pass the batch flag to indicate its not interactive.
       - "--batch"
       - "--local-user"
-      - "{{ .Env.GPG_FINGERPRINT }}" # set this environment variable for your signing key
+      - "{{ .Env.GPG_FINGERPRINT }}"
       - "--output"
       - "${signature}"
       - "--detach-sign"
       - "${artifact}"
+
+release:
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: "{{ .ProjectName }}_{{ .Version }}_manifest.json"
+    # kmigrate needs this to rewrite a configuration; attaching it means a
+    # migration needs only the release, not a clone.
+    - glob: codegen/state_upgrades.yaml
+      name_template: "state_upgrades_{{ .Version }}.yaml"
+
+# Release notes come from the changie version file via --release-notes, which
+# is read by the changelog pipe -- so the pipe must NOT be disabled. `changelog:
+# disable: true` looks like the right way to say "we supply our own notes", but
+# it makes Skip() return true, Run() never executes, and the flag is silently
+# ignored: v1.0.0 through v1.1.0 all published with an empty body. The flag
+# already suppresses generated notes on its own (Run() loads the file, assigns
+# it, and returns before buildChangelog), so there is nothing left to disable.
+#
+# A missing notes file now fails the release instead of quietly shipping an
+# empty one, which is the behaviour the workflow's existence check assumed.
 changelog:
-  use: github
-  format: "{{ .Message }} (@{{ .AuthorUsername }})"
-  disable: "{{ .Env.dry_run }}"

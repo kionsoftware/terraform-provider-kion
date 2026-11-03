@@ -1,0 +1,1250 @@
+# Sample create/update attribute values for generated acceptance tests, per
+# resource. A resource with no entry here generates NO acceptance tests, which
+# is how 107 of them ended up hand-maintained and out of the generator's reach.
+#
+# Values are the RHS of each HCL attribute, passed through
+# fmt.Sprintf(..., rName, <env_args>, <extra_args>): use "%[1]s" where a value
+# must be unique per run. Quoting follows the schema type, so write a string
+# value bare.
+#
+# Keys per resource:
+#   env_args   environment variables whose VALUES the config needs, in order,
+#              readable as %[2]s, %[3]s, ... Use for anything install-specific.
+#   fixtures   shared HCL builders in internal/acctest (e.g. FundingSourceConfig),
+#              called with rName and prepended. Prefer these over copying a
+#              parent chain into several entries.
+#   prereqs    HCL emitted ahead of the resource under test, for a parent that
+#              must exist first. Same Sprintf, so %[1]s works here too.
+#   extra_args Go expressions appended to the Sprintf args, for a value the HCL
+#              cannot state literally (kion_scope's alias is varchar(16) and
+#              rName is 17 chars, so it uses acctest.ShortName(rName, 16)).
+#   require_env  list of {name, reason}: prerequisites whose VALUES the config
+#              does not use (a billing source the create checks for). Each
+#              becomes acctest.RequireEnv(t, name, reason) in PreCheck, so the
+#              test skips with "<name> must be set to <reason>". A variable
+#              already in env_args is gated there; listing it twice is an error.
+#   known_issues list of {issue, note, expect_non_empty_plan}: an open defect
+#              the test is expected to surface, named in a comment atop the
+#              generated file so a red test reads as a recorded finding.
+#              expect_non_empty_plan: true sets ExpectNonEmptyPlan on every
+#              apply step, for a defect that leaves the plan dirty. Remove the
+#              entry when the issue closes.
+#   create_only_unset  create_only attributes (crud_archetypes.yaml) this config
+#              does not produce. Every other one is asserted set after create.
+#   import_unrecoverable  list of {attr, reason}: attributes the read cannot
+#              restore, so an import leaves them null. Each is left out of the
+#              import step's verification, with its reason as a comment.
+#
+# A value prefixed "hcl:" is an expression, not a literal: emitted unquoted and
+# asserted only for presence, since a reference like kion_project.test.id has no
+# value until apply. Use it for references, jsonencode bodies, and nested
+# objects. A list or set is asserted by element count (name.#): the count when
+# the value is a plain [a, b] literal, presence of the count otherwise.
+# Everything else is compared against the value the config used, so a
+# resource that accepts an attribute and discards it fails the test.
+resources:
+  # payer_id is optional in the schema and the spec, and REQUIRED by
+  # POST /v3/category. %[2]s is the KION_ACC_BILLING_SOURCE_ID value.
+  category:
+    env_args: [KION_ACC_BILLING_SOURCE_ID]
+    create:
+      name: "test-acc-%[1]s"
+      payer_id: "%[2]s"
+    update:
+      name: "test-acc-%[1]s-upd"
+      payer_id: "%[2]s"
+  oauth2_client:
+    create:
+      name: "test-acc-%[1]s"
+      description: "terraform acceptance test"
+      grant_types: "hcl:[\"authorization_code\"]"
+      redirect_uris: "hcl:[\"https://example.com/callback\"]"
+      allowed_scopes: "hcl:[\"api\"]"
+      is_public: "false"
+    update:
+      name: "test-acc-%[1]s"
+      description: "terraform acceptance test (updated)"
+      grant_types: "hcl:[\"authorization_code\"]"
+      redirect_uris: "hcl:[\"https://example.com/callback\", \"https://example.com/cb2\"]"
+      allowed_scopes: "hcl:[\"api\"]"
+      is_public: "false"
+  label:
+    create:
+      color: "#0088ff"
+      key: "test-acc-%[1]s"
+      value: "test-acc-%[1]s"
+    update:
+      color: "#ff0000"
+      key: "test-acc-%[1]s-upd"
+      value: "test-acc-%[1]s-upd"
+  account_cache:
+    env_args: [KION_ACC_PAYER_ID, KION_ACC_AWS_ACCOUNT_NUMBER]
+    create:
+      account_name: "%[1]s"
+      account_number: "%[3]s"
+      payer_id: "hcl:%[2]s"
+    update:
+      account_name: "%[1]s-updated"
+      account_number: "%[3]s"
+      payer_id: "hcl:%[2]s"
+  ami:
+    env_args: [KION_ACC_ACCOUNT_ID, KION_ACC_AWS_AMI_ID]
+    create:
+      account_id: "hcl:%[2]s"
+      aws_ami_id: "%[3]s"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      region: "us-east-1"
+    update:
+      account_id: "hcl:%[2]s"
+      aws_ami_id: "%[3]s"
+      description: "test-acc-updated"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      region: "us-east-1"
+  app_api_key:
+    create:
+      name: "%[1]s"
+    update:
+      name: "%[1]s"
+  # Creating an ARM template makes Kion validate a deployment into a real
+  # resource group, so it needs an Azure billing source whose tenant exposes a
+  # subscription; without one the API answers an opaque 500.
+  azure_arm_template:
+    env_args: [KION_ACC_AZURE_REGION_ID]
+    require_env:
+      - name: KION_ACC_AZURE_PAYER_ID
+        reason: the ID of an Azure billing source on the target Kion
+      - name: KION_ACC_AZURE_SUBSCRIPTION_UUID
+        reason: an Azure subscription UUID the payer's tenant exposes; ARM template validation deploys into one
+    create:
+      template: "hcl:jsonencode({ \"$schema\" = \"https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#\", contentVersion = \"1.0.0.0\", resources = [] })"
+      deployment_mode: "1"
+      description: "test-acc ARM template"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      resource_group_name: "%[1]s-rg"
+      resource_group_region_id: "hcl:%[2]s"
+    update:
+      template: "hcl:jsonencode({ \"$schema\" = \"https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#\", contentVersion = \"1.0.0.0\", resources = [] })"
+      deployment_mode: "1"
+      description: "test-acc ARM template updated"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      resource_group_name: "%[1]s-rg"
+      resource_group_region_id: "hcl:%[2]s"
+  azure_policy:
+    create:
+      azure_policy: "hcl:{ name = \"%[1]s\", description = \"test-acc Azure policy\", policy = jsonencode({ policyRule = { if = { field = \"type\", equals = \"Microsoft.Resources/subscriptions\" }, then = { effect = \"audit\" } } }) }"
+      owner_users: "hcl:[1]"
+    update:
+      azure_policy: "hcl:{ name = \"%[1]s\", description = \"test-acc Azure policy updated\", policy = jsonencode({ policyRule = { if = { field = \"type\", equals = \"Microsoft.Resources/subscriptions\" }, then = { effect = \"audit\" } } }) }"
+      owner_users: "hcl:[1]"
+  azure_role:
+    require_env:
+      - name: KION_ACC_AZURE_PAYER_ID
+        reason: an Azure billing source on this install; POST /v3/azure-role returns 500 without one
+    create:
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      role_permissions: "hcl:jsonencode({ actions = [\"Microsoft.Resources/subscriptions/read\"], notActions = [] })"
+    update:
+      car_restricted_user_group_ids: "hcl:[]"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      role_permissions: "hcl:jsonencode({ actions = [\"Microsoft.Resources/subscriptions/resourceGroups/read\"], notActions = [] })"
+  budget:
+    prereqs: |
+      resource "kion_ou" "test_ou" {
+        name = "test-acc-ou-%[1]s"
+        owner_user_ids = [1]
+        parent_ou_id = 0
+        permission_scheme_id = 2
+      }
+    create:
+      amount: "1000"
+      end_datecode: "2026-12"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      start_datecode: "2026-01"
+  cft:
+    import_unrecoverable:
+      - attr: tags
+        reason: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
+    create:
+      policy: "hcl:jsonencode({ AWSTemplateFormatVersion = \"2010-09-09\", Description = \"test-acc\", Resources = { Topic = { Type = \"AWS::SNS::Topic\" } } })"
+      description: "test-acc CFT"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      regions: "hcl:[\"us-east-1\"]"
+      tags: "hcl:[{ tag_key = \"team\", tag_value = \"test-acc\" }, { tag_key = \"env\", tag_value = \"test\" }]"
+    update:
+      policy: "hcl:jsonencode({ AWSTemplateFormatVersion = \"2010-09-09\", Description = \"test-acc\", Resources = { Topic = { Type = \"AWS::SNS::Topic\" } } })"
+      description: "test-acc CFT updated"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      regions: "hcl:[\"us-east-1\"]"
+      tags: "hcl:[{ tag_key = \"env\", tag_value = \"test\" }, { tag_key = \"team\", tag_value = \"test-acc\" }]"
+  cloud_rule:
+    create:
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+    update:
+      concurrent_cft_sync: "true"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+  compliance_check:
+    create:
+      cloud_provider_id: "1"
+      compliance_check_type_id: "1"
+      description: "test-acc compliance check"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      severity_type_id: "3"
+    update:
+      cloud_provider_id: "1"
+      compliance_check_type_id: "1"
+      description: "test-acc compliance check updated"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      severity_type_id: "4"
+      regions: "hcl:[]"
+  compliance_family:
+    prereqs: |
+      resource "kion_compliance_program" "test_program" {
+        name = "test-acc-program-%[1]s"
+        version = "1.0"
+      }
+    create:
+      compliance_program_id: "hcl:kion_compliance_program.test_program.id"
+      name: "%[1]s"
+  compliance_level:
+    prereqs: |
+      resource "kion_compliance_program" "test_program" {
+        name = "test-acc-program-%[1]s"
+        version = "1.0"
+      }
+    create:
+      compliance_program_id: "hcl:kion_compliance_program.test_program.id"
+      name: "%[1]s"
+  compliance_program:
+    create:
+      name: "%[1]s"
+      version: "1.0"
+  compliance_standard:
+    create:
+      created_by_user_id: "1"
+      description: "test-acc compliance standard"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+    update:
+      created_by_user_id: "1"
+      description: "test-acc compliance standard updated"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+  custom_variable:
+    create:
+      default_value_string: "test-acc-default"
+      description: "test-acc custom variable"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      type: "string"
+    update:
+      default_value_string: "test-acc-default-updated"
+      description: "test-acc custom variable updated"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      type: "string"
+  gcp_iam_role:
+    create:
+      gcp_role_launch_stage: "2"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      role_permissions: "hcl:[\"resourcemanager.projects.get\"]"
+    update:
+      car_restricted_user_group_ids: "hcl:[]"
+      gcp_role_launch_stage: "2"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      role_permissions: "hcl:[\"resourcemanager.projects.get\"]"
+  # The record stands for a Google-issued service account, so the email comes
+  # from the install. The create rejects a unique_id already on record, so it
+  # is per-run. The PATCH body carries none of email/gcp_project_id/unique_id
+  # (ratcheted in codegen/unbound_attributes.yaml), so the update step changing
+  # them surfaces that debt.
+  gcp_service_account:
+    env_args: [KION_ACC_GCP_SERVICE_ACCOUNT_EMAIL]
+    create:
+      email: "%[2]s"
+      enable_federation_support: "false"
+      gcp_project_id: "test-acc-value"
+      name: "%[1]s"
+      unique_id: "test-acc-%[1]s"
+    update:
+      description: "test-acc-updated"
+      email: "%[2]s"
+      enable_federation_support: "true"
+      gcp_project_id: "test-acc-updated"
+      name: "%[1]s"
+      unique_id: "test-acc-%[1]s-upd"
+  iam_policy:
+    create:
+      policy: "hcl:jsonencode({ Version = \"2012-10-17\", Statement = [{ Effect = \"Deny\", Action = \"s3:*\", Resource = \"*\" }] })"
+      description: "test-acc IAM policy"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+    update:
+      policy: "hcl:jsonencode({ Version = \"2012-10-17\", Statement = [{ Effect = \"Deny\", Action = \"s3:*\", Resource = \"*\" }] })"
+      description: "test-acc IAM policy updated"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+  idms:
+    create:
+      idms_type_id: "1"
+      name: "%[1]s"
+      password_expiration: "90"
+    update:
+      idms_type_id: "1"
+      name: "%[1]s"
+      password_expiration: "60"
+  idms_group_association:
+    env_args: [KION_ACC_SAML_IDMS_ID]
+    create:
+      assertion_name: "%[1]s"
+      assertion_regex: "^test-acc$"
+      idms_id: "hcl:%[2]s"
+      update_on_login: "false"
+      user_group_id: "1"
+    update:
+      assertion_name: "%[1]s"
+      assertion_regex: "^test-acc-upd$"
+      idms_id: "hcl:%[2]s"
+      update_on_login: "true"
+      user_group_id: "1"
+  idms_open_id:
+    create:
+      authorization_endpoint: "https://test-acc.invalid/auth"
+      client_id: "test-acc-client"
+      email_claim: "email"
+      first_name_claim: "given_name"
+      issuer: "https://test-acc.invalid"
+      jwks_uri: "https://test-acc.invalid/jwks"
+      last_name_claim: "family_name"
+      name: "%[1]s"
+      phone_claim: "phone_number"
+      scopes: "hcl:[\"openid\", \"email\"]"
+      username_claim: "sub"
+    update:
+      authorization_endpoint: "https://test-acc.invalid/auth"
+      client_id: "test-acc-client-upd"
+      email_claim: "email"
+      first_name_claim: "given_name"
+      issuer: "https://test-acc.invalid"
+      jwks_uri: "https://test-acc.invalid/jwks"
+      last_name_claim: "family_name"
+      name: "%[1]s-upd"
+      phone_claim: "phone_number"
+      scopes: "hcl:[\"openid\", \"email\"]"
+      username_claim: "sub"
+  service_control_policy:
+    create:
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      policy: "hcl:jsonencode({ Version = \"2012-10-17\", Statement = [{ Effect = \"Deny\", Action = \"s3:*\", Resource = \"*\" }] })"
+    update:
+      description: "test-acc-updated"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      policy: "hcl:jsonencode({ Version = \"2012-10-17\", Statement = [{ Effect = \"Deny\", Action = \"ec2:*\", Resource = \"*\" }] })"
+  user_group:
+    create:
+      description: "test-acc user group"
+      idms_id: "1"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+    update:
+      description: "test-acc user group updated"
+      idms_id: "1"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+  azure_account:
+    env_args: [KION_ACC_AZURE_PAYER_ID, KION_ACC_AZURE_SUBSCRIPTION_UUID]
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm" {
+        name = "%[1]s-perm"
+        type = "ou"
+      }
+      resource "kion_ou" "test_ou" {
+        name                 = "%[1]s-ou"
+        parent_ou_id         = 0
+        permission_scheme_id = kion_permission_scheme.test_perm.id
+        owner_user_ids       = [1]
+      }
+      resource "kion_permission_scheme" "test_perm_project" {
+        name = "%[1]s-perm-project"
+        type = "project"
+      }
+      resource "kion_project" "test_project" {
+        name                 = "%[1]s-project"
+        ou_id                = kion_ou.test_ou.id
+        permission_scheme_id = kion_permission_scheme.test_perm_project.id
+        owner_user_ids       = [1]
+      }
+    create:
+      account_name: "%[1]s"
+      payer_id: "hcl:%[2]s"
+      project_id: "hcl:kion_project.test_project.id"
+      start_datecode: "2025-01"
+      subscription_uuid: "%[3]s"
+    update:
+      account_name: "%[1]s-updated"
+      payer_id: "hcl:%[2]s"
+      project_id: "hcl:kion_project.test_project.id"
+      start_datecode: "2025-01"
+      subscription_uuid: "%[3]s"
+  compliance_control:
+    prereqs: |
+      resource "kion_compliance_program" "test_program" {
+        name = "test-acc-program-%[1]s"
+        version = "1.0"
+      }
+      resource "kion_compliance_family" "test_family" {
+        compliance_program_id = kion_compliance_program.test_program.id
+        name = "test-acc-family-%[1]s"
+      }
+    create:
+      compliance_family_id: "hcl:kion_compliance_family.test_family.id"
+      control_number: "1"
+      description: "test-acc control"
+      name: "%[1]s"
+      program_id: "hcl:kion_compliance_program.test_program.id"
+      severity: "low"
+      title: "test-acc control title"
+    update:
+      arm_template_definition_ids: "hcl:[]"
+      compliance_family_id: "hcl:kion_compliance_family.test_family.id"
+      control_number: "1"
+      description: "test-acc control"
+      name: "%[1]s"
+      program_id: "hcl:kion_compliance_program.test_program.id"
+      severity: "low"
+      title: "test-acc control title"
+  custom_account:
+    env_args: [KION_ACC_CUSTOM_PAYER_ID, KION_ACC_CUSTOM_ACCOUNT_NUMBER]
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm" {
+        name = "%[1]s-perm"
+        type = "ou"
+      }
+      resource "kion_ou" "test_ou" {
+        name                 = "%[1]s-ou"
+        parent_ou_id         = 0
+        permission_scheme_id = kion_permission_scheme.test_perm.id
+        owner_user_ids       = [1]
+      }
+      resource "kion_permission_scheme" "test_perm_project" {
+        name = "%[1]s-perm-project"
+        type = "project"
+      }
+      resource "kion_project" "test_project" {
+        name                 = "%[1]s-project"
+        ou_id                = kion_ou.test_ou.id
+        permission_scheme_id = kion_permission_scheme.test_perm_project.id
+        owner_user_ids       = [1]
+      }
+    create:
+      account_name: "%[1]s"
+      account_number: "%[3]s"
+      payer_id: "hcl:%[2]s"
+      project_id: "hcl:kion_project.test_project.id"
+      start_datecode: "2025-01"
+    update:
+      account_name: "%[1]s-updated"
+      account_number: "%[3]s"
+      payer_id: "hcl:%[2]s"
+      project_id: "hcl:kion_project.test_project.id"
+      start_datecode: "2025-01"
+  funding_source:
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm" {
+        name = "%[1]s-perm"
+        type = "ou"
+      }
+      resource "kion_permission_scheme" "test_fs_perm" {
+        name = "%[1]s-fs-perm"
+        type = "funding_source"
+      }
+      resource "kion_ou" "test_ou" {
+        name                 = "%[1]s-ou"
+        parent_ou_id         = 0
+        permission_scheme_id = kion_permission_scheme.test_perm.id
+        owner_user_ids       = [1]
+      }
+    create:
+      amount: "1000"
+      end_datecode: "2026-12"
+      name: "%[1]s"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      owner_user_ids: "hcl:[1]"
+      permission_scheme_id: "hcl:kion_permission_scheme.test_fs_perm.id"
+      start_datecode: "2026-01"
+    update:
+      amount: "2000"
+      description: "test-acc-updated"
+      end_datecode: "2027-12"
+      name: "%[1]s"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      owner_user_ids: "hcl:[1]"
+      permission_scheme_id: "hcl:kion_permission_scheme.test_fs_perm.id"
+      start_datecode: "2026-01"
+  idms_open_id_access_rule:
+    prereqs: |
+      resource "kion_idms_open_id" "test" {
+        name                   = "%[1]s-idms"
+        client_id              = "test-acc-client"
+        issuer                 = "https://test-acc.invalid"
+        authorization_endpoint = "https://test-acc.invalid/auth"
+        jwks_uri               = "https://test-acc.invalid/jwks"
+        scopes                 = ["openid", "email"]
+        username_claim         = "sub"
+        email_claim            = "email"
+        first_name_claim       = "given_name"
+        last_name_claim        = "family_name"
+        phone_claim            = "phone_number"
+      }
+    create:
+      assertion_name: "test-acc-assertion"
+      assertion_regex: ".*"
+      cloudtamer_access_level_id: "1"
+      open_id_id: "hcl:kion_idms_open_id.test.id"
+    update:
+      assertion_name: "test-acc-assertion"
+      assertion_regex: "^test-acc.*$"
+      cloudtamer_access_level_id: "1"
+      open_id_id: "hcl:kion_idms_open_id.test.id"
+  idms_open_id_group_association:
+    prereqs: |
+      resource "kion_idms_open_id" "test" {
+        name                   = "%[1]s-idms"
+        client_id              = "test-acc-client"
+        issuer                 = "https://test-acc.invalid"
+        authorization_endpoint = "https://test-acc.invalid/auth"
+        jwks_uri               = "https://test-acc.invalid/jwks"
+        scopes                 = ["openid", "email"]
+        username_claim         = "sub"
+        email_claim            = "email"
+        first_name_claim       = "given_name"
+        last_name_claim        = "family_name"
+        phone_claim            = "phone_number"
+      }
+    create:
+      assertion_name: "test-acc-assertion"
+      assertion_regex: ".*"
+      open_id_id: "hcl:kion_idms_open_id.test.id"
+      update_on_login: "true"
+      user_group_id: "1"
+    update:
+      assertion_name: "test-acc-assertion"
+      assertion_regex: "^test-acc.*$"
+      open_id_id: "hcl:kion_idms_open_id.test.id"
+      update_on_login: "true"
+      user_group_id: "1"
+  ou:
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm" {
+        name = "%[1]s-perm"
+        type = "ou"
+      }
+    create:
+      description: "test-acc OU"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      parent_ou_id: "0"
+      permission_scheme_id: "hcl:kion_permission_scheme.test_perm.id"
+    update:
+      description: "test-acc OU updated"
+      name: "%[1]s"
+      owner_user_ids: "hcl:[1]"
+      parent_ou_id: "0"
+      permission_scheme_id: "hcl:kion_permission_scheme.test_perm.id"
+  ou_cloud_access_role:
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm" {
+        name = "%[1]s-perm"
+        type = "ou"
+      }
+      resource "kion_ou" "test_ou" {
+        name                 = "%[1]s-ou"
+        parent_ou_id         = 0
+        permission_scheme_id = kion_permission_scheme.test_perm.id
+        owner_user_ids       = [1]
+      }
+    import_unrecoverable:
+      - attr: aws_session_tags
+        reason: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
+    create:
+      name: "%[1]s"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      short_term_access_keys: "true"
+      aws_session_tags: "hcl:[{ tag_key = \"env\", tag_value = \"test\" }, { tag_key = \"team\", tag_value = \"test-acc\" }]"
+      user_ids: "hcl:[1]"
+      web_access: "true"
+    update:
+      name: "%[1]s"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      short_term_access_keys: "false"
+      aws_session_tags: "hcl:[{ tag_key = \"team\", tag_value = \"test-acc\" }, { tag_key = \"env\", tag_value = \"test\" }]"
+      user_ids: "hcl:[1]"
+      web_access: "true"
+  ou_note:
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm" {
+        name = "%[1]s-perm"
+        type = "ou"
+      }
+      resource "kion_ou" "test_ou" {
+        name                 = "%[1]s-ou"
+        parent_ou_id         = 0
+        permission_scheme_id = kion_permission_scheme.test_perm.id
+        owner_user_ids       = [1]
+      }
+    create:
+      create_user_id: "1"
+      name: "%[1]s"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      text: "test-acc-value"
+    update:
+      create_user_id: "1"
+      name: "%[1]s"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      text: "test-acc-updated"
+  project:
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm" {
+        name = "%[1]s-perm"
+        type = "ou"
+      }
+      resource "kion_ou" "test_ou" {
+        name                 = "%[1]s-ou"
+        parent_ou_id         = 0
+        permission_scheme_id = kion_permission_scheme.test_perm.id
+        owner_user_ids       = [1]
+      }
+      resource "kion_permission_scheme" "test_perm_project" {
+        name = "%[1]s-perm-project"
+        type = "project"
+      }
+    create:
+      description: "test-acc project"
+      name: "%[1]s"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      owner_user_ids: "hcl:[1]"
+      permission_scheme_id: "hcl:kion_permission_scheme.test_perm_project.id"
+    update:
+      description: "test-acc project updated"
+      name: "%[1]s"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      owner_user_ids: "hcl:[1]"
+      permission_scheme_id: "hcl:kion_permission_scheme.test_perm_project.id"
+  project_cloud_access_role:
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm" {
+        name = "%[1]s-perm"
+        type = "ou"
+      }
+      resource "kion_ou" "test_ou" {
+        name                 = "%[1]s-ou"
+        parent_ou_id         = 0
+        permission_scheme_id = kion_permission_scheme.test_perm.id
+        owner_user_ids       = [1]
+      }
+      resource "kion_permission_scheme" "test_perm_project" {
+        name = "%[1]s-perm-project"
+        type = "project"
+      }
+      resource "kion_project" "test_project" {
+        name                 = "%[1]s-project"
+        ou_id                = kion_ou.test_ou.id
+        permission_scheme_id = kion_permission_scheme.test_perm_project.id
+        owner_user_ids       = [1]
+      }
+    import_unrecoverable:
+      - attr: aws_session_tags
+        reason: an import has no configured order to keep, so it reads Kion's creation order, which the update step's reorder no longer matches
+    create:
+      apply_to_all_accounts: "true"
+      name: "%[1]s"
+      project_id: "hcl:kion_project.test_project.id"
+      aws_session_tags: "hcl:[{ tag_key = \"env\", tag_value = \"test\" }, { tag_key = \"team\", tag_value = \"test-acc\" }]"
+      short_term_access_keys: "true"
+      user_ids: "hcl:[1]"
+      web_access: "true"
+    update:
+      apply_to_all_accounts: "true"
+      name: "%[1]s"
+      project_id: "hcl:kion_project.test_project.id"
+      aws_session_tags: "hcl:[{ tag_key = \"team\", tag_value = \"test-acc\" }, { tag_key = \"env\", tag_value = \"test\" }]"
+      short_term_access_keys: "false"
+      user_ids: "hcl:[1]"
+      web_access: "true"
+  project_line_item:
+    fixtures: [FundingSourceConfig]
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm_project" {
+        name = "%[1]s-perm-project"
+        type = "project"
+      }
+
+      resource "kion_project" "test" {
+        name                 = "%[1]s-project"
+        ou_id                = kion_ou.test_fs_ou.id
+        permission_scheme_id = kion_permission_scheme.test_perm_project.id
+        owner_user_ids       = [1]
+
+        budget = [{
+          amount             = 500
+          start_datecode     = "2026-01"
+          end_datecode       = "2026-12"
+          funding_source_ids = [kion_funding_source.test_fs.id]
+        }]
+      }
+      resource "kion_category" "test" {
+        name     = "%[1]s-cat"
+        payer_id = %[2]s
+      }
+    env_args: [KION_ACC_BILLING_SOURCE_ID]
+    create:
+      amount: "100"
+      category_id: "hcl:kion_category.test.id"
+      datecode: "202601"
+      description: "test-acc line item"
+      funding_source_id: "hcl:kion_funding_source.test_fs.id"
+      payer_id: "hcl:%[2]s"
+      project_id: "hcl:kion_project.test.id"
+    update:
+      amount: "250"
+      category_id: "hcl:kion_category.test.id"
+      datecode: "202601"
+      description: "test-acc line item, updated"
+      funding_source_id: "hcl:kion_funding_source.test_fs.id"
+      payer_id: "hcl:%[2]s"
+      project_id: "hcl:kion_project.test.id"
+  saml_group_association:
+    env_args: [KION_ACC_SAML_IDMS_ID]
+    prereqs: |
+      resource "kion_user_group" "test_group" {
+        idms_id        = 1
+        name           = "%[1]s-group"
+        owner_user_ids = [1]
+      }
+    create:
+      assertion_name: "memberOf"
+      assertion_regex: "^%[1]s$"
+      idms_id: "hcl:%[2]s"
+      update_on_login: "true"
+      user_group_id: "hcl:kion_user_group.test_group.id"
+    update:
+      assertion_name: "memberOf"
+      assertion_regex: "^%[1]s$"
+      idms_id: "hcl:%[2]s"
+      update_on_login: "false"
+      user_group_id: "hcl:kion_user_group.test_group.id"
+  scope:
+    fixtures: [FundingSourceConfig]
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm_project" {
+        name = "%[1]s-perm-project"
+        type = "project"
+      }
+
+      resource "kion_project" "test" {
+        name                 = "%[1]s-project"
+        ou_id                = kion_ou.test_fs_ou.id
+        permission_scheme_id = kion_permission_scheme.test_perm_project.id
+        owner_user_ids       = [1]
+
+        budget = [{
+          amount             = 500
+          start_datecode     = "2026-01"
+          end_datecode       = "2026-12"
+          funding_source_ids = [kion_funding_source.test_fs.id]
+        }]
+      }
+    extra_args: ["acctest.ShortName(rName, 16)"]
+    import_unrecoverable:
+      - attr: criteria
+        reason: a create-time seed for the scope's first criteria record, which Kion expands and kion_scope_criteria then manages; the scope read does not return it
+    create:
+      alias: "%[2]s"
+      criteria: "hcl:jsonencode({})"
+      description: "test-acc scope"
+      end_datecode: "202612"
+      name: "%[1]s"
+      project_id: "hcl:kion_project.test.id"
+      start_datecode: "202601"
+    update:
+      alias: "%[2]s"
+      criteria: "hcl:jsonencode({})"
+      description: "test-acc scope, updated"
+      end_datecode: "202612"
+      name: "%[1]s"
+      project_id: "hcl:kion_project.test.id"
+      start_datecode: "202601"
+  funding_source_enforcement:
+    fixtures: [FundingSourceConfig]
+    create:
+      funding_source_id: "hcl:kion_funding_source.test_fs.id"
+      threshold: "100"
+      timeframe: "month"
+      user_ids: "hcl:[1]"
+    update:
+      cloud_rule_id: "2"
+      funding_source_id: "hcl:kion_funding_source.test_fs.id"
+      threshold: "200"
+      timeframe: "month"
+      user_ids: "hcl:[1]"
+  ou_enforcement:
+    prereqs: |
+      resource "kion_ou" "test_ou" {
+        name = "test-acc-ou-%[1]s"
+        owner_user_ids = [1]
+        parent_ou_id = 0
+        permission_scheme_id = 2
+      }
+    create:
+      ou_id: "hcl:kion_ou.test_ou.id"
+      threshold: "100"
+      timeframe: "month"
+      user_ids: "hcl:[1]"
+    update:
+      cloud_rule_id: "2"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      threshold: "200"
+      timeframe: "month"
+      user_ids: "hcl:[1]"
+  project_enforcement:
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm" {
+        name = "%[1]s-perm"
+        type = "ou"
+      }
+      resource "kion_ou" "test_ou" {
+        name                 = "%[1]s-ou"
+        parent_ou_id         = 0
+        permission_scheme_id = kion_permission_scheme.test_perm.id
+        owner_user_ids       = [1]
+      }
+      resource "kion_permission_scheme" "test_perm_project" {
+        name = "%[1]s-perm-project"
+        type = "project"
+      }
+      resource "kion_project" "test_project" {
+        name                 = "%[1]s-project"
+        ou_id                = kion_ou.test_ou.id
+        permission_scheme_id = kion_permission_scheme.test_perm_project.id
+        owner_user_ids       = [1]
+      }
+    create:
+      amount_type: "custom"
+      description: "test-acc project enforcement"
+      enabled: "true"
+      project_id: "hcl:kion_project.test_project.id"
+      spend_option: "spend"
+      threshold: "1000"
+      threshold_type: "dollar"
+      timeframe: "month"
+      user_ids: "hcl:[1]"
+    update:
+      amount_type: "custom"
+      description: "test-acc project enforcement updated"
+      enabled: "true"
+      project_id: "hcl:kion_project.test_project.id"
+      spend_option: "spend"
+      threshold: "2000"
+      threshold_type: "dollar"
+      timeframe: "month"
+      user_ids: "hcl:[1]"
+  # payer_id is a billing source on the install; azure_object_id and
+  # azure_principal_name are opaque to Kion, so any stable string works.
+  account_linkage:
+    env_args: [KION_ACC_AZURE_PAYER_ID]
+    create:
+      azure_object_id: "test-acc-%[1]s"
+      azure_principal_name: "test-acc-%[1]s"
+      payer_id: "hcl:%[2]s"
+      user_id: "1"
+    update:
+      azure_object_id: "test-acc-%[1]s-upd"
+      azure_principal_name: "test-acc-%[1]s-upd"
+      payer_id: "hcl:%[2]s"
+      user_id: "1"
+  funding_source_permission_mapping:
+    env_args: [KION_ACC_APP_ROLE_ID]
+    fixtures: [FundingSourceConfig]
+    prereqs: |
+      resource "kion_user_group" "test_group" {
+        name           = "%[1]s-group"
+        idms_id        = 1
+        owner_user_ids = [1]
+      }
+    create:
+      app_role_id: "hcl:%[2]s"
+      funding_source_id: "hcl:kion_funding_source.test_fs.id"
+      user_ids: "hcl:[1]"
+    update:
+      app_role_id: "hcl:%[2]s"
+      funding_source_id: "hcl:kion_funding_source.test_fs.id"
+      user_groups_ids: "hcl:[kion_user_group.test_group.id]"
+      user_ids: "hcl:[1]"
+  global_permission_mapping:
+    env_args: [KION_ACC_GLOBAL_APP_ROLE_ID]
+    prereqs: |
+      resource "kion_user_group" "test_group" {
+        name           = "%[1]s-group"
+        idms_id        = 1
+        owner_user_ids = [1]
+      }
+    create:
+      app_role_id: "hcl:%[2]s"
+      user_groups_ids: "hcl:[kion_user_group.test_group.id]"
+  ou_permission_mapping:
+    env_args: [KION_ACC_APP_ROLE_ID]
+    prereqs: |
+      resource "kion_permission_scheme" "test_ou_perm" {
+        name = "%[1]s-ou-perm"
+        type = "ou"
+      }
+
+      resource "kion_ou" "test_ou" {
+        name                 = "%[1]s-ou"
+        parent_ou_id         = 0
+        permission_scheme_id = kion_permission_scheme.test_ou_perm.id
+        owner_user_ids       = [1]
+      }
+
+      resource "kion_user_group" "test_group" {
+        name           = "%[1]s-group"
+        idms_id        = 1
+        owner_user_ids = [1]
+      }
+    create:
+      app_role_id: "hcl:%[2]s"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      user_ids: "hcl:[1]"
+    update:
+      app_role_id: "hcl:%[2]s"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      user_groups_ids: "hcl:[kion_user_group.test_group.id]"
+      user_ids: "hcl:[1]"
+  project_permission_mapping:
+    env_args: [KION_ACC_APP_ROLE_ID]
+    fixtures: [FundingSourceConfig]
+    prereqs: |
+      resource "kion_permission_scheme" "test_proj_perm" {
+        name = "%[1]s-proj-perm"
+        type = "project"
+      }
+
+      resource "kion_project" "test_project" {
+        name                 = "%[1]s-project"
+        ou_id                = kion_ou.test_fs_ou.id
+        permission_scheme_id = kion_permission_scheme.test_proj_perm.id
+        owner_user_ids       = [1]
+
+        budget = [{
+          amount             = 500
+          start_datecode     = "2026-01"
+          end_datecode       = "2026-12"
+          funding_source_ids = [kion_funding_source.test_fs.id]
+        }]
+      }
+
+      resource "kion_user_group" "test_group" {
+        name           = "%[1]s-group"
+        idms_id        = 1
+        owner_user_ids = [1]
+      }
+    create:
+      app_role_id: "hcl:%[2]s"
+      project_id: "hcl:kion_project.test_project.id"
+      user_ids: "hcl:[1]"
+    update:
+      app_role_id: "hcl:%[2]s"
+      project_id: "hcl:kion_project.test_project.id"
+      user_groups_ids: "hcl:[kion_user_group.test_group.id]"
+      user_ids: "hcl:[1]"
+  dashboard:
+    create:
+      config: "hcl:jsonencode({})"
+      description: "test-acc dashboard"
+      is_default: "false"
+      name: "%[1]s"
+    update:
+      config: "hcl:jsonencode({})"
+      description: "test-acc dashboard, updated"
+      is_default: "false"
+      name: "%[1]s"
+  funding_source_note:
+    fixtures: [FundingSourceConfig]
+    create:
+      funding_source_id: "hcl:kion_funding_source.test_fs.id"
+      name: "test-acc-note"
+      text: "test-acc note body"
+    update:
+      funding_source_id: "hcl:kion_funding_source.test_fs.id"
+      name: "test-acc-note"
+      text: "test-acc note body, updated"
+  app_role:
+    create:
+      name: "%[1]s"
+    update:
+      name: "%[1]s-upd"
+  billing_rule:
+    env_args: [KION_ACC_BILLING_SOURCE_ID]
+    create:
+      billing_source_ids: "hcl:[%[2]s]"
+      description: "test-acc billing rule"
+      name: "%[1]s"
+      rule_type: "2"
+      rule_value: "5.0"
+      start_month: "202501"
+    update:
+      billing_source_ids: "hcl:[%[2]s]"
+      description: "test-acc billing rule updated"
+      name: "%[1]s"
+      rule_type: "2"
+      rule_value: "10.0"
+      start_month: "202501"
+  permission_scheme:
+    create:
+      name: "%[1]s"
+      type: "ou"
+    update:
+      name: "%[1]s-updated"
+      type: "ou"
+  project_note:
+    fixtures: [FundingSourceConfig]
+    prereqs: |
+      resource "kion_permission_scheme" "test_pn_perm" {
+        name = "%[1]s-pn-perm"
+        type = "project"
+      }
+
+      resource "kion_project" "test" {
+        name                 = "%[1]s-project"
+        ou_id                = kion_ou.test_fs_ou.id
+        permission_scheme_id = kion_permission_scheme.test_pn_perm.id
+        owner_user_ids       = [1]
+
+        budget = [{
+          amount             = 500
+          start_datecode     = "2026-01"
+          end_datecode       = "2026-12"
+          funding_source_ids = [kion_funding_source.test_fs.id]
+        }]
+      }
+    create:
+      create_user_id: "1"
+      name: "%[1]s"
+      project_id: "hcl:kion_project.test.id"
+      text: "test-acc project note"
+    update:
+      create_user_id: "1"
+      name: "%[1]s"
+      project_id: "hcl:kion_project.test.id"
+      text: "test-acc project note, updated"
+  aws_resource_tag:
+    create:
+      resource_key: "test-acc-%[1]s"
+      resource_value: "test-acc-value"
+  ou_cloud_access_role_exemption:
+    prereqs: |
+      resource "kion_ou" "test_ou" {
+        name = "test-acc-ou-%[1]s"
+        owner_user_ids = [1]
+        parent_ou_id = 0
+        permission_scheme_id = 2
+      }
+      resource "kion_ou_cloud_access_role" "test_car" {
+        name = "test-acc-car-%[1]s"
+        ou_id = kion_ou.test_ou.id
+      }
+    create:
+      ou_cloud_access_role_id: "hcl:kion_ou_cloud_access_role.test_car.id"
+      ou_id: "hcl:kion_ou.test_ou.id"
+      reason: "test-acc exemption"
+  project_cloud_access_role_exemption:
+    fixtures: [FundingSourceConfig]
+    prereqs: |
+      resource "kion_permission_scheme" "test_perm_project" {
+        name = "%[1]s-perm-project"
+        type = "project"
+      }
+      resource "kion_project" "test" {
+        name                 = "%[1]s-project"
+        ou_id                = kion_ou.test_fs_ou.id
+        permission_scheme_id = kion_permission_scheme.test_perm_project.id
+        owner_user_ids       = [1]
+
+        budget = [{
+          amount             = 500
+          start_datecode     = "2026-01"
+          end_datecode       = "2026-12"
+          funding_source_ids = [kion_funding_source.test_fs.id]
+        }]
+      }
+      resource "kion_ou_cloud_access_role" "test_car" {
+        name  = "%[1]s-car"
+        ou_id = kion_ou.test_fs_ou.id
+      }
+    create:
+      ou_cloud_access_role_id: "hcl:kion_ou_cloud_access_role.test_car.id"
+      project_id: "hcl:kion_project.test.id"
+      reason: "test-acc exemption"
+  # The seven below create real cloud billing connections or accounts, so every
+  # install-specific value is an env_arg: the test skips when it is unset rather
+  # than sending an empty attribute. skip_validation keeps the API from calling
+  # out to the provider during the test where the schema allows it.
+  # Placeholder Azure identifiers: skip_validation creates the record without
+  # contacting Azure, so this runs against any install (#53).
+  # Kion validates the Admin key with Anthropic on create, so this needs a real
+  # one; the test skips without it (#53).
+  billing_source_anthropic:
+    env_args: [KION_ACC_ANTHROPIC_ADMIN_KEY]
+    create:
+      name: "test-acc-%[1]s"
+      billing_start_date: "2026-01"
+      admin_api_key: "%[2]s"
+    update:
+      name: "test-acc-%[1]s-upd"
+      billing_start_date: "2026-02"
+      admin_api_key: "%[2]s"
+  billing_source_azure:
+    create:
+      name: "test-acc-%[1]s"
+      account_type_id: "6"
+      billing_start_date: "2026-01"
+      customer_id: "00000000-0000-0000-0000-000000000001"
+      app_id: "00000000-0000-0000-0000-000000000002"
+      client_secret: "test-acc-placeholder"
+      domain: "test-acc.onmicrosoft.com"
+      storage_container: "test-acc"
+      storage_prefix: "exports"
+      storage_primary_endpoint: "https://testacc.blob.core.windows.net/"
+      use_proprietary_reports: "true"
+      skip_validation: "true"
+    update:
+      name: "test-acc-%[1]s-upd"
+      account_type_id: "6"
+      billing_start_date: "2026-01"
+      customer_id: "00000000-0000-0000-0000-000000000001"
+      app_id: "00000000-0000-0000-0000-000000000002"
+      client_secret: "test-acc-placeholder"
+      domain: "test-acc.onmicrosoft.com"
+      storage_container: "test-acc"
+      storage_prefix: "exports-2"
+      storage_primary_endpoint: "https://testacc.blob.core.windows.net/"
+      use_proprietary_reports: "true"
+      skip_validation: "true"
+  billing_source_aws:
+    env_args: [KION_ACC_AWS_ACCOUNT_NUMBER, KION_ACC_AWS_BILLING_ROLE]
+    create:
+      account_type_id: "1"
+      aws_account_number: "%[2]s"
+      billing_start_date: "2026-01"
+      linked_role: "%[3]s"
+      name: "test-acc-%[1]s"
+      skip_validation: "true"
+    update:
+      account_type_id: "1"
+      aws_account_number: "%[2]s"
+      billing_start_date: "2026-01"
+      linked_role: "%[3]s"
+      name: "test-acc-%[1]s-upd"
+      skip_validation: "true"
+  billing_source_govcloud:
+    env_args: [KION_ACC_PAYER_ID, KION_ACC_AWS_ACCOUNT_NUMBER]
+    create:
+      aws_account_number: "%[3]s"
+      name: "test-acc-%[1]s"
+      payer_id: "hcl:%[2]s"
+    update:
+      aws_account_number: "%[3]s"
+      name: "test-acc-%[1]s-upd"
+      payer_id: "hcl:%[2]s"
+  gcp_account:
+    env_args: [KION_ACC_GCP_PAYER_ID, KION_ACC_GCP_PROJECT_ID]
+    create:
+      account_name: "test-acc-%[1]s"
+      payer_id: "hcl:%[2]s"
+      project_id: "hcl:%[3]s"
+      start_datecode: "2026-01"
+    update:
+      account_name: "test-acc-%[1]s-upd"
+      payer_id: "hcl:%[2]s"
+      project_id: "hcl:%[3]s"
+      start_datecode: "2026-01"
+  # portfolio_id is the AWS portfolio id, not a kion_service_catalog reference
+  # (see codegen/references.yaml), so it comes from the environment.
+  service_catalog:
+    env_args: [KION_ACC_ACCOUNT_ID, KION_ACC_AWS_PORTFOLIO_ID, KION_ACC_AWS_REGION]
+    create:
+      account_id: "hcl:%[2]s"
+      description: "test-acc service catalog"
+      name: "test-acc-%[1]s"
+      owner_user_ids: "hcl:[1]"
+      portfolio_id: "%[3]s"
+      region: "%[4]s"
+    update:
+      account_id: "hcl:%[2]s"
+      description: "test-acc service catalog, updated"
+      name: "test-acc-%[1]s-upd"
+      owner_user_ids: "hcl:[1]"
+      portfolio_id: "%[3]s"
+      region: "%[4]s"
+  billing_source:
+    env_args: [KION_ACC_AWS_ACCOUNT_NUMBER, KION_ACC_AWS_BILLING_ROLE, KION_ACC_AWS_BILLING_BUCKET, KION_ACC_AWS_REGION]
+    create:
+      aws_connection: 'hcl:{ account_number = "%[2]s", bucket_access_role = "%[3]s", storage_bucket = "%[4]s", storage_prefix = "test-acc", storage_region = "%[5]s" }'
+      billing_start_date: "2026-01"
+      name: "test-acc-%[1]s"
+      skip_validation: "true"
+    update:
+      aws_connection: 'hcl:{ account_number = "%[2]s", bucket_access_role = "%[3]s", storage_bucket = "%[4]s", storage_prefix = "test-acc-upd", storage_region = "%[5]s" }'
+      billing_start_date: "2026-01"
+      name: "test-acc-%[1]s-upd"
+      skip_validation: "true"
+  # Everything the GCP billing source needs sits inside one nested object; only
+  # account_type_id is top-level.
+  billing_source_gcp:
+    env_args: [KION_ACC_GCP_BILLING_ACCOUNT_ID, KION_ACC_GCP_SERVICE_ACCOUNT_ID]
+    create:
+      account_type_id: "15"
+      gcp_billing_account_create: 'hcl:{ big_query_export = { dataset_name = "test_acc", focus_view_name = "test_acc", gcp_project_id = "%[2]s", table_format = "focus", table_name = "test_acc" }, billing_start_date = "2026-01", gcp_id = "%[2]s", name = "test-acc-%[1]s", service_account_id = %[3]s }'
+    update:
+      account_type_id: "15"
+      gcp_billing_account_create: 'hcl:{ big_query_export = { dataset_name = "test_acc", focus_view_name = "test_acc", gcp_project_id = "%[2]s", table_format = "focus", table_name = "test_acc" }, billing_start_date = "2026-01", gcp_id = "%[2]s", name = "test-acc-%[1]s-upd", service_account_id = %[3]s }'
+  # The OCI API key is a secret, so it is read from the environment like the
+  # tenancy and user OCIDs rather than written here.
+  billing_source_oci:
+    env_args: [KION_ACC_OCI_TENANCY_OCID, KION_ACC_OCI_USER_OCID, KION_ACC_OCI_FINGERPRINT, KION_ACC_OCI_PRIVATE_KEY, KION_ACC_OCI_REGION]
+    create:
+      account_type_id: "1"
+      billing_start_date: "2026-01"
+      fingerprint: "%[4]s"
+      name: "test-acc-%[1]s"
+      private_key: "%[5]s"
+      region: "%[6]s"
+      skip_validation: "true"
+      tenancy_ocid: "%[2]s"
+      user_ocid: "%[3]s"
+    update:
+      account_type_id: "1"
+      billing_start_date: "2026-01"
+      fingerprint: "%[4]s"
+      name: "test-acc-%[1]s-upd"
+      private_key: "%[5]s"
+      region: "%[6]s"
+      skip_validation: "true"
+      tenancy_ocid: "%[2]s"
+      user_ocid: "%[3]s"
+
