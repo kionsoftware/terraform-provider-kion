@@ -9,6 +9,7 @@ difference matters when reading a run.
     discover_acc.py <url> <api-key> [api-prefix]
 """
 import json
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -110,9 +111,14 @@ record("KION_ACC_AWS_AMI_ID", next((a.get("aws_ami_id") for a in amis if a.get("
        "no AMI registered to copy an id from; set it to any AMI id the install's "
        "accounts can describe (a public Amazon image works)")
 
-azure_acct = next((inner(a) for a in accts if inner(a).get("subscription_uuid")), None)
-record("KION_ACC_AZURE_SUBSCRIPTION_UUID", (azure_acct or {}).get("subscription_uuid"),
-       "no Azure account carrying a subscription_uuid")
+# /v3/account carries an Azure account's subscription in account_number;
+# only some payloads name it subscription_uuid.
+UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+def subscription(a):
+    a = inner(a)
+    return a.get("subscription_uuid") or (a.get("account_number") if UUID.match(str(a.get("account_number") or "")) else None)
+record("KION_ACC_AZURE_SUBSCRIPTION_UUID", next((s for s in map(subscription, accts) if s), None),
+       "no Azure account carrying a subscription UUID")
 
 # --- IDMS: the tests want a SAML one specifically ---
 idms = items(get("/v3/idms"))
