@@ -1,0 +1,6 @@
+resources:
+  thing:
+    create:
+      name: "test-acc-%[1]s"
+    update:
+      name: "test-acc-%[1]s-upd"

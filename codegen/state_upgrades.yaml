@@ -1,0 +1,192 @@
+# Old (SDKv2) → new (Plugin Framework) state transforms, per resource type.
+#
+# Consumed by:
+#   - `kgen migrate-gen` (via `kgen crud`) → internal/service/<name>/<name>_upgrade_gen.go
+#     (the provider-side Terraform state upgrader, v0 → current schema).
+#   - `cmd/kmigrate` → rewrites the input-attribute subset in customers' .tf.
+#
+# Authored from `kgen migrate-diff` (the authoritative old↔new schema delta).
+# Rules (attributes not named by any rule fall through by name; new-only → null):
+#   rename:  {old_attr: new_attr}        value passes through unchanged
+#   id_int:  true                        old string id "42" → new numeric id 42
+#   project: {new_attr: {from, field}}   old [{field: n}] set/list → new list/set(number)
+#   kv_list: {attr: {key_field, val_field}}
+#                                        old map(…) {k: v} → new list of
+#                                        {key_field: k, val_field: v} objects
+#   drop:    [old_attr]                  explicitly ignore an old attr
+#
+# Ground truth: 33 old resources, zero type renames, one id-type change
+# (kion_aws_account), three map→object-list changes (kion_cft.tags and both
+# cloud-access-roles' aws_session_tags). Those five plus the two aws_account
+# block-set→single-object unwraps are the ONLY old→new changes whose JSON shape
+# cannot decode as-is; everything else is either a
+# same-shape container widening (set→list) or an exact-field passthrough.
+# TestUpgradeShapes_allIncompatiblesHandled enforces that. See
+# codegen/schema_snapshots/.
+
+resources:
+  # --- ownership blocks → id lists (the most common pattern) ------------------
+  kion_user_group:
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_groups, field: id }
+      user_ids: { from: users, field: id }
+
+  # ALIAS resources. The new provider renamed these and kept the old names as
+  # back-compat aliases whose resource struct EMBEDS the primary (awsIamPolicy
+  # embeds iam_policy, awsCft embeds cft). We key the transform by the PRIMARY
+  # type (kion_iam_policy / kion_cft) so the upgrader generates on the primary
+  # receiver in the primary package; the alias inherits it via embedding and it
+  # runs for old-state whose type is `old_type`. `old_type` also tells kmigrate
+  # which config block (the old name customers still use) to rewrite, and feeds
+  # the old schema for attribute passthrough.
+  kion_iam_policy:
+    old_type: kion_aws_iam_policy
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+
+  # tags is a map→object-list change, like aws_session_tags below: the old
+  # kion_aws_cloudformation_template took `tags = { k = v }` (map(string)), the
+  # new cft takes a list of { tag_key, tag_value }. Both halves of the migration
+  # read this one rule. The state upgrader explodes the old map, kmigrate
+  # rewrites the config expression.
+  kion_cft:
+    old_type: kion_aws_cloudformation_template
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+    kv_list:
+      tags: { key_field: tag_key, val_field: tag_value }
+
+  kion_azure_arm_template:
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+
+  kion_azure_role:
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+
+  kion_gcp_iam_role:
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+
+  kion_service_control_policy:
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+
+  kion_funding_source:
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+
+  kion_ou:
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+
+  kion_compliance_check:
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+
+  kion_compliance_standard:
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+      compliance_check_ids: { from: compliance_checks, field: id }
+
+  # cloud-access-roles: same-name object blocks → id lists. aws_session_tags
+  # (0.3.35, #150) was map(string); the new provider takes a tag-object list.
+  kion_ou_cloud_access_role:
+    project:
+      user_ids: { from: users, field: id }
+      user_group_ids: { from: user_groups, field: id }
+      aws_iam_policies: { from: aws_iam_policies, field: id }
+      azure_role_definitions: { from: azure_role_definitions, field: id }
+      gcp_iam_roles: { from: gcp_iam_roles, field: id }
+    kv_list:
+      aws_session_tags: { key_field: tag_key, val_field: tag_value }
+
+  kion_project_cloud_access_role:
+    project:
+      account_ids: { from: accounts, field: id }
+      user_ids: { from: users, field: id }
+      user_group_ids: { from: user_groups, field: id }
+      aws_iam_policies: { from: aws_iam_policies, field: id }
+      azure_role_definitions: { from: azure_role_definitions, field: id }
+      gcp_iam_roles: { from: gcp_iam_roles, field: id }
+    kv_list:
+      aws_session_tags: { key_field: tag_key, val_field: tag_value }
+
+  # project: owner blocks → id lists; budget/move_ou_settings/project_funding
+  # (block-set → set/list of objects) pass through as-is.
+  kion_project:
+    project:
+      owner_user_ids: { from: owner_user_ids, field: id }
+      owner_user_group_ids: { from: owner_user_group_ids, field: id }
+
+  # aws_account (bespoke): id string→number; single-nested blocks unwrap [{…}]→{}.
+  kion_aws_account:
+    id_int: true
+    unwrap: [aws_organizational_unit, move_project_settings]
+
+  # --- cloud_rule: the big object-list → id-list set -------------------------
+  kion_cloud_rule:
+    project:
+      owner_user_ids: { from: owner_users, field: id }
+      owner_user_group_ids: { from: owner_user_groups, field: id }
+      cft_ids: { from: aws_cloudformation_templates, field: id }
+      iam_policy_ids: { from: aws_iam_policies, field: id }
+      azure_arm_template_definition_ids: { from: azure_arm_template_definitions, field: id }
+      azure_policy_definition_ids: { from: azure_policy_definitions, field: id }
+      azure_role_definition_ids: { from: azure_role_definitions, field: id }
+      compliance_standard_ids: { from: compliance_standards, field: id }
+      gcp_iam_role_ids: { from: gcp_iam_roles, field: id }
+      internal_ami_ids: { from: internal_aws_amis, field: id }
+      internal_portfolio_ids: { from: internal_aws_service_catalog_portfolios, field: id }
+      ou_ids: { from: ous, field: id }
+      project_ids: { from: projects, field: id }
+      service_control_policy_ids: { from: service_control_policies, field: id }
+
+  # --- set(number) → list(number) container change (values already ids) -------
+  kion_custom_variable: {}
+  kion_webhook: {}
+
+  # --- list → set container change (values unchanged) ------------------------
+  # Same case as the two above, the other way round: a JSON array decodes as
+  # either container, so the transform is empty and the entry exists to record
+  # that the change was looked at. kion_app_config widens supported_aws_regions
+  # (list→set of string); kion_project_enforcement widens user_ids and
+  # user_group_ids (list→set of number).
+  kion_app_config: {}
+  kion_project_enforcement: {}
+
+  # --- azure_policy: owner blocks → id lists (scalar policy fields handled by
+  # kmigrate / provider Read) ---------------------------------------------------
+  # The new schema keeps the names owner_users / owner_user_groups but retypes
+  # them from blocks to id-lists (list of number), so the projection is
+  # same-name (block { id } → [id]).
+  kion_azure_policy:
+    project:
+      owner_users: { from: owner_users, field: id }
+      owner_user_groups: { from: owner_user_groups, field: id }
+
+  # --- account resources: name → account_name --------------------------------
+  kion_azure_account:
+    rename:
+      name: account_name
+  kion_gcp_account:
+    rename:
+      name: account_name
+  kion_custom_account:
+    rename:
+      name: account_name
+
+  # NOTE deferred (bespoke archetypes, whose model/receiver names differ from the
+  # entity convention the upgrade generator assumes): kion_aws_account (id_int),
+  # kion_app_config, kion_custom_variable_override.

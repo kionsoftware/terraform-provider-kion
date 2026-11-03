@@ -1,0 +1,297 @@
+# Owner/member associations that Kion manages via SEPARATE add/remove endpoints
+# rather than the main update body. The generated Create sets initial values (the
+# create body carries them), but the main PATCH does NOT, so the entity Update
+# must diff prior state vs plan and call the add/remove endpoints. Without this,
+# changing an owner on an existing resource is a silent no-op.
+#
+# owners: one add (Post*Owners) + one remove (Delete*Owners) endpoint taking a
+# {owner_user_ids, owner_user_group_ids} struct body (uniform across the SDK).
+resources:
+  azure_policy:
+    owners:
+      user_field: owner_users
+      group_field: owner_user_groups
+      add: PostAzurePolicyOwners
+      remove: DeleteAzurePolicyOwners
+      body: AzurePolicyDefinitionOwners
+  user_group:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: UpdateUGroupOwners
+      remove: DeleteUGroupOwners
+      body: UGroupOwners
+      ptr: true
+    associations:
+      - add: UpdateUGroupViewers
+        remove: DeleteUGroupViewers
+        body: UGroupViewers
+        ptr: true
+        fields:
+          - viewer_user_ids
+          - viewer_user_group_ids
+    slice_members:
+      - field: user_ids
+        add: UpdateUGroupUsers
+        remove: RemoveUGroupUsers
+  ou:
+    labels:
+      attr: labels
+      get: GetOULabels
+      put: PutOULabels
+      params: OuID
+      element: GetOULabel
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: PostOUAddOwners
+      remove: DeleteOURemoveOwners
+      body: OUOwners
+      ptr: true
+  project_cloud_access_role:
+    associations:
+      - add: PostProjectCloudAccessRoleAssociations
+        remove: DeleteProjectCloudAccessRoleAssociations
+        body: ProjectCloudAccessRoleAssociations
+        ptr: true
+        fields:
+          - account_ids
+          - user_group_ids
+          - user_ids
+          # Create binds these; update did not, so changing a policy list on an
+          # existing role was accepted and silently discarded. The associations
+          # body carries all three.
+          - aws_iam_policies
+          - azure_role_definitions
+          - gcp_iam_roles
+  ou_cloud_access_role:
+    associations:
+      - add: PostOUCloudAccessRoleAssociations
+        remove: DeleteOUCloudAccessRoleAssociations
+        body: OUCloudAccessRoleAssociations
+        ptr: true
+        fields:
+          - user_group_ids
+          - user_ids
+          # As above: bound at create, dropped on update.
+          - aws_iam_policies
+          - azure_role_definitions
+          - gcp_iam_roles
+  compliance_standard:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: PostComplianceStandardOwners
+      remove: DeleteComplianceStandardOwners
+      body: ComplianceStandardOwners
+      ptr: true
+    associations:
+      - add: PostComplianceStandardAssociations
+        remove: DeleteComplianceStandardAssociations
+        body: ComplianceStandardAssociations
+        ptr: true
+        fields:
+          - compliance_check_ids
+  cloud_rule:
+    labels:
+      attr: labels
+      get: GetCloudRuleLabels
+      put: PutCloudRuleLabels
+      params: CloudRuleID
+      element: GetCloudRuleLabel
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: PostCloudRuleOwners
+      remove: DeleteCloudRuleOwners
+      body: CloudRuleOwners
+      ptr: true
+    associations:
+      - add: PostCloudRuleAssociations
+        remove: DeleteCloudRuleAssociations
+        body: CloudRuleAssociations
+        ptr: true
+        # Kion refuses to delete a cloud rule that is still attached to anything
+        # -- "this cloud rule is in use, and cannot be deleted" -- so destroy
+        # fails and leaves it behind. Found by the live migration harness.
+        detach_before_delete: true
+        fields:
+          - automation_policy_ids
+          - azure_arm_template_definition_ids
+          - azure_policy_definition_ids
+          - azure_role_definition_ids
+          - cft_ids
+          - compliance_standard_ids
+          - gcp_iam_role_ids
+          - iam_policy_ids
+          - internal_ami_ids
+          - internal_portfolio_ids
+          - ou_ids
+          - project_ids
+          - service_control_policy_ids
+  project:
+    labels:
+      attr: labels
+      get: GetProjectLabels
+      put: PutProjectLabels
+      params: ProjectID
+      element: GetProjectLabel
+  account:
+    labels:
+      attr: labels
+      get: GetAccountLabels
+      put: PutAccountLabels
+      params: AccountID
+      element: GetAccountLabel
+  aws_account:
+    labels:
+      attr: labels
+      get: GetAccountLabels
+      put: PutAccountLabels
+      params: AccountID
+      element: GetAccountLabel
+
+  # The add/remove endpoints existed all along and nothing called them, so
+  # changing an owner after create was a silent no-op on each of these. The
+  # bodies are uniform ({owner_user_ids, owner_user_group_ids}); they differ
+  # only in whether the endpoint takes a pointer or an Opt wrapper.
+  ami:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: AMIAddOwners
+      remove: AMIRemoveOwners
+      body: AMIOwners
+      ptr: true
+  azure_arm_template:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: ARMTemplateAddOwners
+      remove: ARMTemplateRemoveOwners
+      body: AzureARMTemplateDefinitionOwners
+      ptr: true
+  azure_role:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: AzureRoleAddOwners
+      remove: AzureRoleRemoveOwners
+      body: PolicyOwners
+      ptr: true
+    associations:
+      # CAR restriction has its own add/remove pair, the same shape as owners.
+      # The body spells the group field ugroup_ids where the provider spells it
+      # user_group_ids, so that one is mapped.
+      - add: AzureRoleAddCARRestrictedEntities
+        remove: AzureRoleRemoveCARRestrictedEntities
+        body: CARRestrictedEntities
+        ptr: true
+        fields:
+          - car_restricted_user_ids
+          - car_restricted_user_group_ids
+        field_json:
+          car_restricted_user_group_ids: car_restricted_ugroup_ids
+  cft:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: CftAddOwners
+      remove: CftRemoveOwners
+      body: CFTOwners
+      ptr: true
+  compliance_check:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: ComplianceCheckAddOwners
+      remove: ComplianceCheckRemoveOwners
+      body: ComplianceCheckOwners
+  iam_policy:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: IAMPolicyAddOwners
+      remove: IAMPolicyRemoveOwners
+      body: PolicyOwners
+      ptr: true
+    associations:
+      # CAR restriction has its own add/remove pair, the same shape as owners.
+      # The body spells the group field ugroup_ids where the provider spells it
+      # user_group_ids, so that one is mapped.
+      - add: IAMPolicyAddCARRestrictedEntities
+        remove: IAMPolicyRemoveCARRestrictedEntities
+        body: CARRestrictedEntities
+        ptr: true
+        fields:
+          - car_restricted_user_ids
+          - car_restricted_user_group_ids
+        field_json:
+          car_restricted_user_group_ids: car_restricted_ugroup_ids
+  service_catalog:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: PortfolioAddOwners
+      remove: PortfolioRemoveOwners
+      body: AMIOwners
+      ptr: true
+  service_control_policy:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: ServiceControlPolicyAddOwners
+      remove: ServiceControlPolicyRemoveOwners
+      body: PolicyOwners
+      ptr: true
+  webhook:
+    owners:
+      user_field: owner_user_ids
+      group_field: owner_user_group_ids
+      add: WebhookAddOwners
+      remove: WebhookRemoveOwners
+      body: WebhookOwners
+
+  # Enforcement update bodies carry no notification recipients; they change
+  # through POST/DELETE .../enforcement/{enforcement_id}/user. #75.
+  project_enforcement:
+    associations:
+      - add: PostProjectEnforcementUsers
+        remove: DeleteProjectEnforcementUsers
+        body: ProjectEnforcementUsers
+        fields:
+          - user_ids
+          - user_group_ids
+  funding_source_enforcement:
+    associations:
+      - add: PostFundingSourceEnforcementUsers
+        remove: DeleteFundingSourceEnforcementUsers
+        body: FundingSourceEnforcementUsers
+        fields:
+          - user_ids
+          - user_group_ids
+
+  # PATCH /v3/user/{id} has no user_group_ids; the user's groups change through
+  # POST/DELETE /v3/user/{id}/user-group. #75.
+  user:
+    slice_members:
+      - field: user_group_ids
+        add: UserAddUGroups
+        remove: UserRemoveUGroups
+
+  # Owners already bind through the create/update body; only the CAR
+  # restriction needs the separate endpoints.
+  gcp_iam_role:
+    associations:
+      # CAR restriction has its own add/remove pair, the same shape as owners.
+      # The body spells the group field ugroup_ids where the provider spells it
+      # user_group_ids, so that one is mapped.
+      - add: GcpIAMRoleAddCARRestrictedEntities
+        remove: GcpIAMRoleRemoveCARRestrictedEntities
+        body: CARRestrictedEntities
+        ptr: true
+        fields:
+          - car_restricted_user_ids
+          - car_restricted_user_group_ids
+        field_json:
+          car_restricted_user_group_ids: car_restricted_ugroup_ids

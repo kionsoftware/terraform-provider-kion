@@ -1,0 +1,3671 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "tf_type": "kion_account",
+      "path": "terraform-kion-account",
+      "variables": [
+        {
+          "attr": "account_alias",
+          "var": "account_alias",
+          "block": false
+        },
+        {
+          "attr": "account_number",
+          "var": "account_number",
+          "block": false
+        },
+        {
+          "attr": "account_type_id",
+          "var": "account_type_id",
+          "block": false
+        },
+        {
+          "attr": "aws_organizational_unit",
+          "var": "aws_organizational_unit",
+          "block": true
+        },
+        {
+          "attr": "commercial_account_name",
+          "var": "commercial_account_name",
+          "block": false
+        },
+        {
+          "attr": "create_govcloud",
+          "var": "create_govcloud",
+          "block": false
+        },
+        {
+          "attr": "email",
+          "var": "email",
+          "block": false
+        },
+        {
+          "attr": "gov_account_name",
+          "var": "gov_account_name",
+          "block": false
+        },
+        {
+          "attr": "include_linked_account_spend",
+          "var": "include_linked_account_spend",
+          "block": false
+        },
+        {
+          "attr": "labels",
+          "var": "labels",
+          "block": false
+        },
+        {
+          "attr": "linked_role",
+          "var": "linked_role",
+          "block": false
+        },
+        {
+          "attr": "move_project_settings",
+          "var": "move_project_settings",
+          "block": true
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "payer_id",
+          "var": "payer_id",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "skip_access_checking",
+          "var": "skip_access_checking",
+          "block": false
+        },
+        {
+          "attr": "start_datecode",
+          "var": "start_datecode",
+          "block": false
+        },
+        {
+          "attr": "use_org_account_info",
+          "var": "use_org_account_info",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_account_cache",
+      "path": "terraform-kion-account-cache",
+      "variables": [
+        {
+          "attr": "account_alias",
+          "var": "account_alias",
+          "block": false
+        },
+        {
+          "attr": "account_email",
+          "var": "account_email",
+          "block": false
+        },
+        {
+          "attr": "account_name",
+          "var": "account_name",
+          "block": false
+        },
+        {
+          "attr": "account_number",
+          "var": "account_number",
+          "block": false
+        },
+        {
+          "attr": "account_type_id",
+          "var": "account_type_id",
+          "block": false
+        },
+        {
+          "attr": "commercial_account_name",
+          "var": "commercial_account_name",
+          "block": false
+        },
+        {
+          "attr": "create_govcloud",
+          "var": "create_govcloud",
+          "block": false
+        },
+        {
+          "attr": "gov_account_name",
+          "var": "gov_account_name",
+          "block": false
+        },
+        {
+          "attr": "include_linked_account_spend",
+          "var": "include_linked_account_spend",
+          "block": false
+        },
+        {
+          "attr": "linked_role",
+          "var": "linked_role",
+          "block": false
+        },
+        {
+          "attr": "organizational_unit",
+          "var": "organizational_unit",
+          "block": false
+        },
+        {
+          "attr": "payer_id",
+          "var": "payer_id",
+          "block": false
+        },
+        {
+          "attr": "skip_access_checking",
+          "var": "skip_access_checking",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_account_linkage",
+      "path": "terraform-kion-account-linkage",
+      "variables": [
+        {
+          "attr": "azure_object_id",
+          "var": "azure_object_id",
+          "block": false
+        },
+        {
+          "attr": "azure_principal_name",
+          "var": "azure_principal_name",
+          "block": false
+        },
+        {
+          "attr": "payer_id",
+          "var": "payer_id",
+          "block": false
+        },
+        {
+          "attr": "user_id",
+          "var": "user_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_ami",
+      "path": "terraform-kion-ami",
+      "variables": [
+        {
+          "attr": "account_id",
+          "var": "account_id",
+          "block": false
+        },
+        {
+          "attr": "aws_ami_id",
+          "var": "aws_ami_id",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "expiration_alert_number",
+          "var": "expiration_alert_number",
+          "block": false
+        },
+        {
+          "attr": "expiration_alert_unit",
+          "var": "expiration_alert_unit",
+          "block": false
+        },
+        {
+          "attr": "expiration_notify",
+          "var": "expiration_notify",
+          "block": false
+        },
+        {
+          "attr": "expiration_warning_number",
+          "var": "expiration_warning_number",
+          "block": false
+        },
+        {
+          "attr": "expiration_warning_unit",
+          "var": "expiration_warning_unit",
+          "block": false
+        },
+        {
+          "attr": "expires_at",
+          "var": "expires_at",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "region",
+          "var": "region",
+          "block": false
+        },
+        {
+          "attr": "sync_deprecation",
+          "var": "sync_deprecation",
+          "block": false
+        },
+        {
+          "attr": "sync_tags",
+          "var": "sync_tags",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_app_api_key",
+      "path": "terraform-kion-app-api-key",
+      "variables": [
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_app_config",
+      "path": "terraform-kion-app-config",
+      "variables": [
+        {
+          "attr": "all_users_see_ou_names",
+          "var": "all_users_see_ou_names",
+          "block": false
+        },
+        {
+          "attr": "allocation_mode",
+          "var": "allocation_mode",
+          "block": false
+        },
+        {
+          "attr": "allow_custom_permission_schemes",
+          "var": "allow_custom_permission_schemes",
+          "block": false
+        },
+        {
+          "attr": "app_api_key_creation_enabled",
+          "var": "app_api_key_creation_enabled",
+          "block": false
+        },
+        {
+          "attr": "app_api_key_lifespan",
+          "var": "app_api_key_lifespan",
+          "block": false
+        },
+        {
+          "attr": "app_api_key_limit",
+          "var": "app_api_key_limit",
+          "block": false
+        },
+        {
+          "attr": "aws_access_key_creation_enabled",
+          "var": "aws_access_key_creation_enabled",
+          "block": false
+        },
+        {
+          "attr": "budget_mode",
+          "var": "budget_mode",
+          "block": false
+        },
+        {
+          "attr": "cloud_rule_group_ownership_only",
+          "var": "cloud_rule_group_ownership_only",
+          "block": false
+        },
+        {
+          "attr": "cost_savings_allow_terminate",
+          "var": "cost_savings_allow_terminate",
+          "block": false
+        },
+        {
+          "attr": "cost_savings_enabled",
+          "var": "cost_savings_enabled",
+          "block": false
+        },
+        {
+          "attr": "cost_savings_post_token_life_hours",
+          "var": "cost_savings_post_token_life_hours",
+          "block": false
+        },
+        {
+          "attr": "default_org_chart_view",
+          "var": "default_org_chart_view",
+          "block": false
+        },
+        {
+          "attr": "enforce_funding",
+          "var": "enforce_funding",
+          "block": false
+        },
+        {
+          "attr": "enforce_funding_sources",
+          "var": "enforce_funding_sources",
+          "block": false
+        },
+        {
+          "attr": "event_driven_enabled",
+          "var": "event_driven_enabled",
+          "block": false
+        },
+        {
+          "attr": "reserved_instances_enabled",
+          "var": "reserved_instances_enabled",
+          "block": false
+        },
+        {
+          "attr": "resource_inventory_enabled",
+          "var": "resource_inventory_enabled",
+          "block": false
+        },
+        {
+          "attr": "smtp_enabled",
+          "var": "smtp_enabled",
+          "block": false
+        },
+        {
+          "attr": "smtp_from",
+          "var": "smtp_from",
+          "block": false
+        },
+        {
+          "attr": "smtp_host",
+          "var": "smtp_host",
+          "block": false
+        },
+        {
+          "attr": "smtp_password",
+          "var": "smtp_password",
+          "block": false
+        },
+        {
+          "attr": "smtp_port",
+          "var": "smtp_port",
+          "block": false
+        },
+        {
+          "attr": "smtp_skip_verify",
+          "var": "smtp_skip_verify",
+          "block": false
+        },
+        {
+          "attr": "smtp_username",
+          "var": "smtp_username",
+          "block": false
+        },
+        {
+          "attr": "supported_aws_regions",
+          "var": "supported_aws_regions",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_app_role",
+      "path": "terraform-kion-app-role",
+      "variables": [
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_automation_policy",
+      "path": "terraform-kion-automation-policy",
+      "variables": [
+        {
+          "attr": "cloud_provider_policies",
+          "var": "cloud_provider_policies",
+          "block": false
+        },
+        {
+          "attr": "cloud_rule_ids",
+          "var": "cloud_rule_ids",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "enabled",
+          "var": "enabled",
+          "block": false
+        },
+        {
+          "attr": "engine",
+          "var": "engine",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "scheduled_frequency",
+          "var": "scheduled_frequency",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_aws_account",
+      "path": "terraform-kion-aws-account",
+      "variables": [
+        {
+          "attr": "account_alias",
+          "var": "account_alias",
+          "block": false
+        },
+        {
+          "attr": "account_number",
+          "var": "account_number",
+          "block": false
+        },
+        {
+          "attr": "account_type_id",
+          "var": "account_type_id",
+          "block": false
+        },
+        {
+          "attr": "aws_organizational_unit",
+          "var": "aws_organizational_unit",
+          "block": true
+        },
+        {
+          "attr": "commercial_account_name",
+          "var": "commercial_account_name",
+          "block": false
+        },
+        {
+          "attr": "create_govcloud",
+          "var": "create_govcloud",
+          "block": false
+        },
+        {
+          "attr": "email",
+          "var": "email",
+          "block": false
+        },
+        {
+          "attr": "gov_account_name",
+          "var": "gov_account_name",
+          "block": false
+        },
+        {
+          "attr": "include_linked_account_spend",
+          "var": "include_linked_account_spend",
+          "block": false
+        },
+        {
+          "attr": "labels",
+          "var": "labels",
+          "block": false
+        },
+        {
+          "attr": "linked_role",
+          "var": "linked_role",
+          "block": false
+        },
+        {
+          "attr": "move_project_settings",
+          "var": "move_project_settings",
+          "block": true
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "payer_id",
+          "var": "payer_id",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "skip_access_checking",
+          "var": "skip_access_checking",
+          "block": false
+        },
+        {
+          "attr": "start_datecode",
+          "var": "start_datecode",
+          "block": false
+        },
+        {
+          "attr": "use_org_account_info",
+          "var": "use_org_account_info",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_aws_cloudformation_template",
+      "path": "terraform-kion-aws-cloudformation-template",
+      "variables": [
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "policy",
+          "var": "policy",
+          "block": false
+        },
+        {
+          "attr": "region",
+          "var": "region",
+          "block": false
+        },
+        {
+          "attr": "regions",
+          "var": "regions",
+          "block": false
+        },
+        {
+          "attr": "sns_arns",
+          "var": "sns_arns",
+          "block": false
+        },
+        {
+          "attr": "tags",
+          "var": "tags",
+          "block": false
+        },
+        {
+          "attr": "template_parameters",
+          "var": "template_parameters",
+          "block": false
+        },
+        {
+          "attr": "termination_protection",
+          "var": "termination_protection",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_aws_iam_policy",
+      "path": "terraform-kion-aws-iam-policy",
+      "variables": [
+        {
+          "attr": "aws_iam_path",
+          "var": "aws_iam_path",
+          "block": false
+        },
+        {
+          "attr": "car_restricted",
+          "var": "car_restricted",
+          "block": false
+        },
+        {
+          "attr": "car_restricted_user_group_ids",
+          "var": "car_restricted_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "car_restricted_user_ids",
+          "var": "car_restricted_user_ids",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "policy",
+          "var": "policy",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_aws_resource_tag",
+      "path": "terraform-kion-aws-resource-tag",
+      "variables": [
+        {
+          "attr": "resource_key",
+          "var": "resource_key",
+          "block": false
+        },
+        {
+          "attr": "resource_value",
+          "var": "resource_value",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_azure_account",
+      "path": "terraform-kion-azure-account",
+      "variables": [
+        {
+          "attr": "account_alias",
+          "var": "account_alias",
+          "block": false
+        },
+        {
+          "attr": "account_name",
+          "var": "account_name",
+          "block": false
+        },
+        {
+          "attr": "account_type_id",
+          "var": "account_type_id",
+          "block": false
+        },
+        {
+          "attr": "payer_id",
+          "var": "payer_id",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "skip_access_checking",
+          "var": "skip_access_checking",
+          "block": false
+        },
+        {
+          "attr": "start_datecode",
+          "var": "start_datecode",
+          "block": false
+        },
+        {
+          "attr": "subscription_uuid",
+          "var": "subscription_uuid",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_azure_arm_template",
+      "path": "terraform-kion-azure-arm-template",
+      "variables": [
+        {
+          "attr": "deployment_mode",
+          "var": "deployment_mode",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "resource_group_name",
+          "var": "resource_group_name",
+          "block": false
+        },
+        {
+          "attr": "resource_group_region_id",
+          "var": "resource_group_region_id",
+          "block": false
+        },
+        {
+          "attr": "template",
+          "var": "template",
+          "block": false
+        },
+        {
+          "attr": "template_parameters",
+          "var": "template_parameters",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_azure_policy",
+      "path": "terraform-kion-azure-policy",
+      "variables": [
+        {
+          "attr": "azure_policy",
+          "var": "azure_policy",
+          "block": false
+        },
+        {
+          "attr": "owner_user_groups",
+          "var": "owner_user_groups",
+          "block": false
+        },
+        {
+          "attr": "owner_users",
+          "var": "owner_users",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_azure_role",
+      "path": "terraform-kion-azure-role",
+      "variables": [
+        {
+          "attr": "car_restricted_user_group_ids",
+          "var": "car_restricted_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "car_restricted_user_ids",
+          "var": "car_restricted_user_ids",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "role_permissions",
+          "var": "role_permissions",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_billing_rule",
+      "path": "terraform-kion-billing-rule",
+      "variables": [
+        {
+          "attr": "billing_source_ids",
+          "var": "billing_source_ids",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "end_month",
+          "var": "end_month",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "rule_type",
+          "var": "rule_type",
+          "block": false
+        },
+        {
+          "attr": "rule_value",
+          "var": "rule_value",
+          "block": false
+        },
+        {
+          "attr": "start_month",
+          "var": "start_month",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_billing_source",
+      "path": "terraform-kion-billing-source",
+      "variables": [
+        {
+          "attr": "aws_connection",
+          "var": "aws_connection",
+          "block": false
+        },
+        {
+          "attr": "azure_connection",
+          "var": "azure_connection",
+          "block": false
+        },
+        {
+          "attr": "billing_start_date",
+          "var": "billing_start_date",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "skip_validation",
+          "var": "skip_validation",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_billing_source_anthropic",
+      "path": "terraform-kion-billing-source-anthropic",
+      "variables": [
+        {
+          "attr": "admin_api_key",
+          "var": "admin_api_key",
+          "block": false
+        },
+        {
+          "attr": "analytics_api_key",
+          "var": "analytics_api_key",
+          "block": false
+        },
+        {
+          "attr": "billing_start_date",
+          "var": "billing_start_date",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_billing_source_aws",
+      "path": "terraform-kion-billing-source-aws",
+      "variables": [
+        {
+          "attr": "account_creation",
+          "var": "account_creation",
+          "block": false
+        },
+        {
+          "attr": "account_type_id",
+          "var": "account_type_id",
+          "block": false
+        },
+        {
+          "attr": "aws_account_number",
+          "var": "aws_account_number",
+          "block": false
+        },
+        {
+          "attr": "billing_bucket_account_number",
+          "var": "billing_bucket_account_number",
+          "block": false
+        },
+        {
+          "attr": "billing_region",
+          "var": "billing_region",
+          "block": false
+        },
+        {
+          "attr": "billing_report_type",
+          "var": "billing_report_type",
+          "block": false
+        },
+        {
+          "attr": "billing_start_date",
+          "var": "billing_start_date",
+          "block": false
+        },
+        {
+          "attr": "bucket_access_role",
+          "var": "bucket_access_role",
+          "block": false
+        },
+        {
+          "attr": "cur_bucket",
+          "var": "cur_bucket",
+          "block": false
+        },
+        {
+          "attr": "cur_bucket_region",
+          "var": "cur_bucket_region",
+          "block": false
+        },
+        {
+          "attr": "cur_name",
+          "var": "cur_name",
+          "block": false
+        },
+        {
+          "attr": "cur_prefix",
+          "var": "cur_prefix",
+          "block": false
+        },
+        {
+          "attr": "focus_billing_bucket_account_number",
+          "var": "focus_billing_bucket_account_number",
+          "block": false
+        },
+        {
+          "attr": "focus_billing_report_bucket",
+          "var": "focus_billing_report_bucket",
+          "block": false
+        },
+        {
+          "attr": "focus_billing_report_bucket_region",
+          "var": "focus_billing_report_bucket_region",
+          "block": false
+        },
+        {
+          "attr": "focus_billing_report_name",
+          "var": "focus_billing_report_name",
+          "block": false
+        },
+        {
+          "attr": "focus_billing_report_prefix",
+          "var": "focus_billing_report_prefix",
+          "block": false
+        },
+        {
+          "attr": "focus_bucket_access_role",
+          "var": "focus_bucket_access_role",
+          "block": false
+        },
+        {
+          "attr": "key_id",
+          "var": "key_id",
+          "block": false
+        },
+        {
+          "attr": "key_secret",
+          "var": "key_secret",
+          "block": false
+        },
+        {
+          "attr": "linked_role",
+          "var": "linked_role",
+          "block": false
+        },
+        {
+          "attr": "mr_bucket",
+          "var": "mr_bucket",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "only_dbr",
+          "var": "only_dbr",
+          "block": false
+        },
+        {
+          "attr": "skip_validation",
+          "var": "skip_validation",
+          "block": false
+        },
+        {
+          "attr": "use_focus_reports",
+          "var": "use_focus_reports",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_billing_source_azure",
+      "path": "terraform-kion-billing-source-azure",
+      "variables": [
+        {
+          "attr": "account_creation",
+          "var": "account_creation",
+          "block": false
+        },
+        {
+          "attr": "account_type_id",
+          "var": "account_type_id",
+          "block": false
+        },
+        {
+          "attr": "app_id",
+          "var": "app_id",
+          "block": false
+        },
+        {
+          "attr": "azure_csp_id",
+          "var": "azure_csp_id",
+          "block": false
+        },
+        {
+          "attr": "billing_start_date",
+          "var": "billing_start_date",
+          "block": false
+        },
+        {
+          "attr": "client_secret",
+          "var": "client_secret",
+          "block": false
+        },
+        {
+          "attr": "customer_id",
+          "var": "customer_id",
+          "block": false
+        },
+        {
+          "attr": "domain",
+          "var": "domain",
+          "block": false
+        },
+        {
+          "attr": "focus_storage_container",
+          "var": "focus_storage_container",
+          "block": false
+        },
+        {
+          "attr": "focus_storage_prefix",
+          "var": "focus_storage_prefix",
+          "block": false
+        },
+        {
+          "attr": "focus_storage_primary_endpoint",
+          "var": "focus_storage_primary_endpoint",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "primary_management_group_azure_id",
+          "var": "primary_management_group_azure_id",
+          "block": false
+        },
+        {
+          "attr": "resource_group_creation",
+          "var": "resource_group_creation",
+          "block": false
+        },
+        {
+          "attr": "skip_validation",
+          "var": "skip_validation",
+          "block": false
+        },
+        {
+          "attr": "storage_container",
+          "var": "storage_container",
+          "block": false
+        },
+        {
+          "attr": "storage_prefix",
+          "var": "storage_prefix",
+          "block": false
+        },
+        {
+          "attr": "storage_primary_endpoint",
+          "var": "storage_primary_endpoint",
+          "block": false
+        },
+        {
+          "attr": "subscription_creation",
+          "var": "subscription_creation",
+          "block": false
+        },
+        {
+          "attr": "tenant_level_charge_attribution_account_id",
+          "var": "tenant_level_charge_attribution_account_id",
+          "block": false
+        },
+        {
+          "attr": "use_focus_reports",
+          "var": "use_focus_reports",
+          "block": false
+        },
+        {
+          "attr": "use_proprietary_reports",
+          "var": "use_proprietary_reports",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_billing_source_gcp",
+      "path": "terraform-kion-billing-source-gcp",
+      "variables": [
+        {
+          "attr": "account_type_id",
+          "var": "account_type_id",
+          "block": false
+        },
+        {
+          "attr": "gcp_billing_account_create",
+          "var": "gcp_billing_account_create",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_billing_source_govcloud",
+      "path": "terraform-kion-billing-source-govcloud",
+      "variables": [
+        {
+          "attr": "account_creation_enabled",
+          "var": "account_creation_enabled",
+          "block": false
+        },
+        {
+          "attr": "aws_account_number",
+          "var": "aws_account_number",
+          "block": false
+        },
+        {
+          "attr": "car_external_id",
+          "var": "car_external_id",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "payer_id",
+          "var": "payer_id",
+          "block": false
+        },
+        {
+          "attr": "service_external_id",
+          "var": "service_external_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_billing_source_oci",
+      "path": "terraform-kion-billing-source-oci",
+      "variables": [
+        {
+          "attr": "account_type_id",
+          "var": "account_type_id",
+          "block": false
+        },
+        {
+          "attr": "billing_start_date",
+          "var": "billing_start_date",
+          "block": false
+        },
+        {
+          "attr": "fingerprint",
+          "var": "fingerprint",
+          "block": false
+        },
+        {
+          "attr": "is_parent_tenancy",
+          "var": "is_parent_tenancy",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "private_key",
+          "var": "private_key",
+          "block": false
+        },
+        {
+          "attr": "region",
+          "var": "region",
+          "block": false
+        },
+        {
+          "attr": "skip_validation",
+          "var": "skip_validation",
+          "block": false
+        },
+        {
+          "attr": "tenancy_ocid",
+          "var": "tenancy_ocid",
+          "block": false
+        },
+        {
+          "attr": "use_focus_reports",
+          "var": "use_focus_reports",
+          "block": false
+        },
+        {
+          "attr": "use_proprietary_reports",
+          "var": "use_proprietary_reports",
+          "block": false
+        },
+        {
+          "attr": "user_ocid",
+          "var": "user_ocid",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_budget",
+      "path": "terraform-kion-budget",
+      "variables": [
+        {
+          "attr": "amount",
+          "var": "amount",
+          "block": false
+        },
+        {
+          "attr": "end_datecode",
+          "var": "end_datecode",
+          "block": false
+        },
+        {
+          "attr": "funding_source_ids",
+          "var": "funding_source_ids",
+          "block": false
+        },
+        {
+          "attr": "ou_id",
+          "var": "ou_id",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "start_datecode",
+          "var": "start_datecode",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_category",
+      "path": "terraform-kion-category",
+      "variables": [
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "payer_id",
+          "var": "payer_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_cft",
+      "path": "terraform-kion-cft",
+      "variables": [
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "policy",
+          "var": "policy",
+          "block": false
+        },
+        {
+          "attr": "region",
+          "var": "region",
+          "block": false
+        },
+        {
+          "attr": "regions",
+          "var": "regions",
+          "block": false
+        },
+        {
+          "attr": "sns_arns",
+          "var": "sns_arns",
+          "block": false
+        },
+        {
+          "attr": "tags",
+          "var": "tags",
+          "block": false
+        },
+        {
+          "attr": "template_parameters",
+          "var": "template_parameters",
+          "block": false
+        },
+        {
+          "attr": "termination_protection",
+          "var": "termination_protection",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_cloud_rule",
+      "path": "terraform-kion-cloud-rule",
+      "variables": [
+        {
+          "attr": "automation_policy_ids",
+          "var": "automation_policy_ids",
+          "block": false
+        },
+        {
+          "attr": "azure_arm_template_definition_ids",
+          "var": "azure_arm_template_definition_ids",
+          "block": false
+        },
+        {
+          "attr": "azure_policy_definition_ids",
+          "var": "azure_policy_definition_ids",
+          "block": false
+        },
+        {
+          "attr": "azure_role_definition_ids",
+          "var": "azure_role_definition_ids",
+          "block": false
+        },
+        {
+          "attr": "cft_ids",
+          "var": "cft_ids",
+          "block": false
+        },
+        {
+          "attr": "compliance_standard_ids",
+          "var": "compliance_standard_ids",
+          "block": false
+        },
+        {
+          "attr": "concurrent_cft_sync",
+          "var": "concurrent_cft_sync",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "gcp_iam_role_ids",
+          "var": "gcp_iam_role_ids",
+          "block": false
+        },
+        {
+          "attr": "iam_policy_ids",
+          "var": "iam_policy_ids",
+          "block": false
+        },
+        {
+          "attr": "internal_ami_ids",
+          "var": "internal_ami_ids",
+          "block": false
+        },
+        {
+          "attr": "internal_portfolio_ids",
+          "var": "internal_portfolio_ids",
+          "block": false
+        },
+        {
+          "attr": "labels",
+          "var": "labels",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "ou_ids",
+          "var": "ou_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "post_webhook_id",
+          "var": "post_webhook_id",
+          "block": false
+        },
+        {
+          "attr": "pre_webhook_id",
+          "var": "pre_webhook_id",
+          "block": false
+        },
+        {
+          "attr": "project_ids",
+          "var": "project_ids",
+          "block": false
+        },
+        {
+          "attr": "service_control_policy_ids",
+          "var": "service_control_policy_ids",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_compliance_check",
+      "path": "terraform-kion-compliance-check",
+      "variables": [
+        {
+          "attr": "azure_policy_id",
+          "var": "azure_policy_id",
+          "block": false
+        },
+        {
+          "attr": "body",
+          "var": "body",
+          "block": false
+        },
+        {
+          "attr": "cloud_provider_id",
+          "var": "cloud_provider_id",
+          "block": false
+        },
+        {
+          "attr": "compliance_check_type_id",
+          "var": "compliance_check_type_id",
+          "block": false
+        },
+        {
+          "attr": "compliance_control_ids",
+          "var": "compliance_control_ids",
+          "block": false
+        },
+        {
+          "attr": "compliance_standard_id",
+          "var": "compliance_standard_id",
+          "block": false
+        },
+        {
+          "attr": "created_by_user_id",
+          "var": "created_by_user_id",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "frequency_minutes",
+          "var": "frequency_minutes",
+          "block": false
+        },
+        {
+          "attr": "frequency_type_id",
+          "var": "frequency_type_id",
+          "block": false
+        },
+        {
+          "attr": "is_all_regions",
+          "var": "is_all_regions",
+          "block": false
+        },
+        {
+          "attr": "is_auto_archived",
+          "var": "is_auto_archived",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "regions",
+          "var": "regions",
+          "block": false
+        },
+        {
+          "attr": "severity_type_id",
+          "var": "severity_type_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_compliance_control",
+      "path": "terraform-kion-compliance-control",
+      "variables": [
+        {
+          "attr": "arm_template_definition_ids",
+          "var": "arm_template_definition_ids",
+          "block": false
+        },
+        {
+          "attr": "aws_cloudformation_policy_ids",
+          "var": "aws_cloudformation_policy_ids",
+          "block": false
+        },
+        {
+          "attr": "azure_policy_definition_ids",
+          "var": "azure_policy_definition_ids",
+          "block": false
+        },
+        {
+          "attr": "cloud_provider_policy_ids",
+          "var": "cloud_provider_policy_ids",
+          "block": false
+        },
+        {
+          "attr": "compliance_check_ids",
+          "var": "compliance_check_ids",
+          "block": false
+        },
+        {
+          "attr": "compliance_family_id",
+          "var": "compliance_family_id",
+          "block": false
+        },
+        {
+          "attr": "compliance_levels",
+          "var": "compliance_levels",
+          "block": false
+        },
+        {
+          "attr": "control_number",
+          "var": "control_number",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "program_id",
+          "var": "program_id",
+          "block": false
+        },
+        {
+          "attr": "severity",
+          "var": "severity",
+          "block": false
+        },
+        {
+          "attr": "title",
+          "var": "title",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_compliance_family",
+      "path": "terraform-kion-compliance-family",
+      "variables": [
+        {
+          "attr": "compliance_program_id",
+          "var": "compliance_program_id",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_compliance_level",
+      "path": "terraform-kion-compliance-level",
+      "variables": [
+        {
+          "attr": "compliance_program_id",
+          "var": "compliance_program_id",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_compliance_program",
+      "path": "terraform-kion-compliance-program",
+      "variables": [
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "grouping_type",
+          "var": "grouping_type",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "terse_name",
+          "var": "terse_name",
+          "block": false
+        },
+        {
+          "attr": "verbose_name",
+          "var": "verbose_name",
+          "block": false
+        },
+        {
+          "attr": "version",
+          "var": "compliance_program_version",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_compliance_standard",
+      "path": "terraform-kion-compliance-standard",
+      "variables": [
+        {
+          "attr": "cloud_rule_id",
+          "var": "cloud_rule_id",
+          "block": false
+        },
+        {
+          "attr": "compliance_check_ids",
+          "var": "compliance_check_ids",
+          "block": false
+        },
+        {
+          "attr": "created_by_user_id",
+          "var": "created_by_user_id",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_custom_account",
+      "path": "terraform-kion-custom-account",
+      "variables": [
+        {
+          "attr": "account_alias",
+          "var": "account_alias",
+          "block": false
+        },
+        {
+          "attr": "account_name",
+          "var": "account_name",
+          "block": false
+        },
+        {
+          "attr": "account_number",
+          "var": "account_number",
+          "block": false
+        },
+        {
+          "attr": "payer_id",
+          "var": "payer_id",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "start_datecode",
+          "var": "start_datecode",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_custom_variable",
+      "path": "terraform-kion-custom-variable",
+      "variables": [
+        {
+          "attr": "default_value_list",
+          "var": "default_value_list",
+          "block": false
+        },
+        {
+          "attr": "default_value_map",
+          "var": "default_value_map",
+          "block": false
+        },
+        {
+          "attr": "default_value_string",
+          "var": "default_value_string",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "key_validation_message",
+          "var": "key_validation_message",
+          "block": false
+        },
+        {
+          "attr": "key_validation_regex",
+          "var": "key_validation_regex",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "type",
+          "var": "type",
+          "block": false
+        },
+        {
+          "attr": "value_validation_message",
+          "var": "value_validation_message",
+          "block": false
+        },
+        {
+          "attr": "value_validation_regex",
+          "var": "value_validation_regex",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_custom_variable_override",
+      "path": "terraform-kion-custom-variable-override",
+      "variables": [
+        {
+          "attr": "custom_variable_id",
+          "var": "custom_variable_id",
+          "block": false
+        },
+        {
+          "attr": "entity_id",
+          "var": "entity_id",
+          "block": false
+        },
+        {
+          "attr": "entity_type",
+          "var": "entity_type",
+          "block": false
+        },
+        {
+          "attr": "value_list",
+          "var": "value_list",
+          "block": false
+        },
+        {
+          "attr": "value_map",
+          "var": "value_map",
+          "block": false
+        },
+        {
+          "attr": "value_string",
+          "var": "value_string",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_dashboard",
+      "path": "terraform-kion-dashboard",
+      "variables": [
+        {
+          "attr": "config",
+          "var": "config",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "is_default",
+          "var": "is_default",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_funding_source",
+      "path": "terraform-kion-funding-source",
+      "variables": [
+        {
+          "attr": "amount",
+          "var": "amount",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "end_datecode",
+          "var": "end_datecode",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "ou_id",
+          "var": "ou_id",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "permission_scheme_id",
+          "var": "permission_scheme_id",
+          "block": false
+        },
+        {
+          "attr": "start_datecode",
+          "var": "start_datecode",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_funding_source_enforcement",
+      "path": "terraform-kion-funding-source-enforcement",
+      "variables": [
+        {
+          "attr": "cloud_rule_id",
+          "var": "cloud_rule_id",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "enabled",
+          "var": "enabled",
+          "block": false
+        },
+        {
+          "attr": "funding_source_id",
+          "var": "funding_source_id",
+          "block": false
+        },
+        {
+          "attr": "overburn",
+          "var": "overburn",
+          "block": false
+        },
+        {
+          "attr": "spend_option",
+          "var": "spend_option",
+          "block": false
+        },
+        {
+          "attr": "threshold",
+          "var": "threshold",
+          "block": false
+        },
+        {
+          "attr": "timeframe",
+          "var": "timeframe",
+          "block": false
+        },
+        {
+          "attr": "user_group_ids",
+          "var": "user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "user_ids",
+          "var": "user_ids",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_funding_source_note",
+      "path": "terraform-kion-funding-source-note",
+      "variables": [
+        {
+          "attr": "funding_source_id",
+          "var": "funding_source_id",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "text",
+          "var": "text",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_funding_source_permission_mapping",
+      "path": "terraform-kion-funding-source-permission-mapping",
+      "variables": [
+        {
+          "attr": "app_role_id",
+          "var": "app_role_id",
+          "block": false
+        },
+        {
+          "attr": "funding_source_id",
+          "var": "funding_source_id",
+          "block": false
+        },
+        {
+          "attr": "user_groups_ids",
+          "var": "user_groups_ids",
+          "block": false
+        },
+        {
+          "attr": "user_ids",
+          "var": "user_ids",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_gcp_account",
+      "path": "terraform-kion-gcp-account",
+      "variables": [
+        {
+          "attr": "account_alias",
+          "var": "account_alias",
+          "block": false
+        },
+        {
+          "attr": "account_name",
+          "var": "account_name",
+          "block": false
+        },
+        {
+          "attr": "account_type_id",
+          "var": "account_type_id",
+          "block": false
+        },
+        {
+          "attr": "google_cloud_project_id",
+          "var": "google_cloud_project_id",
+          "block": false
+        },
+        {
+          "attr": "payer_id",
+          "var": "payer_id",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "skip_access_checking",
+          "var": "skip_access_checking",
+          "block": false
+        },
+        {
+          "attr": "start_datecode",
+          "var": "start_datecode",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_gcp_iam_role",
+      "path": "terraform-kion-gcp-iam-role",
+      "variables": [
+        {
+          "attr": "car_restricted_user_group_ids",
+          "var": "car_restricted_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "car_restricted_user_ids",
+          "var": "car_restricted_user_ids",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "gcp_role_launch_stage",
+          "var": "gcp_role_launch_stage",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "role_denials",
+          "var": "role_denials",
+          "block": false
+        },
+        {
+          "attr": "role_permissions",
+          "var": "role_permissions",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_gcp_service_account",
+      "path": "terraform-kion-gcp-service-account",
+      "variables": [
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "disabled",
+          "var": "disabled",
+          "block": false
+        },
+        {
+          "attr": "display_name",
+          "var": "display_name",
+          "block": false
+        },
+        {
+          "attr": "email",
+          "var": "email",
+          "block": false
+        },
+        {
+          "attr": "enable_federation_support",
+          "var": "enable_federation_support",
+          "block": false
+        },
+        {
+          "attr": "gcp_project_id",
+          "var": "gcp_project_id",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "oauth_client_id",
+          "var": "oauth_client_id",
+          "block": false
+        },
+        {
+          "attr": "oauth_client_secret",
+          "var": "oauth_client_secret",
+          "block": false
+        },
+        {
+          "attr": "unique_id",
+          "var": "unique_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_global_permission_mapping",
+      "path": "terraform-kion-global-permission-mapping",
+      "variables": [
+        {
+          "attr": "app_role_id",
+          "var": "app_role_id",
+          "block": false
+        },
+        {
+          "attr": "user_groups_ids",
+          "var": "user_groups_ids",
+          "block": false
+        },
+        {
+          "attr": "user_ids",
+          "var": "user_ids",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_iam_policy",
+      "path": "terraform-kion-iam-policy",
+      "variables": [
+        {
+          "attr": "aws_iam_path",
+          "var": "aws_iam_path",
+          "block": false
+        },
+        {
+          "attr": "car_restricted",
+          "var": "car_restricted",
+          "block": false
+        },
+        {
+          "attr": "car_restricted_user_group_ids",
+          "var": "car_restricted_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "car_restricted_user_ids",
+          "var": "car_restricted_user_ids",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "policy",
+          "var": "policy",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_idms",
+      "path": "terraform-kion-idms",
+      "variables": [
+        {
+          "attr": "idms_type_id",
+          "var": "idms_type_id",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "password_expiration",
+          "var": "password_expiration",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_idms_group_association",
+      "path": "terraform-kion-idms-group-association",
+      "variables": [
+        {
+          "attr": "assertion_name",
+          "var": "assertion_name",
+          "block": false
+        },
+        {
+          "attr": "assertion_regex",
+          "var": "assertion_regex",
+          "block": false
+        },
+        {
+          "attr": "idms_id",
+          "var": "idms_id",
+          "block": false
+        },
+        {
+          "attr": "update_on_login",
+          "var": "update_on_login",
+          "block": false
+        },
+        {
+          "attr": "user_group_id",
+          "var": "user_group_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_idms_open_id",
+      "path": "terraform-kion-idms-open-id",
+      "variables": [
+        {
+          "attr": "access_rules",
+          "var": "access_rules",
+          "block": false
+        },
+        {
+          "attr": "authorization_endpoint",
+          "var": "authorization_endpoint",
+          "block": false
+        },
+        {
+          "attr": "client_id",
+          "var": "client_id",
+          "block": false
+        },
+        {
+          "attr": "email_claim",
+          "var": "email_claim",
+          "block": false
+        },
+        {
+          "attr": "first_name_claim",
+          "var": "first_name_claim",
+          "block": false
+        },
+        {
+          "attr": "issuer",
+          "var": "issuer",
+          "block": false
+        },
+        {
+          "attr": "jwks_uri",
+          "var": "jwks_uri",
+          "block": false
+        },
+        {
+          "attr": "last_name_claim",
+          "var": "last_name_claim",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "phone_claim",
+          "var": "phone_claim",
+          "block": false
+        },
+        {
+          "attr": "scopes",
+          "var": "scopes",
+          "block": false
+        },
+        {
+          "attr": "username_claim",
+          "var": "username_claim",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_idms_open_id_access_rule",
+      "path": "terraform-kion-idms-open-id-access-rule",
+      "variables": [
+        {
+          "attr": "assertion_name",
+          "var": "assertion_name",
+          "block": false
+        },
+        {
+          "attr": "assertion_regex",
+          "var": "assertion_regex",
+          "block": false
+        },
+        {
+          "attr": "cloudtamer_access_level_id",
+          "var": "cloudtamer_access_level_id",
+          "block": false
+        },
+        {
+          "attr": "open_id_id",
+          "var": "open_id_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_idms_open_id_group_association",
+      "path": "terraform-kion-idms-open-id-group-association",
+      "variables": [
+        {
+          "attr": "assertion_name",
+          "var": "assertion_name",
+          "block": false
+        },
+        {
+          "attr": "assertion_regex",
+          "var": "assertion_regex",
+          "block": false
+        },
+        {
+          "attr": "open_id_id",
+          "var": "open_id_id",
+          "block": false
+        },
+        {
+          "attr": "update_on_login",
+          "var": "update_on_login",
+          "block": false
+        },
+        {
+          "attr": "user_group_id",
+          "var": "user_group_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_label",
+      "path": "terraform-kion-label",
+      "variables": [
+        {
+          "attr": "color",
+          "var": "color",
+          "block": false
+        },
+        {
+          "attr": "key",
+          "var": "key",
+          "block": false
+        },
+        {
+          "attr": "value",
+          "var": "value",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_oauth2_client",
+      "path": "terraform-kion-oauth2-client",
+      "variables": [
+        {
+          "attr": "allowed_scopes",
+          "var": "allowed_scopes",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "grant_types",
+          "var": "grant_types",
+          "block": false
+        },
+        {
+          "attr": "is_public",
+          "var": "is_public",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_id",
+          "var": "owner_user_id",
+          "block": false
+        },
+        {
+          "attr": "redirect_uris",
+          "var": "redirect_uris",
+          "block": false
+        },
+        {
+          "attr": "service_account_user_id",
+          "var": "service_account_user_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_ou",
+      "path": "terraform-kion-ou",
+      "variables": [
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "labels",
+          "var": "labels",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "parent_ou_id",
+          "var": "parent_ou_id",
+          "block": false
+        },
+        {
+          "attr": "permission_scheme_id",
+          "var": "permission_scheme_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_ou_cloud_access_role",
+      "path": "terraform-kion-ou-cloud-access-role",
+      "variables": [
+        {
+          "attr": "aws_create_instance_profile",
+          "var": "aws_create_instance_profile",
+          "block": false
+        },
+        {
+          "attr": "aws_iam_path",
+          "var": "aws_iam_path",
+          "block": false
+        },
+        {
+          "attr": "aws_iam_permissions_boundary",
+          "var": "aws_iam_permissions_boundary",
+          "block": false
+        },
+        {
+          "attr": "aws_iam_policies",
+          "var": "aws_iam_policies",
+          "block": false
+        },
+        {
+          "attr": "aws_iam_role_name",
+          "var": "aws_iam_role_name",
+          "block": false
+        },
+        {
+          "attr": "aws_iam_role_trust_policy",
+          "var": "aws_iam_role_trust_policy",
+          "block": false
+        },
+        {
+          "attr": "aws_partition",
+          "var": "aws_partition",
+          "block": false
+        },
+        {
+          "attr": "aws_session_tags",
+          "var": "aws_session_tags",
+          "block": false
+        },
+        {
+          "attr": "aws_trusted_account_numbers",
+          "var": "aws_trusted_account_numbers",
+          "block": false
+        },
+        {
+          "attr": "aws_trusted_services",
+          "var": "aws_trusted_services",
+          "block": false
+        },
+        {
+          "attr": "azure_role_definitions",
+          "var": "azure_role_definitions",
+          "block": false
+        },
+        {
+          "attr": "cloud_access_role_type_id",
+          "var": "cloud_access_role_type_id",
+          "block": false
+        },
+        {
+          "attr": "gcp_iam_roles",
+          "var": "gcp_iam_roles",
+          "block": false
+        },
+        {
+          "attr": "long_term_access_keys",
+          "var": "long_term_access_keys",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "ou_id",
+          "var": "ou_id",
+          "block": false
+        },
+        {
+          "attr": "short_term_access_keys",
+          "var": "short_term_access_keys",
+          "block": false
+        },
+        {
+          "attr": "user_group_ids",
+          "var": "user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "user_ids",
+          "var": "user_ids",
+          "block": false
+        },
+        {
+          "attr": "web_access",
+          "var": "web_access",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_ou_cloud_access_role_exemption",
+      "path": "terraform-kion-ou-cloud-access-role-exemption",
+      "variables": [
+        {
+          "attr": "ou_cloud_access_role_id",
+          "var": "ou_cloud_access_role_id",
+          "block": false
+        },
+        {
+          "attr": "ou_id",
+          "var": "ou_id",
+          "block": false
+        },
+        {
+          "attr": "reason",
+          "var": "reason",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_ou_enforcement",
+      "path": "terraform-kion-ou-enforcement",
+      "variables": [
+        {
+          "attr": "cloud_rule_id",
+          "var": "cloud_rule_id",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "enabled",
+          "var": "enabled",
+          "block": false
+        },
+        {
+          "attr": "ou_id",
+          "var": "ou_id",
+          "block": false
+        },
+        {
+          "attr": "overburn",
+          "var": "overburn",
+          "block": false
+        },
+        {
+          "attr": "service_id",
+          "var": "service_id",
+          "block": false
+        },
+        {
+          "attr": "threshold",
+          "var": "threshold",
+          "block": false
+        },
+        {
+          "attr": "threshold_type",
+          "var": "threshold_type",
+          "block": false
+        },
+        {
+          "attr": "timeframe",
+          "var": "timeframe",
+          "block": false
+        },
+        {
+          "attr": "trigger_planned_amount_type",
+          "var": "trigger_planned_amount_type",
+          "block": false
+        },
+        {
+          "attr": "user_group_ids",
+          "var": "user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "user_ids",
+          "var": "user_ids",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_ou_note",
+      "path": "terraform-kion-ou-note",
+      "variables": [
+        {
+          "attr": "create_user_id",
+          "var": "create_user_id",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "ou_id",
+          "var": "ou_id",
+          "block": false
+        },
+        {
+          "attr": "text",
+          "var": "text",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_ou_permission_mapping",
+      "path": "terraform-kion-ou-permission-mapping",
+      "variables": [
+        {
+          "attr": "app_role_id",
+          "var": "app_role_id",
+          "block": false
+        },
+        {
+          "attr": "ou_id",
+          "var": "ou_id",
+          "block": false
+        },
+        {
+          "attr": "user_groups_ids",
+          "var": "user_groups_ids",
+          "block": false
+        },
+        {
+          "attr": "user_ids",
+          "var": "user_ids",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_permission_scheme",
+      "path": "terraform-kion-permission-scheme",
+      "variables": [
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "roles",
+          "var": "roles",
+          "block": false
+        },
+        {
+          "attr": "type",
+          "var": "type",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_project",
+      "path": "terraform-kion-project",
+      "variables": [
+        {
+          "attr": "archived",
+          "var": "archived",
+          "block": false
+        },
+        {
+          "attr": "auto_pay",
+          "var": "auto_pay",
+          "block": false
+        },
+        {
+          "attr": "budget",
+          "var": "budget",
+          "block": false
+        },
+        {
+          "attr": "default_aws_region",
+          "var": "default_aws_region",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "labels",
+          "var": "labels",
+          "block": false
+        },
+        {
+          "attr": "move_ou_settings",
+          "var": "move_ou_settings",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "ou_id",
+          "var": "ou_id",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "permission_scheme_id",
+          "var": "permission_scheme_id",
+          "block": false
+        },
+        {
+          "attr": "project_funding",
+          "var": "project_funding",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_project_cloud_access_role",
+      "path": "terraform-kion-project-cloud-access-role",
+      "variables": [
+        {
+          "attr": "account_ids",
+          "var": "account_ids",
+          "block": false
+        },
+        {
+          "attr": "apply_to_all_accounts",
+          "var": "apply_to_all_accounts",
+          "block": false
+        },
+        {
+          "attr": "aws_create_instance_profile",
+          "var": "aws_create_instance_profile",
+          "block": false
+        },
+        {
+          "attr": "aws_iam_path",
+          "var": "aws_iam_path",
+          "block": false
+        },
+        {
+          "attr": "aws_iam_permissions_boundary",
+          "var": "aws_iam_permissions_boundary",
+          "block": false
+        },
+        {
+          "attr": "aws_iam_policies",
+          "var": "aws_iam_policies",
+          "block": false
+        },
+        {
+          "attr": "aws_iam_role_name",
+          "var": "aws_iam_role_name",
+          "block": false
+        },
+        {
+          "attr": "aws_iam_role_trust_policy",
+          "var": "aws_iam_role_trust_policy",
+          "block": false
+        },
+        {
+          "attr": "aws_partition",
+          "var": "aws_partition",
+          "block": false
+        },
+        {
+          "attr": "aws_session_tags",
+          "var": "aws_session_tags",
+          "block": false
+        },
+        {
+          "attr": "aws_trusted_account_numbers",
+          "var": "aws_trusted_account_numbers",
+          "block": false
+        },
+        {
+          "attr": "aws_trusted_services",
+          "var": "aws_trusted_services",
+          "block": false
+        },
+        {
+          "attr": "azure_role_definitions",
+          "var": "azure_role_definitions",
+          "block": false
+        },
+        {
+          "attr": "cloud_access_role_type_id",
+          "var": "cloud_access_role_type_id",
+          "block": false
+        },
+        {
+          "attr": "cloud_provider_ids",
+          "var": "cloud_provider_ids",
+          "block": false
+        },
+        {
+          "attr": "future_accounts",
+          "var": "future_accounts",
+          "block": false
+        },
+        {
+          "attr": "gcp_iam_roles",
+          "var": "gcp_iam_roles",
+          "block": false
+        },
+        {
+          "attr": "long_term_access_keys",
+          "var": "long_term_access_keys",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "short_term_access_keys",
+          "var": "short_term_access_keys",
+          "block": false
+        },
+        {
+          "attr": "user_group_ids",
+          "var": "user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "user_ids",
+          "var": "user_ids",
+          "block": false
+        },
+        {
+          "attr": "web_access",
+          "var": "web_access",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_project_cloud_access_role_exemption",
+      "path": "terraform-kion-project-cloud-access-role-exemption",
+      "variables": [
+        {
+          "attr": "ou_cloud_access_role_id",
+          "var": "ou_cloud_access_role_id",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "reason",
+          "var": "reason",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_project_enforcement",
+      "path": "terraform-kion-project-enforcement",
+      "variables": [
+        {
+          "attr": "amount_type",
+          "var": "amount_type",
+          "block": false
+        },
+        {
+          "attr": "cloud_rule_id",
+          "var": "cloud_rule_id",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "enabled",
+          "var": "enabled",
+          "block": false
+        },
+        {
+          "attr": "notification_emails",
+          "var": "notification_emails",
+          "block": false
+        },
+        {
+          "attr": "notification_frequency",
+          "var": "notification_frequency",
+          "block": false
+        },
+        {
+          "attr": "overburn",
+          "var": "overburn",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "service_id",
+          "var": "service_id",
+          "block": false
+        },
+        {
+          "attr": "spend_option",
+          "var": "spend_option",
+          "block": false
+        },
+        {
+          "attr": "threshold",
+          "var": "threshold",
+          "block": false
+        },
+        {
+          "attr": "threshold_type",
+          "var": "threshold_type",
+          "block": false
+        },
+        {
+          "attr": "timeframe",
+          "var": "timeframe",
+          "block": false
+        },
+        {
+          "attr": "user_group_ids",
+          "var": "user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "user_ids",
+          "var": "user_ids",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_project_line_item",
+      "path": "terraform-kion-project-line-item",
+      "variables": [
+        {
+          "attr": "amount",
+          "var": "amount",
+          "block": false
+        },
+        {
+          "attr": "category_id",
+          "var": "category_id",
+          "block": false
+        },
+        {
+          "attr": "datecode",
+          "var": "datecode",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "funding_source_id",
+          "var": "funding_source_id",
+          "block": false
+        },
+        {
+          "attr": "payer_id",
+          "var": "payer_id",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_project_note",
+      "path": "terraform-kion-project-note",
+      "variables": [
+        {
+          "attr": "create_user_id",
+          "var": "create_user_id",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "text",
+          "var": "text",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_project_permission_mapping",
+      "path": "terraform-kion-project-permission-mapping",
+      "variables": [
+        {
+          "attr": "app_role_id",
+          "var": "app_role_id",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "user_groups_ids",
+          "var": "user_groups_ids",
+          "block": false
+        },
+        {
+          "attr": "user_ids",
+          "var": "user_ids",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_saml_group_association",
+      "path": "terraform-kion-saml-group-association",
+      "variables": [
+        {
+          "attr": "assertion_name",
+          "var": "assertion_name",
+          "block": false
+        },
+        {
+          "attr": "assertion_regex",
+          "var": "assertion_regex",
+          "block": false
+        },
+        {
+          "attr": "idms_id",
+          "var": "idms_id",
+          "block": false
+        },
+        {
+          "attr": "update_on_login",
+          "var": "update_on_login",
+          "block": false
+        },
+        {
+          "attr": "user_group_id",
+          "var": "user_group_id",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_scope",
+      "path": "terraform-kion-scope",
+      "variables": [
+        {
+          "attr": "alias",
+          "var": "alias",
+          "block": false
+        },
+        {
+          "attr": "criteria",
+          "var": "criteria",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "end_datecode",
+          "var": "end_datecode",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "project_id",
+          "var": "project_id",
+          "block": false
+        },
+        {
+          "attr": "start_datecode",
+          "var": "start_datecode",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_scope_criteria",
+      "path": "terraform-kion-scope-criteria",
+      "variables": [
+        {
+          "attr": "criteria",
+          "var": "criteria",
+          "block": false
+        },
+        {
+          "attr": "end_month",
+          "var": "end_month",
+          "block": false
+        },
+        {
+          "attr": "scope_id",
+          "var": "scope_id",
+          "block": false
+        },
+        {
+          "attr": "start_month",
+          "var": "start_month",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_service_catalog",
+      "path": "terraform-kion-service-catalog",
+      "variables": [
+        {
+          "attr": "account_id",
+          "var": "account_id",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "portfolio_id",
+          "var": "portfolio_id",
+          "block": false
+        },
+        {
+          "attr": "region",
+          "var": "region",
+          "block": false
+        },
+        {
+          "attr": "tag_option",
+          "var": "tag_option",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_service_control_policy",
+      "path": "terraform-kion-service-control-policy",
+      "variables": [
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "policy",
+          "var": "policy",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_user",
+      "path": "terraform-kion-user",
+      "variables": [
+        {
+          "attr": "email",
+          "var": "email",
+          "block": false
+        },
+        {
+          "attr": "first_name",
+          "var": "first_name",
+          "block": false
+        },
+        {
+          "attr": "idms_id",
+          "var": "idms_id",
+          "block": false
+        },
+        {
+          "attr": "last_name",
+          "var": "last_name",
+          "block": false
+        },
+        {
+          "attr": "mfa",
+          "var": "mfa",
+          "block": false
+        },
+        {
+          "attr": "phone",
+          "var": "phone",
+          "block": false
+        },
+        {
+          "attr": "user_group_ids",
+          "var": "user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "username",
+          "var": "username",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_user_group",
+      "path": "terraform-kion-user-group",
+      "variables": [
+        {
+          "attr": "add_self_as_viewer",
+          "var": "add_self_as_viewer",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "idms_id",
+          "var": "idms_id",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "user_ids",
+          "var": "user_ids",
+          "block": false
+        },
+        {
+          "attr": "viewer_user_group_ids",
+          "var": "viewer_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "viewer_user_ids",
+          "var": "viewer_user_ids",
+          "block": false
+        }
+      ]
+    },
+    {
+      "tf_type": "kion_webhook",
+      "path": "terraform-kion-webhook",
+      "variables": [
+        {
+          "attr": "callout_url",
+          "var": "callout_url",
+          "block": false
+        },
+        {
+          "attr": "description",
+          "var": "description",
+          "block": false
+        },
+        {
+          "attr": "name",
+          "var": "name",
+          "block": false
+        },
+        {
+          "attr": "owner_user_group_ids",
+          "var": "owner_user_group_ids",
+          "block": false
+        },
+        {
+          "attr": "owner_user_ids",
+          "var": "owner_user_ids",
+          "block": false
+        },
+        {
+          "attr": "request_body",
+          "var": "request_body",
+          "block": false
+        },
+        {
+          "attr": "request_headers",
+          "var": "request_headers",
+          "block": false
+        },
+        {
+          "attr": "request_method",
+          "var": "request_method",
+          "block": false
+        },
+        {
+          "attr": "should_send_secure_info",
+          "var": "should_send_secure_info",
+          "block": false
+        },
+        {
+          "attr": "skip_ssl",
+          "var": "skip_ssl",
+          "block": false
+        },
+        {
+          "attr": "timeout_in_seconds",
+          "var": "timeout_in_seconds",
+          "block": false
+        },
+        {
+          "attr": "use_request_headers",
+          "var": "use_request_headers",
+          "block": false
+        }
+      ]
+    }
+  ]
+}

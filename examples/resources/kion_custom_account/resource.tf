@@ -1,17 +1,11 @@
-resource "kion_custom_account" "complete_example" {
-  # Required fields
-  name           = "Terraform Complete Custom Account"
+resource "kion_custom_account" "example" {
+  # Required
+  account_name   = "example"
+  account_number = "example"
   payer_id       = 1
-  account_number = "CUSTOM-123456"
+  project_id     = 1
+  start_datecode = "2026-01"
 
-  # Optional fields
-  project_id          = 42
-  start_datecode      = "2024-03"
-
-  # Labels for the account (only supported for project accounts)
-  labels = {
-    environment = "production"
-    team        = "platform"
-    cost_center = "12345"
-  }
+  # Optional
+  # account_alias = "example"
 }

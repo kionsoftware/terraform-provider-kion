@@ -1,0 +1,176 @@
+# Foreign-key references
+# ======================
+# Which schema attributes hold the id of ANOTHER Kion resource, and which
+# resource that is. `terraform plan -generate-config-out` writes these as bare
+# integers -- `ou_id = 11` -- because Terraform has no idea the value points at
+# anything. That configuration is correct for the install it was imported from
+# and wrong everywhere else, and it does not express its own dependency graph.
+# This file is what lets `kion-import rewrite-refs` turn those literals into
+# `ou_id = kion_ou.engineering.id`.
+#
+# AUTHORED, not derived. The attribute name is not enough:
+#
+#   payer_id            -> kion_billing_source   (name says nothing)
+#   ugroup_ids          -> kion_user_group       (one of three spellings)
+#   internal_portfolio_ids -> kion_service_catalog
+#   portfolio_id        -> NOT a reference: the AWS portfolio id
+#   car_external_id     -> NOT a reference: an external identifier
+#
+# Every settable `*_id` / `*_ids` attribute in the schema snapshot must appear in
+# `references` or `not_references`. TestReferencesAreComplete fails when a new
+# one shows up unclassified, so this cannot silently rot as the provider grows.
+#
+# Keyed by attribute name, which is consistent across resources in this API
+# (`ou_id` is always an OU). `overrides` handles a resource that disagrees.
+#
+# Whether a value is a single id or a list is NOT recorded here -- the rewriter
+# reads the actual HCL value, so a scalar and a tuple both work from one entry.
+
+references:
+  # --- org / financial structure ---
+  ou_id: kion_ou
+  ou_ids: kion_ou
+  # A parent of 0 means "top-level OU", not "the OU whose id is 0". The rewriter
+  # leaves 0 alone; see zeroIsSentinel.
+  parent_ou_id: kion_ou
+  project_id: kion_project
+  project_ids: kion_project
+  funding_source_id: kion_funding_source
+  funding_source_ids: kion_funding_source
+  account_id: kion_account
+  account_ids: kion_account
+  # "The ID of the billing source containing billing data for this account."
+  payer_id: kion_billing_source
+  # The Kion account an Azure billing source attributes tenant-level charges to.
+  tenant_level_charge_attribution_account_id: kion_account
+  billing_source_ids: kion_billing_source
+  scope_id: kion_scope
+  category_id: kion_category
+
+  # --- identity ---
+  user_id: kion_user
+  user_ids: kion_user
+  owner_user_ids: kion_user
+  viewer_user_ids: kion_user
+  car_restricted_user_ids: kion_user
+  create_user_id: kion_user
+  created_by_user_id: kion_user
+  owner_user_id: kion_user
+  service_account_user_id: kion_user
+  user_group_id: kion_user_group
+  user_group_ids: kion_user_group
+  owner_user_group_ids: kion_user_group
+  viewer_user_group_ids: kion_user_group
+  car_restricted_user_group_ids: kion_user_group
+  # Three spellings of the same target, all live in the current schema.
+  user_groups_ids: kion_user_group
+  ugroup_ids: kion_user_group
+  idms_id: kion_idms
+  open_id_id: kion_idms_open_id
+  app_role_id: kion_app_role
+  permission_scheme_id: kion_permission_scheme
+
+  # --- cloud access ---
+  cloud_rule_id: kion_cloud_rule
+  cloud_rule_ids: kion_cloud_rule
+  # Now a managed resource, so a cloud rule's attached policies rewrite into
+  # references like any other foreign key. This lived in not_references until
+  # kion_automation_policy existed.
+  automation_policy_ids: kion_automation_policy
+  ou_cloud_access_role_id: kion_ou_cloud_access_role
+  iam_policy_ids: kion_iam_policy
+  gcp_iam_role_ids: kion_gcp_iam_role
+  service_control_policy_ids: kion_service_control_policy
+  azure_policy_id: kion_azure_policy
+  # "List of Azure Policy IDs to attach to the Cloud Rule."
+  azure_policy_definition_ids: kion_azure_policy
+  azure_role_definition_ids: kion_azure_role
+  azure_arm_template_definition_ids: kion_azure_arm_template
+  arm_template_definition_ids: kion_azure_arm_template
+  cft_ids: kion_cft
+  # "AWS cloudformation policy ids applied to the control" -- kion_cft is the
+  # CloudFormation template resource (kion_aws_cloudformation_template is its
+  # alias, and aliases are never import targets).
+  aws_cloudformation_policy_ids: kion_cft
+  internal_ami_ids: kion_ami
+  # "List of Service Catalog Portfolio IDs attached to the Cloud Rule."
+  internal_portfolio_ids: kion_service_catalog
+  pre_webhook_id: kion_webhook
+  post_webhook_id: kion_webhook
+
+  # --- compliance ---
+  compliance_check_ids: kion_compliance_check
+  compliance_control_ids: kion_compliance_control
+  compliance_family_id: kion_compliance_family
+  compliance_standard_id: kion_compliance_standard
+  compliance_standard_ids: kion_compliance_standard
+  compliance_program_id: kion_compliance_program
+  # "ID of the compliance program the control belongs to (used to scope delete)."
+  program_id: kion_compliance_program
+
+  custom_variable_id: kion_custom_variable
+
+# Attributes that end in _id/_ids and are NOT references to a Kion resource.
+# Listed with the reason, because the next person will wonder. The value is
+# free text; only presence matters to the completeness test.
+not_references:
+  # kion_billing_source_azure (#53): Azure's own ids, plus one Kion record the
+  # provider has no resource for.
+  app_id: "the Azure service principal's application (client) id, an Azure identifier"
+  customer_id: "the Azure customer or enrollment id, an Azure identifier"
+  primary_management_group_azure_id: "an Azure management group id"
+  azure_csp_id: "a Kion Azure CSP record, which no provider resource manages"
+  # Enumerations and lookup-table ids. These are stable integers with fixed
+  # meanings, not records this provider manages.
+  account_type_id: enum of Kion account types
+  cloud_access_role_type_id: enum -- 1 User, 2 Custom Trust, 3 Account, 4 Service
+  cloud_provider_id: enum -- "Must be 2 for Azure Policy checks"
+  cloud_provider_ids: enum, same values as cloud_provider_id
+  cloudtamer_access_level_id: enum -- 1 is full access, 2 is read-only
+  compliance_check_type_id: enum -- 1 is External
+  frequency_type_id: enum of check frequencies
+  idms_type_id: enum -- 1 Internal Directory, 2 Active Directory, 3 SAML
+  severity_type_id: enum -- 1 Informational through 5
+  resource_group_region_id: Kion's Azure-region lookup table, not a resource
+  service_id: lookup via /v3/cloud-provider/service, not a resource
+
+  # Identifiers belonging to the CLOUD provider, not to Kion. Rewriting one
+  # would point a Terraform reference at a foreign id space.
+  aws_ami_id: the AMI id in AWS
+  azure_object_id: the Azure AD object UUID
+  gcp_project_id: the Google Cloud project the service account lives in
+  google_cloud_project_id: the Google Cloud project id
+  portfolio_id: the Service Catalog portfolio id in AWS -- NOT kion_service_catalog
+  car_external_id: external identifier Kion generates for a cloud access role
+  service_external_id: external identifier Kion generates for a service
+
+  # Credentials / opaque handles.
+  key_id: the AWS access key id used to read the billing bucket, not a Kion record
+  client_id: OpenID client id, configured at the provider
+  oauth_client_id: oauth client id in the service account's project
+  unique_id: client id used with a key to authenticate
+
+  # Targets this provider does not manage as a resource.
+  cloud_provider_policy_ids: no single resource type behind this set
+
+  # Polymorphic: the entity may be an account, OU, or project, so the target
+  # cannot be resolved from the attribute alone.
+  entity_id: polymorphic parent of a custom variable override
+
+# Per-resource overrides, for a resource whose attribute disagrees with the
+# global mapping above. Empty today -- every attribute in this API means the
+# same thing everywhere it appears, which is why the global table works.
+overrides: {}
+
+# A target whose id space several tf_types share. A reference resolves to
+# whichever member the imports hold the id under. Every billing source type is
+# keyed on the payer id, so payer_id = 5 names a kion_billing_source_aws when
+# payer 5 is an AWS payer.
+families:
+  kion_billing_source:
+    - kion_billing_source
+    - kion_billing_source_aws
+    - kion_billing_source_gcp
+    - kion_billing_source_oci
+    - kion_billing_source_azure
+    - kion_billing_source_anthropic

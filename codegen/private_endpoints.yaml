@@ -1,0 +1,596 @@
+# Private / unspecified backend endpoints reference
+# =================================================
+# Some resources' public OpenAPI spec (the v3/v4/beta surface that kion-sdk-go is
+# generated from) is INCOMPLETE. Most often it publishes a create and a list but no
+# by-id read, while the backend actually reads via an internal (v1/v2) route the
+# spec never exposes. This file records the *real* endpoints, sourced from the
+# the backend controllers, so the CRUD work (generator or hand) knows what to call.
+#
+# The provider reaches endpoints the SDK lacks via raw HTTP
+# (internal/conns/kion_client.go has RawDelete today; add RawGet/RawPost/RawPatch as
+# needed). The base URL is the Kion host; prefix the path below.
+#
+# Prefix legend (the backend):
+#   /v1  = APIV1        internal (private)
+#   /v2  = APIV2        internal (private)
+#   /v3  = PublicAPIv1  public (in the spec + SDK)
+#   /v4  = PublicAPIv2  public (in the spec + SDK)
+#   /beta                public beta (in the spec + SDK)
+#
+# spec: public (in openapi3.json/SDK) | private (backend-only, needs raw HTTP)
+# {id} path params use the SDK/config convention, not the backend's :id.
+
+resources:
+
+  # Public create+update+delete at /beta, but the create body is untyped and there
+  # is NO public read. The read is the internal /v1 route returning a fully-typed
+  # Dashboard. Schema fields come from the model, not the spec.
+  dashboard:
+    reason: public /beta/dashboard is create-only + untyped body; read is private
+    create: { method: POST,   path: "/beta/dashboard",      spec: public }
+    read:   { method: GET,    path: "/v1/dashboard/{id}",   spec: private }
+    update: { method: PATCH,  path: "/beta/dashboard/{id}", spec: public }
+    delete: { method: DELETE, path: "/beta/dashboard/{id}", spec: public }
+    # /v1/dashboard's payload does not match the string-typed Dashboard that
+    # spec_additions.yaml declares by hand, so the whole response failed to
+    # decode and no dashboard could be imported. Observed on a live install:
+    #   config      the JSON object itself, not a string of JSON
+    #   description {"String":"…","Valid":true}   (sql.NullString)
+    #   updated_at  {"Time":"…","Valid":true}     (sql.NullTime)
+    # created_at, name, is_default really are plain. global_visibility,
+    # is_hidden and pin_for_sharees are wrapped too but absent from the model,
+    # so the decoder ignores them.
+    read_kinds:
+      config: json_string
+      description: null_string
+      updated_at: null_time
+
+  # Blended. Public spec exposes create + list + PATCH update, but no by-id read
+  # and no delete; those are internal /v1.
+  app_role:
+    reason: public spec has the list + PATCH but no by-id read and no delete
+    create: { method: POST,   path: "/v3/app-role",      spec: public }
+    read:   { method: GET,    path: "/v1/app-role/{id}", spec: private }
+    update: { method: PATCH,  path: "/v3/app-role/{id}", spec: public }
+    delete: { method: DELETE, path: "/v1/app-role/{id}", spec: private }
+    # GET /v1/app-role/{id} answers a deleted or unknown id with a 500, not a
+    # 404, so a role deleted outside Terraform failed every refresh. The public
+    # list omits deleted roles.
+    missing_via_list: /v3/app-role
+
+  # Blended. Public spec (v3) has create + list + delete; the by-id read AND the
+  # update are internal /v2.
+  project_note:
+    reason: public spec read is list-only; by-id read + update are private
+    create: { method: POST,   path: "/v3/project-note",      spec: public }
+    read:   { method: GET,    path: "/v2/project-note/{id}", spec: private }
+    update: { method: PATCH,  path: "/v2/project-note/{id}", spec: private }
+    delete: { method: DELETE, path: "/v3/project-note/{id}", spec: public }
+    # /v2/project-note returns two columns through Go's SQL null wrappers, so
+    # the whole response failed to decode and no note could be imported.
+    # Observed on a live install:
+    #   last_update_user_id {"Int":0,"Valid":false}
+    #   updated_at          {"Time":"0001-01-01T00:00:00Z","Valid":false}
+    # created_at is a plain string. The data source already flattens
+    # last_update_user_id by hand, via generated.OptNullUint.
+    read_kinds:
+      last_update_user_id: null_int
+      updated_at: null_time
+
+  # Fully raw (unlike project_note's blend): nothing public at all. Every op
+  # is internal /v2. Completes the note family alongside project_note + ou_note.
+  funding_source_note:
+    reason: no public spec surface; all CRUD is internal /v2
+    create: { method: POST,   path: "/v2/funding-source-note",      spec: private }
+    read:   { method: GET,    path: "/v2/funding-source-note/{id}", spec: private }
+    update: { method: PATCH,  path: "/v2/funding-source-note/{id}", spec: private }
+    delete: { method: DELETE, path: "/v2/funding-source-note/{id}", spec: private }
+    # POST /v2/funding-source-note answers {"status":201,"data":""} -- no
+    # record_id anywhere in the body, unlike the public v3 creates the archetype
+    # was modeled on. The id is recovered from the parent collection instead
+    # (#71); without this every apply left a note in Kion that Terraform had
+    # recorded as id 0 and could never refresh or delete.
+    create_id:
+      list_path: "/v2/funding-source/{parent_id}/funding-source-note"
+      parent_tf: funding_source_id
+
+  # No public surface at all: the spec carries an AutomationPolicy component but
+  # no path that uses it, so every op is the internal /v1 route. Update is PUT,
+  # not PATCH, and it is a full replace -- the backend rebuilds the provider
+  # policies from the body rather than merging, so the template always sends the
+  # complete record.
+  #
+  # The body is an envelope (scalars under "automation_policy", the rest as its
+  # siblings) and the schema is flat, so this resource uses its own template
+  # rather than raw_http, which supports scalar attributes only.
+  automation_policy:
+    reason: no public spec surface; all CRUD is internal /v1
+    create: { method: POST,   path: "/v1/automation-policy",      spec: private }
+    read:   { method: GET,    path: "/v1/automation-policy/{id}", spec: private }
+    update: { method: PUT,    path: "/v1/automation-policy/{id}", spec: private }
+    delete: { method: DELETE, path: "/v1/automation-policy/{id}", spec: private }
+    # ScheduledFrequency renders start_date/end_date through domain/util.NullTime,
+    # which has no MarshalJSON, so they arrive as {"Time":…,"Valid":false} rather
+    # than a bare string -- the same defect that made project_note and dashboard
+    # undecodable (#19). These are nested under scheduled_frequency, so the
+    # template handles them directly rather than through read_kinds, which keys
+    # on top-level attributes.
+
+  # Blended. Public v3 create/update/delete; the by-id read is private /v2
+  # (/v2/app-policy) because the public v3 GetByID omits the roles mapping. The
+  # private read returns permission_roles as {permission_id, role_ids[]}, which
+  # explodes into the model's flat roles pairs {permission_id, role_id}.
+  # Blended for an unusual reason: every verb here is PUBLIC, but the spec's
+  # BillingRule read schema is EMPTY, so the SDK's typed model carries no fields
+  # and flatten had nothing to assign. kion_billing_rule imported as a bare id
+  # with every attribute missing. The endpoint itself returns the whole record;
+  # only the spec is silent, so the read is declared by hand here.
+  # Blended because the SDK cannot decode this response, not because the endpoint
+  # is private. AzureAccountLinkage types delete_finalized_at as OptString --
+  # optional but NOT nullable -- and Kion returns null for a linkage that has not
+  # been finalized, which is all of them:
+  #
+  #   decode AzureAccountLinkage: callback: decode field "delete_finalized_at":
+  #   unexpected byte 110 'n'
+  #
+  # So every create and every read of kion_account_linkage failed, on a field the
+  # provider does not even expose. The upstream spec needs OptNilString; reading
+  # raw sidesteps the typed decode entirely and costs nothing, since the model
+  # holds five attributes and the payload carries all of them.
+  account_linkage:
+    reason: SDK decode fails on a null delete_finalized_at (spec says non-nullable)
+    read:   { method: GET, path: "/v3/account-linkages/{id}", spec: public, raw: true }
+    read_shape:
+      scalars:
+        - { tf: id,              from: id,              kind: id }
+        - { tf: payer_id,        from: payer_id,        kind: int }
+        - { tf: user_id,         from: user_id,         kind: int }
+        - { tf: azure_object_id, from: azure_object_id, kind: string }
+        # Kion splits this into azure_username + azure_domain on store and never
+        # returns it as given, so reading it back would diff against the
+        # configured value forever.
+        - { tf: azure_principal_name, from: azure_principal_name, kind: string, write_only: true }
+
+  billing_rule:
+    reason: spec's BillingRule read schema is empty; the endpoint returns the record
+    # Only the read. Create, update and delete have usable typed models and stay
+    # on the SDK; declaring a path here is what makes an op raw.
+    read:   { method: GET,    path: "/v3/billing-rule/{id}", spec: public, raw: true }
+    read_shape:
+      scalars:
+        - { tf: id,          from: id,          kind: id }
+        - { tf: name,        from: name,        kind: string }
+        - { tf: description, from: description, kind: string }
+        # The model says rule_type/rule_value; the wire says type/value.
+        - { tf: rule_type,   from: type,        kind: int }
+        - { tf: rule_value,  from: value,       kind: float }
+        - { tf: start_month, from: start_month, kind: int }
+        # sql.NullInt64, serialized {"Int":0,"Valid":false}.
+        - { tf: end_month,   from: end_month,   kind: null_int }
+      # Sent as a list of ids, returned as the expanded payers.
+      id_lists:
+        - { tf: billing_source_ids, from: "billing_criteria.payers", field: id }
+
+  permission_scheme:
+    reason: public read omits the roles mapping; private /v2/app-policy has it
+    create: { method: POST,   path: "/v3/permission-scheme",      spec: public }
+    read:   { method: GET,    path: "/v2/app-policy/{id}",        spec: private }
+    # The read answers a deleted scheme with a 500; the public list omits it.
+    missing_via_list: /v3/permission-scheme
+    update: { method: PUT,    path: "/v3/permission-scheme/{id}", spec: public }
+    delete: { method: DELETE, path: "/v3/permission-scheme/{id}", spec: public }
+    read_shape:
+      scalars:
+        - { tf: id,   from: "app_policy.id",   kind: id }
+        - { tf: name, from: "app_policy.name", kind: string }
+        - { tf: type, from: "app_policy.type", kind: string }
+      explode:
+        tf: roles
+        value_type: RolesValue
+        from: "permission_roles"
+        carry:
+          - { tf: permission_id, from: permission_id, kind: int }
+        each: { tf: role_id, from: role_ids, kind: int }
+
+  # Blended. Public v3 create/update/delete (custom billing source); the by-id
+  # read is private /v1/payer, which nests the record under custom_billing_source
+  # and tags the role field `role_name` (the model attr is bucket_access_role).
+  billing_source:
+    reason: no public by-id read; private /v1/payer nests + renames role_name
+    create: { method: POST,   path: "/v3/billing-source/custom",      spec: public }
+    read:   { method: GET,    path: "/v1/payer/{id}",                 spec: private }
+    update: { method: PATCH,  path: "/v3/billing-source/custom/{id}", spec: public }
+    delete: { method: DELETE, path: "/v3/billing-source/{id}",        spec: public }
+    read_shape:
+      scalars:
+        # The payer id, not custom_billing_source.id. The two are different id
+        # spaces: /v1/payer/{id} answers on the payer id and nests the custom
+        # record, which carries its own. Everything addresses the payer -- the
+        # import block, DELETE /v3/billing-source/{id}, PATCH
+        # /v3/billing-source/custom/{id} (which resolves the payer, then checks
+        # it has a custom record), and account.payer_id. Reporting the inner id
+        # made every reference resolve wrong, and would have pointed
+        # `terraform destroy` at whatever billing source held that number.
+        - { tf: id,                 from: "id",                                      kind: id }
+        - { tf: name,               from: "custom_billing_source.name",               kind: string }
+        - { tf: billing_start_date, from: "custom_billing_source.billing_start_date", kind: datecode }
+      objects:
+        - tf: aws_connection
+          value_type: AwsConnectionValue
+          from: "custom_billing_source.aws_connection"
+          subs:
+            - { tf: account_number,     from: account_number, kind: string }
+            - { tf: bucket_access_role, from: role_name,      kind: string }
+            - { tf: storage_bucket,     from: storage_bucket, kind: string }
+            - { tf: storage_prefix,     from: storage_prefix, kind: string }
+            - { tf: storage_region,     from: storage_region, kind: string }
+        # Added in SDK 0.9.0. tenant_client_secret is write_only: Payer.Sanitize
+        # returns it as the literal "REDACTED",
+        # so flattening it would diff against the configured value forever.
+        - tf: azure_connection
+          value_type: AzureConnectionValue
+          from: "custom_billing_source.azure_connection"
+          subs:
+            - { tf: credentialed_billing_source_id, from: credentialed_billing_source_id, kind: int }
+            - { tf: storage_container,              from: storage_container,              kind: string }
+            - { tf: storage_prefix,                 from: storage_prefix,                 kind: string }
+            - { tf: storage_primary_endpoint,       from: storage_primary_endpoint,       kind: string }
+            - { tf: tenant_app_id,                  from: tenant_app_id,                  kind: string }
+            - { tf: tenant_cloud_partition_id,      from: tenant_cloud_partition_id,      kind: int }
+            - { tf: tenant_domain,                  from: tenant_domain,                  kind: string }
+            - { tf: tenant_client_secret,           from: tenant_client_secret,           kind: string, write_only: true }
+
+  # OCI billing source. Public create/update/delete; no public by-id read, so
+  # the read is the private /v1/payer/{id}, which nests the record under
+  # oci_billing_source.
+  #
+  # private_key is write_only: Payer.Sanitize replaces
+  # OCITenancyCredentials.PrivateKey with the literal "REDACTED"
+  #, so flattening it would diff forever.
+  billing_source_oci:
+    reason: no public by-id read; private /v1/payer nests under oci_billing_source
+    create: { method: POST,   path: "/v3/billing-source/oci",      spec: public }
+    read:   { method: GET,    path: "/v1/payer/{id}",              spec: private }
+    update: { method: PATCH,  path: "/v3/billing-source/oci/{id}", spec: public }
+    delete: { method: DELETE, path: "/v3/billing-source/{id}",     spec: public }
+    read_shape:
+      scalars:
+        # The payer id, not the nested record's own. /v1/payer/{id} answers on
+        # the payer id and DELETE /v3/billing-source/{id} takes it; the nested
+        # record carries a different one (payer 2 -> aws_payer.id 1). Reporting
+        # the inner id would point destroy at another billing source.
+        - { tf: id,                 from: "id",                                    kind: id }
+        - { tf: name,               from: "oci_billing_source.name",               kind: string }
+        - { tf: billing_start_date, from: "oci_billing_source.billing_start_date", kind: datecode }
+        - { tf: tenancy_ocid,       from: "oci_billing_source.tenancy_ocid",       kind: string }
+        - { tf: user_ocid,          from: "oci_billing_source.user_ocid",          kind: string }
+        - { tf: region,             from: "oci_billing_source.region",             kind: string }
+        - { tf: fingerprint,        from: "oci_billing_source.fingerprint",        kind: string }
+        - { tf: is_parent_tenancy,  from: "oci_billing_source.is_parent_tenancy",  kind: bool }
+        - { tf: private_key,        from: "oci_billing_source.oci_tenancy_credentials.private_key", kind: string, write_only: true }
+  # AWS billing source. Create + delete are public; there is no public update
+  # and no public by-id read, so both are private /v1/payer/{id}, nesting the
+  # record under aws_payer.
+  #
+  # key_id and key_secret are write_only: Payer.Sanitize replaces both with the
+  # literal "REDACTED".
+  #
+  # The PUT overwrites every aws_payer column (org_id, support settings, the
+  # inner record id it keys on) plus account_creation and both report flags,
+  # so the update is read-modify-write: see write_shape. Sending REDACTED keys
+  # back keeps the stored ones. account_type_id and the deprecated only_dbr
+  # have no column the PUT writes, so both force replacement instead.
+  billing_source_aws:
+    reason: no public by-id read and no public update; private /v1/payer nests under aws_payer
+    create: { method: POST,   path: "/v3/billing-source/aws",  spec: public }
+    read:   { method: GET,    path: "/v1/payer/{id}",          spec: private }
+    update: { method: PUT,    path: "/v1/payer/{id}",          spec: private }
+    delete: { method: DELETE, path: "/v3/billing-source/{id}", spec: public }
+    read_shape:
+      scalars:
+        # The payer id, not the nested record's own. /v1/payer/{id} answers on
+        # the payer id and DELETE /v3/billing-source/{id} takes it; the nested
+        # record carries a different one (payer 2 -> aws_payer.id 1). Reporting
+        # the inner id would point destroy at another billing source.
+        - { tf: id,                 from: "id",                                     kind: id }
+        - { tf: name,               from: "aws_payer.name",                         kind: string }
+        - { tf: aws_account_number, from: "aws_payer.account_number",               kind: string }
+        - { tf: billing_start_date, from: "aws_payer.billing_start_date",           kind: datecode }
+        - { tf: bucket_access_role, from: "aws_payer.bucket_access_role",           kind: string }
+        - { tf: billing_region,     from: "aws_payer.billing_region",               kind: string }
+        - { tf: cur_bucket,         from: "aws_payer.billing_report_bucket",        kind: string }
+        - { tf: cur_bucket_region,  from: "aws_payer.billing_report_bucket_region", kind: string }
+        - { tf: cur_name,           from: "aws_payer.billing_report_name",          kind: string }
+        - { tf: cur_prefix,         from: "aws_payer.billing_report_prefix",        kind: string }
+        - { tf: billing_bucket_account_number, from: "aws_payer.billing_bucket_account_number", kind: string }
+        - { tf: linked_role,        from: "aws_payer.linked_role",                  kind: string }
+        - { tf: account_type_id,    from: "account_type_id",                        kind: int }
+        - { tf: key_id,             from: "aws_payer.key_id",     kind: string, write_only: true }
+        - { tf: key_secret,         from: "aws_payer.key_secret", kind: string, write_only: true }
+    write_shape:
+      - { tf: name,                                to: "aws_payer.name",                                kind: string }
+      - { tf: aws_account_number,                  to: "aws_payer.account_number",                      kind: string }
+      - { tf: billing_start_date,                  to: "aws_payer.billing_start_date",                  kind: datecode }
+      - { tf: bucket_access_role,                  to: "aws_payer.bucket_access_role",                  kind: string }
+      - { tf: billing_region,                      to: "aws_payer.billing_region",                      kind: string }
+      - { tf: cur_bucket,                          to: "aws_payer.billing_report_bucket",               kind: string }
+      - { tf: cur_bucket_region,                   to: "aws_payer.billing_report_bucket_region",        kind: string }
+      - { tf: cur_name,                            to: "aws_payer.billing_report_name",                 kind: string }
+      - { tf: cur_prefix,                          to: "aws_payer.billing_report_prefix",               kind: string }
+      - { tf: billing_bucket_account_number,       to: "aws_payer.billing_bucket_account_number",       kind: string }
+      - { tf: mr_bucket,                           to: "aws_payer.detailed_billing_bucket",             kind: string }
+      - { tf: linked_role,                         to: "aws_payer.linked_role",                         kind: string }
+      - { tf: key_id,                              to: "aws_payer.key_id",                              kind: string }
+      - { tf: key_secret,                          to: "aws_payer.key_secret",                          kind: string }
+      - { tf: focus_billing_bucket_account_number, to: "aws_payer.focus_billing_bucket_account_number", kind: string }
+      - { tf: focus_bucket_access_role,            to: "aws_payer.focus_bucket_access_role",            kind: string }
+      - { tf: focus_billing_report_bucket,         to: "aws_payer.focus_billing_report_bucket",         kind: string }
+      - { tf: focus_billing_report_bucket_region,  to: "aws_payer.focus_billing_report_bucket_region",  kind: string }
+      - { tf: focus_billing_report_name,           to: "aws_payer.focus_billing_report_name",           kind: string }
+      - { tf: focus_billing_report_prefix,         to: "aws_payer.focus_billing_report_prefix",         kind: string }
+      # The create takes the report type by name and derives the numeric id and
+      # use_proprietary_reports from it; the PUT takes both directly.
+      - { tf: billing_report_type, to: "aws_payer.billing_report_type_id", kind: enum, values: { none: 0, cur: 1, dbrrt: 2, only_cur: 1, only_dbrrt: 2, dbr_and_cur: 1, dbr_and_dbrrt: 2 } }
+      - { tf: billing_report_type, to: "use_proprietary_reports",          kind: enum, values: { none: false, cur: true, dbrrt: true, only_cur: true, only_dbrrt: true, dbr_and_cur: true, dbr_and_dbrrt: true } }
+      - { tf: account_creation,    to: "account_creation",                 kind: bool }
+      - { tf: use_focus_reports,   to: "use_focus_reports",                kind: bool }
+      - { tf: skip_validation,     to: "skip_validation",                  kind: bool }
+
+  # GCP billing source. Same shape as AWS: public create + shared delete, no
+  # public update, no public by-id read. The private read nests the record two
+  # levels deep, under gcp_billing_account.billing_account (the backend
+  # GCPBillingAccountAugmented.BillingAccount).
+  #
+  # The update is the private PUT, which takes the billing account's changes
+  # under gcp_billing_account_update and the report flags at the top level,
+  # which it overwrites -- hence read-modify-write. account_type_id has no
+  # column the PUT writes, so it forces replacement.
+  #
+  # The service-account key is not modelled: Sanitize replaces
+  # ServiceAccount.Key.KeyData with "REDACTED" and the
+  # create body references the key by service_account_id rather than inline.
+  # Azure billing source (#53). Nothing public: create is the shared POST
+  # /v1/payer/standalone, read and update the private /v1/payer/{id}, delete the
+  # public /v3/billing-source/{id}. Built by the bespoke `payer` kind: create
+  # merges write_shape into create_seed, update merges it into the record it
+  # reads first (the PUT overwrites every column), read uses read_shape.
+  #
+  # Verified on a local install: skip_validation is honored on both POST and
+  # PUT; client_secret comes back "REDACTED" and sending that back keeps the
+  # stored secret; the report flags are read from the top-level payer, the
+  # nested copies under azure_csp_customer are ignored.
+  billing_source_azure:
+    reason: no public spec surface; every billing source type creates through /v1/payer/standalone
+    create: { method: POST,   path: "/v1/payer/standalone",    spec: private }
+    read:   { method: GET,    path: "/v1/payer/{id}",          spec: private }
+    update: { method: PUT,    path: "/v1/payer/{id}",          spec: private }
+    delete: { method: DELETE, path: "/v3/billing-source/{id}", spec: public }
+    create_seed: '{}'
+    read_shape:
+      scalars:
+        - { tf: id, from: "id", kind: id }
+        - { tf: name, from: "azure_csp_customer.name", kind: string }
+        - { tf: billing_start_date, from: "azure_csp_customer.billing_start_date", kind: datecode }
+        - { tf: customer_id, from: "azure_csp_customer.customer_id", kind: string }
+        - { tf: azure_csp_id, from: "azure_csp_customer.azure_csp_id", kind: opt_int }
+        - { tf: app_id, from: "azure_csp_customer.app_id", kind: string }
+        - { tf: domain, from: "azure_csp_customer.domain", kind: string }
+        - { tf: primary_management_group_azure_id, from: "azure_csp_customer.primary_management_group_azure_id", kind: opt_string }
+        - { tf: resource_group_creation, from: "azure_csp_customer.resource_group_creation", kind: bool }
+        - { tf: subscription_creation, from: "azure_csp_customer.subscription_creation", kind: bool }
+        - { tf: tenant_level_charge_attribution_account_id, from: "azure_csp_customer.tenant_level_charge_attribution_account_id", kind: opt_int }
+        - { tf: storage_container, from: "azure_csp_customer.storage_container", kind: string }
+        - { tf: storage_prefix, from: "azure_csp_customer.storage_prefix", kind: string }
+        - { tf: storage_primary_endpoint, from: "azure_csp_customer.storage_primary_endpoint", kind: string }
+        - { tf: focus_storage_container, from: "azure_csp_customer.focus_storage_container", kind: string }
+        - { tf: focus_storage_prefix, from: "azure_csp_customer.focus_storage_prefix", kind: string }
+        - { tf: focus_storage_primary_endpoint, from: "azure_csp_customer.focus_storage_primary_endpoint", kind: string }
+        - { tf: account_type_id, from: "account_type_id", kind: int }
+        - { tf: account_creation, from: "account_creation", kind: bool }
+        - { tf: use_proprietary_reports, from: "use_proprietary_reports", kind: bool }
+        - { tf: use_focus_reports, from: "use_focus_reports", kind: bool }
+        - { tf: client_secret, from: "azure_csp_customer.client_secret", kind: string, write_only: true }
+        - { tf: skip_validation, from: "skip_validation", kind: bool, write_only: true }
+    write_shape:
+      - { tf: name, to: "azure_csp_customer.name", kind: string }
+      - { tf: billing_start_date, to: "azure_csp_customer.billing_start_date", kind: datecode }
+      - { tf: customer_id, to: "azure_csp_customer.customer_id", kind: string }
+      - { tf: azure_csp_id, to: "azure_csp_customer.azure_csp_id", kind: int }
+      - { tf: app_id, to: "azure_csp_customer.app_id", kind: string }
+      - { tf: domain, to: "azure_csp_customer.domain", kind: string }
+      - { tf: primary_management_group_azure_id, to: "azure_csp_customer.primary_management_group_azure_id", kind: string }
+      - { tf: resource_group_creation, to: "azure_csp_customer.resource_group_creation", kind: bool }
+      - { tf: subscription_creation, to: "azure_csp_customer.subscription_creation", kind: bool }
+      - { tf: tenant_level_charge_attribution_account_id, to: "azure_csp_customer.tenant_level_charge_attribution_account_id", kind: int }
+      - { tf: storage_container, to: "azure_csp_customer.storage_container", kind: string }
+      - { tf: storage_prefix, to: "azure_csp_customer.storage_prefix", kind: string }
+      - { tf: storage_primary_endpoint, to: "azure_csp_customer.storage_primary_endpoint", kind: string }
+      - { tf: focus_storage_container, to: "azure_csp_customer.focus_storage_container", kind: string }
+      - { tf: focus_storage_prefix, to: "azure_csp_customer.focus_storage_prefix", kind: string }
+      - { tf: focus_storage_primary_endpoint, to: "azure_csp_customer.focus_storage_primary_endpoint", kind: string }
+      - { tf: account_type_id, to: "account_type_id", kind: int }
+      - { tf: account_creation, to: "account_creation", kind: bool }
+      - { tf: use_proprietary_reports, to: "use_proprietary_reports", kind: bool }
+      - { tf: use_focus_reports, to: "use_focus_reports", kind: bool }
+      - { tf: client_secret, to: "azure_csp_customer.client_secret", kind: string }
+      - { tf: skip_validation, to: "skip_validation", kind: bool }
+
+  # Anthropic billing source (#53), the same `payer` kind as Azure. Kion calls
+  # Anthropic on every create to resolve the organization from the Admin key, so
+  # a real key is required even with skip_validation; organization_id is read
+  # only. Both keys come back "REDACTED" (or "" when unset) and sending that back
+  # keeps the stored key. Anthropic billing sources exist from Kion 3.16.
+  billing_source_anthropic:
+    reason: no public spec surface; every billing source type creates through /v1/payer/standalone
+    create: { method: POST,   path: "/v1/payer/standalone",    spec: private }
+    read:   { method: GET,    path: "/v1/payer/{id}",          spec: private }
+    update: { method: PUT,    path: "/v1/payer/{id}",          spec: private }
+    delete: { method: DELETE, path: "/v3/billing-source/{id}", spec: public }
+    create_seed: '{"account_type_id": 30, "skip_validation": true}'
+    min_kion_version: "3.16.0"
+    read_shape:
+      scalars:
+        - { tf: id,                 from: "id",                                          kind: id }
+        - { tf: name,               from: "anthropic_billing_source.name",               kind: string }
+        - { tf: billing_start_date, from: "anthropic_billing_source.billing_start_date", kind: datecode }
+        - { tf: organization_id,    from: "anthropic_billing_source.organization_id",    kind: string }
+        - { tf: admin_api_key,      from: "anthropic_billing_source.admin_api_key",      kind: string, write_only: true }
+        - { tf: analytics_api_key,  from: "anthropic_billing_source.analytics_api_key",  kind: string, write_only: true }
+    write_shape:
+      - { tf: name,               to: "anthropic_billing_source.name",               kind: string }
+      - { tf: billing_start_date, to: "anthropic_billing_source.billing_start_date", kind: datecode }
+      - { tf: admin_api_key,      to: "anthropic_billing_source.admin_api_key",      kind: string }
+      - { tf: analytics_api_key,  to: "anthropic_billing_source.analytics_api_key",  kind: string }
+
+  billing_source_gcp:
+    reason: no public by-id read and no public update; private /v1/payer nests under gcp_billing_account
+    create: { method: POST,   path: "/v3/billing-source/gcp",  spec: public }
+    read:   { method: GET,    path: "/v1/payer/{id}",          spec: private }
+    update: { method: PUT,    path: "/v1/payer/{id}",          spec: private }
+    delete: { method: DELETE, path: "/v3/billing-source/{id}", spec: public }
+    read_shape:
+      scalars:
+        # The payer id, not the nested record's own. /v1/payer/{id} answers on
+        # the payer id and DELETE /v3/billing-source/{id} takes it; the nested
+        # record carries a different one (payer 2 -> aws_payer.id 1). Reporting
+        # the inner id would point destroy at another billing source.
+        - { tf: id, from: "id", kind: id }
+        - { tf: account_type_id, from: "account_type_id", kind: int }
+      # Everything else lives inside the nested create object in the model, so it
+      # is flattened as one object rather than as top-level scalars.
+      objects:
+        - tf: gcp_billing_account_create
+          value_type: GcpBillingAccountCreateValue
+          from: "gcp_billing_account.billing_account"
+          subs:
+            - { tf: name,               from: name,               kind: string }
+            - { tf: gcp_id,             from: gcp_id,             kind: string }
+            # YYYYMM on the wire, YYYY-MM in the schema. Declared int, it
+            # handed an Int64 to a string attribute and every read failed.
+            - { tf: billing_start_date, from: billing_start_date, kind: datecode }
+            - { tf: is_reseller,        from: is_reseller,        kind: bool }
+            - { tf: service_account_id, from: service_account_id, kind: int }
+            # Required, so import needs it read rather than carried from state.
+            - tf: big_query_export
+              from: big_query_export
+              kind: object
+              subs:
+                - { tf: gcp_project_id,  from: gcp_project_id,  kind: string }
+                - { tf: dataset_name,    from: dataset_name,    kind: string }
+                - { tf: table_name,      from: table_name,      kind: string }
+                - { tf: table_format,    from: table_format,    kind: string }
+                - { tf: focus_view_name, from: focus_view_name, kind: string }
+            - { tf: billing_account_attribution_account_id, from: billing_account_attribution_account_id, kind: string, write_only: true }
+            - { tf: use_focus,                              from: use_focus,                              kind: bool,   write_only: true }
+            - { tf: use_proprietary,                        from: use_proprietary,                        kind: bool,   write_only: true }
+    write_shape:
+      - { tf: gcp_billing_account_create.name,                                   to: "gcp_billing_account_update.name",                                   kind: string }
+      - { tf: gcp_billing_account_create.gcp_id,                                 to: "gcp_billing_account_update.gcp_id",                                 kind: string }
+      - { tf: gcp_billing_account_create.billing_start_date,                     to: "gcp_billing_account_update.billing_start_date",                     kind: datecode }
+      - { tf: gcp_billing_account_create.is_reseller,                            to: "gcp_billing_account_update.is_reseller",                            kind: bool }
+      - { tf: gcp_billing_account_create.service_account_id,                     to: "gcp_billing_account_update.service_account_id",                     kind: int }
+      - { tf: gcp_billing_account_create.billing_account_attribution_account_id, to: "gcp_billing_account_update.billing_account_attribution_account_id", kind: int }
+      - { tf: gcp_billing_account_create.big_query_export.gcp_project_id,        to: "gcp_billing_account_update.big_query_export.gcp_project_id",        kind: string }
+      - { tf: gcp_billing_account_create.big_query_export.dataset_name,          to: "gcp_billing_account_update.big_query_export.dataset_name",          kind: string }
+      - { tf: gcp_billing_account_create.big_query_export.table_name,            to: "gcp_billing_account_update.big_query_export.table_name",            kind: string }
+      - { tf: gcp_billing_account_create.big_query_export.table_format,          to: "gcp_billing_account_update.big_query_export.table_format",          kind: string }
+      - { tf: gcp_billing_account_create.big_query_export.focus_view_name,       to: "gcp_billing_account_update.big_query_export.focus_view_name",       kind: string }
+      - { tf: gcp_billing_account_create.use_focus,                              to: "use_focus_reports",                          kind: bool }
+      - { tf: gcp_billing_account_create.use_proprietary,                        to: "use_proprietary_reports",                    kind: bool }
+
+  service_catalog:
+    reason: public surface is minimal; richer portfolio ops are private
+    create: { method: POST,   path: "/v3/service-catalog",                    spec: public }
+    read:   { method: GET,    path: "/v2/aws-service-catalog/portfolio/{id}", spec: private }
+    delete: { method: DELETE, path: "/v2/aws-service-catalog/portfolio/{id}", spec: private }
+
+  # Public /v3/*-cloud-access-role-exemption has create+delete but no read (a
+  # by-id GET is 405). The records are returned by the parent's cloud access
+  # role listing, GET /v1/{ou,project}/{id}/ou-cloud-access-role, under
+  # data.ou_exemptions / data.project_exemptions as
+  # {id, ou_id|project_id, ou_cloud_access_role_id, reason, ou_cloud_access_role}.
+  # That list holds only the exemptions the parent itself owns, and only cloud
+  # access role exemptions, so no discriminator is needed.
+  #
+  # The exemption list is populated only for a caller holding Browse All Cloud
+  # Access Roles and Manage OU (Manage Project) on the parent; for anyone else
+  # it comes back null and the record reads as gone.
+  #
+  # Both previously read /v1/{ou,project}/{id}/cloud-access-role-exemption,
+  # which lists a different exemption kind tied to cloud rules, so a created
+  # record was never found and every refresh dropped it from state (#80).
+  ou_cloud_access_role_exemption:
+    reason: no public read; the parent OU's private cloud access role listing
+    create: { method: POST,   path: "/v3/ou-cloud-access-role-exemption",      spec: public }
+    read:   { method: GET,    path: "/v1/ou/{id}/ou-cloud-access-role",        spec: private }
+    delete: { method: DELETE, path: "/v3/ou-cloud-access-role-exemption/{id}", spec: public }
+    parent_read:
+      path: "/v1/ou/{parent_id}/ou-cloud-access-role"
+      records: ou_exemptions
+      parent_tf: ou_id
+      parent_json: ou_id
+      fields:
+        - { tf: ou_cloud_access_role_id, from: ou_cloud_access_role_id, kind: int }
+        - { tf: reason,                  from: reason,                  kind: string }
+
+  # A project exemption exempts an OU cloud access role FOR a project, so it
+  # keys on ou_cloud_access_role_id too.
+  project_cloud_access_role_exemption:
+    reason: no public read; the parent project's private cloud access role listing
+    create: { method: POST,   path: "/v3/project-cloud-access-role-exemption",      spec: public }
+    read:   { method: GET,    path: "/v1/project/{id}/ou-cloud-access-role",         spec: private }
+    delete: { method: DELETE, path: "/v3/project-cloud-access-role-exemption/{id}", spec: public }
+    parent_read:
+      path: "/v1/project/{parent_id}/ou-cloud-access-role"
+      records: project_exemptions
+      parent_tf: project_id
+      parent_json: project_id
+      fields:
+        - { tf: ou_cloud_access_role_id, from: ou_cloud_access_role_id, kind: int }
+        - { tf: reason,                  from: reason,                  kind: string }
+
+  # The third resource that had a no-op read, and the easy one: the spec has the
+  # collection GET, POST and DELETE, but no by-id GET, so it too imported as an
+  # empty shell. The collection is flat and public, so the read needs no parent
+  # and the import id stays the plain id. Fields match the spec's AWSResourceTag,
+  # verified live 2026-10-20 (#30): create, refresh, import, out-of-band delete.
+  aws_resource_tag:
+    reason: public spec has the collection GET but no by-id read
+    parent_read:
+      path: "/v3/aws-resource-tag"
+      fields:
+        - { tf: resource_key,   from: resource_key,   kind: string }
+        - { tf: resource_value, from: resource_value, kind: string }
+
+  # Example of the public/private DUPLICATE pattern. ou_note is fully covered by the
+  # public spec (v3); a private v2 twin also exists. Listed to document the pattern
+  # the codebase already uses (e.g. conns RawDelete for SDK-uncovered routes).
+  ou_note:
+    reason: fully public (v3); private v2 twin exists, reference only
+    create: { method: POST,   path: "/v3/ou-note",      spec: public }
+    read:   { method: GET,    path: "/v3/ou-note/{id}", spec: public }
+    update: { method: PATCH,  path: "/v3/ou-note/{id}", spec: public }
+    delete: { method: DELETE, path: "/v3/ou-note/{id}", spec: public }
+    private_twin_delete: { method: DELETE, path: "/v2/ou-note/{id}" }
+
+  # The public spec publishes no delete for either, so the generator emitted a
+  # Delete that warns and removes the resource from state only -- every webhook
+  # and user a configuration created survived `terraform destroy`, unreferenced
+  # and undeletable through Terraform. The private route exists and works;
+  # verified on a live 3.16 install, create -> GET 200 -> DELETE 200 -> GET 404.
+  webhook:
+    reason: public spec has no delete; the private v1 route deletes for real
+    create: { method: POST,   path: "/v3/webhook",      spec: public }
+    read:   { method: GET,    path: "/v3/webhook/{id}", spec: public }
+    update: { method: PATCH,  path: "/v3/webhook/{id}", spec: public }
+    delete: { method: DELETE, path: "/v1/webhook/{id}", spec: private }
+
+  # kion_project is public throughout, but no public read returns its
+  # permission_scheme_id. Its Read (internal/kgen/crud/project.gtpl) also calls
+  # GET /v1/project/{id}/edit (private), taking project_app_policy[0].id.
+
+  user:
+    reason: public spec has no delete; the private v1 route deletes for real
+    create: { method: POST,   path: "/v3/user",      spec: public }
+    read:   { method: GET,    path: "/v3/user/{id}", spec: public }
+    delete: { method: DELETE, path: "/v1/user/{id}", spec: private }

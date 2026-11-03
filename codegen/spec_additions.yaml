@@ -1,0 +1,580 @@
+# OpenAPI spec additions
+# =======================
+# Endpoints / schemas the public spec + SDK omit, transcribed from the backend
+# backend, so `kgen schemas` can generate resources the spec can't describe on its
+# own. `kgen schemas` MERGES these into spec/openapi3.json (in a working copy,
+# the checked-in spec, refreshed from the SDK, is left untouched) before running
+# tfplugingen. Paths deep-merge at the verb level (adding a GET keeps existing
+# PATCH/DELETE); component schemas add-or-overwrite by name.
+#
+# Retire an entry once the endpoint is published to the real OpenAPI spec upstream.
+# See codegen/private_endpoints.yaml for where each of these lives in the backend.
+
+paths:
+  # dashboard: public spec has an untyped create body and no read. Type the create
+  # body (settable fields) and add the private read so tfplugingen can generate it.
+  /beta/dashboard:
+    post:
+      operationId: PostDashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DashboardCreate"
+      responses:
+        "201":
+          description: Created
+  /beta/dashboard/{id}:
+    get:
+      operationId: GetDashboard
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardResponse"
+
+  # app_role: public spec has only the list; type the create body and add the
+  # by-id read.
+  /v3/app-role:
+    post:
+      operationId: PostAppRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppRoleCreate"
+      responses:
+        "201":
+          description: Created
+  /v3/app-role/{id}:
+    get:
+      operationId: GetAppRole
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppRoleResponse"
+
+  # project_note: public spec read is list-only; the by-id read is private /v2
+  # (backend model: ProjectNote in .../public/api/v3/.../project.go).
+  /v3/project-note:
+    post:
+      operationId: PostProjectNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectNoteCreate"
+      responses:
+        "201":
+          description: Created
+  /v3/project-note/{id}:
+    get:
+      operationId: GetProjectNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectNoteResponse"
+
+  # funding_source_note: nothing public at all. Every op is internal /v2.
+  # Type the create body + add the by-id read so tfplugingen can generate the
+  # schema; the raw_http archetype calls the /v2 routes over raw HTTP.
+  /v2/funding-source-note:
+    post:
+      operationId: PostFundingSourceNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FundingSourceNoteCreate"
+      responses:
+        "201":
+          description: Created
+  /v2/funding-source-note/{id}:
+    get:
+      operationId: GetFundingSourceNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FundingSourceNoteResponse"
+
+  # Private update/delete routes that generator_config.yaml names but nothing
+  # typed. tfplugingen resolves EVERY path a resource declares, not just the
+  # create and read it builds the schema from, so an untyped delete fails the
+  # whole run: `make generate-schemas` aborted with six "path not found in
+  # OpenAPI spec" errors and wrote nothing. Nothing caught it, because the spec
+  # is gitignored and CI therefore cannot run schema generation at all.
+  #
+  # These carry no request or response body on purpose. They exist so the path
+  # resolves; the schema still comes from each resource's create and read.
+  /v2/project-note/{id}:
+    patch:
+      operationId: PatchProjectNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectNoteCreate"
+      responses:
+        "200":
+          description: OK
+  /v1/app-role/{id}:
+    delete:
+      operationId: DeleteAppRole
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+  # The AWS/GCP billing source update. No body declared: the update is
+  # read-modify-write over the payer record (see write_shape), and the schema
+  # stays the public create's.
+  /v1/payer/{id}:
+    put:
+      operationId: PutPayer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+  /v1/user/{id}:
+    delete:
+      operationId: DeleteUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+  /v1/webhook/{id}:
+    delete:
+      operationId: DeleteWebhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+  /v2/aws-service-catalog/portfolio/{id}:
+    delete:
+      operationId: DeleteServiceCatalogPortfolio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+
+  # automation_policy: nothing public at all -- the spec carries an
+  # AutomationPolicy component (4 fields) but no path that uses it. Every op is
+  # internal /v1. The wire body is an envelope: the policy's own scalars sit
+  # under "automation_policy" and everything else is a sibling, so the schema
+  # here is the FLATTENED view the practitioner writes and the bespoke template
+  # does the nesting. See codegen/private_endpoints.yaml.
+  /v1/automation-policy:
+    post:
+      operationId: PostAutomationPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomationPolicyCreate"
+      responses:
+        "201":
+          description: Created
+  /v1/automation-policy/{id}:
+    get:
+      operationId: GetAutomationPolicy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationPolicyResponse"
+
+  # billing_source_azure: no public surface. Kion creates every billing source
+  # type through one private route (POST /v1/payer/standalone) and reads them all
+  # at GET /v1/payer/{id}, so Azure and Anthropic would share these paths with
+  # different bodies. These two keys exist only to give tfplugingen a FLATTENED
+  # Azure schema; they are not routes. The bespoke `payer` template calls the
+  # real ones, declared in codegen/private_endpoints.yaml.
+  /v1/payer/standalone/azure:
+    post:
+      operationId: PostBillingSourceAzure
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillingSourceAzureCreate"
+      responses:
+        "200":
+          description: OK
+  /v1/payer/{id}/azure:
+    get:
+      operationId: GetBillingSourceAzure
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingSourceAzureResponse"
+
+  # billing_source_anthropic: schema-only keys, as for billing_source_azure above.
+  /v1/payer/standalone/anthropic:
+    post:
+      operationId: PostBillingSourceAnthropic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillingSourceAnthropicCreate"
+      responses:
+        "200":
+          description: OK
+  /v1/payer/{id}/anthropic:
+    get:
+      operationId: GetBillingSourceAnthropic
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingSourceAnthropicResponse"
+
+components:
+  schemas:
+    # billing_source_azure: the FLATTENED view the practitioner writes. On the
+    # wire most fields nest under "azure_csp_customer"; the payer template's
+    # write_shape and read_shape own that mapping.
+    # billing_source_anthropic: FLATTENED view; on the wire the fields nest under
+    # "anthropic_billing_source" and account_type_id is fixed (create_seed).
+    BillingSourceAnthropicCreate:
+      type: object
+      required: [name, billing_start_date, admin_api_key]
+      properties:
+        name: { type: string, description: Name of the billing source. }
+        billing_start_date: { type: string, description: First month Kion reads billing data for (YYYY-MM). }
+        admin_api_key: { type: string, description: Anthropic Admin API key (sk-ant-admin...). }
+        analytics_api_key: { type: string, description: Anthropic Enterprise Analytics API key. }
+    BillingSourceAnthropicResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/BillingSourceAnthropic" }
+    BillingSourceAnthropic:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string, description: Name of the billing source. }
+        billing_start_date: { type: string, description: First month Kion reads billing data for (YYYY-MM). }
+        admin_api_key: { type: string, description: Anthropic Admin API key (sk-ant-admin...). }
+        analytics_api_key: { type: string, description: Anthropic Enterprise Analytics API key. }
+        organization_id: { type: string, description: Anthropic organization the Admin API key belongs to. }
+    BillingSourceAzureCreate:
+      type: object
+      required: [name, account_type_id, billing_start_date]
+      properties:
+        name: { type: string, description: Name of the billing source. }
+        account_type_id: { type: integer, description: "Kion account type of the billing source: 3 Azure CSP, 6 Azure EA, 16 Azure MCA, or their Government and Secret variants." }
+        billing_start_date: { type: string, description: First month Kion reads billing data for (YYYY-MM). }
+        customer_id: { type: string, description: The Azure customer or enrollment id. }
+        azure_csp_id: { type: integer, description: ID of the parent Azure CSP record, for a CSP customer. }
+        app_id: { type: string, description: Application (client) ID of the Azure service principal. }
+        client_secret: { type: string, description: Client secret of the Azure service principal. }
+        domain: { type: string, description: Azure AD tenant domain. }
+        primary_management_group_azure_id: { type: string, description: Azure id of the management group new subscriptions are placed under. }
+        resource_group_creation: { type: boolean, description: Whether Kion may create resource groups under this billing source. }
+        subscription_creation: { type: boolean, description: Whether Kion may create subscriptions under this billing source. }
+        tenant_level_charge_attribution_account_id: { type: integer, description: ID of the account tenant-level charges are attributed to. }
+        storage_container: { type: string, description: Storage container holding the billing export. }
+        storage_prefix: { type: string, description: Path prefix of the billing export in the container. }
+        storage_primary_endpoint: { type: string, description: Primary blob endpoint of the billing export storage account. }
+        focus_storage_container: { type: string, description: Storage container holding the FOCUS export. }
+        focus_storage_prefix: { type: string, description: Path prefix of the FOCUS export in the container. }
+        focus_storage_primary_endpoint: { type: string, description: Primary blob endpoint of the FOCUS export storage account. }
+        use_proprietary_reports: { type: boolean, description: Whether Kion reads the Azure cost export. }
+        use_focus_reports: { type: boolean, description: Whether Kion reads the FOCUS export. }
+        account_creation: { type: boolean, description: Whether accounts can be created under this billing source. }
+        skip_validation: { type: boolean, description: Create or update without testing the Azure credentials and storage access first. }
+    BillingSourceAzureResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/BillingSourceAzure" }
+    BillingSourceAzure:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string, description: Name of the billing source. }
+        account_type_id: { type: integer, description: "Kion account type of the billing source: 3 Azure CSP, 6 Azure EA, 16 Azure MCA, or their Government and Secret variants." }
+        billing_start_date: { type: string, description: First month Kion reads billing data for (YYYY-MM). }
+        customer_id: { type: string, description: The Azure customer or enrollment id. }
+        azure_csp_id: { type: integer, description: ID of the parent Azure CSP record, for a CSP customer. }
+        app_id: { type: string, description: Application (client) ID of the Azure service principal. }
+        client_secret: { type: string, description: Client secret of the Azure service principal. }
+        domain: { type: string, description: Azure AD tenant domain. }
+        primary_management_group_azure_id: { type: string, description: Azure id of the management group new subscriptions are placed under. }
+        resource_group_creation: { type: boolean, description: Whether Kion may create resource groups under this billing source. }
+        subscription_creation: { type: boolean, description: Whether Kion may create subscriptions under this billing source. }
+        tenant_level_charge_attribution_account_id: { type: integer, description: ID of the account tenant-level charges are attributed to. }
+        storage_container: { type: string, description: Storage container holding the billing export. }
+        storage_prefix: { type: string, description: Path prefix of the billing export in the container. }
+        storage_primary_endpoint: { type: string, description: Primary blob endpoint of the billing export storage account. }
+        focus_storage_container: { type: string, description: Storage container holding the FOCUS export. }
+        focus_storage_prefix: { type: string, description: Path prefix of the FOCUS export in the container. }
+        focus_storage_primary_endpoint: { type: string, description: Primary blob endpoint of the FOCUS export storage account. }
+        use_proprietary_reports: { type: boolean, description: Whether Kion reads the Azure cost export. }
+        use_focus_reports: { type: boolean, description: Whether Kion reads the FOCUS export. }
+        account_creation: { type: boolean, description: Whether accounts can be created under this billing source. }
+    DashboardCreate:
+      type: object
+      properties:
+        name: { type: string, description: Name of the dashboard. }
+        description: { type: string, description: Description of the dashboard. }
+        config: { type: string, description: JSON configuration (cards, layout). }
+        is_default: { type: boolean, description: Whether this is the default dashboard. }
+    DashboardResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/Dashboard" }
+    Dashboard:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        config: { type: string }
+        is_default: { type: boolean }
+        created_by_user_id: { type: integer }
+        created_at: { type: string }
+        updated_at: { type: string }
+
+    AppRoleCreate:
+      type: object
+      properties:
+        name: { type: string, description: Name of the app role. }
+        disabled: { type: boolean, description: Whether the app role is disabled. }
+    AppRoleResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/AppRole" }
+    AppRole:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        system_managed: { type: boolean }
+        disabled: { type: boolean }
+
+    ProjectNoteCreate:
+      type: object
+      properties:
+        project_id: { type: integer, description: ID of the project. }
+        name: { type: string, description: Name of the note. }
+        text: { type: string, description: Body text of the note. }
+    ProjectNoteResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/ProjectNote" }
+    ProjectNote:
+      type: object
+      properties:
+        id: { type: integer }
+        project_id: { type: integer }
+        name: { type: string }
+        text: { type: string }
+    # funding_source_note has no public spec, so every field (incl. the computed
+    # audit fields) must be declared here for the model to include them.
+    FundingSourceNoteCreate:
+      type: object
+      properties:
+        funding_source_id: { type: integer, description: ID of the funding source the note belongs to. }
+        name: { type: string, description: Name of the note. }
+        text: { type: string, description: Body text of the note. }
+    FundingSourceNoteResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/FundingSourceNote" }
+    FundingSourceNote:
+      type: object
+      properties:
+        id: { type: integer }
+        funding_source_id: { type: integer }
+        name: { type: string }
+        text: { type: string }
+        create_user_id: { type: integer }
+        create_user_name: { type: string }
+        last_update_user_id: { type: integer }
+        last_update_user_name: { type: string }
+        created_at: { type: string }
+        updated_at: { type: string }
+
+    # automation_policy. The spec already carries an `AutomationPolicy`
+    # component of four fields with no path using it; this overwrites it with
+    # the full record, per the add-or-overwrite rule above.
+    #
+    # This is the FLATTENED shape, not the wire shape. On the wire the policy's
+    # own scalars are nested under an "automation_policy" key and the rest are
+    # siblings of it; cloud_provider.id is an object; and resources/regions are
+    # arrays of one-key objects ({"resource":"ec2"}). Writing that literally
+    # would make the practitioner mirror an envelope they have no reason to know
+    # about, so the schema is flat and the bespoke template owns the nesting.
+    #
+    # app_labels is deliberately absent: the API accepts it, but binding it
+    # needs the label record shape, and an attribute the request body does not
+    # carry is input accepted and discarded (see bind-check).
+    AutomationPolicyCreate:
+      type: object
+      properties:
+        name: { type: string, description: Name of the automation policy. }
+        description: { type: string, description: Description of the automation policy. }
+        engine: { type: integer, format: uint8, description: "Engine that runs the policy. 0 = Kion. Cloud Custodian (1) is defined but rejected by the API." }
+        enabled: { type: boolean, description: Whether the policy is enabled. }
+        owner_user_ids: { type: array, items: { type: integer }, description: IDs of the users who own the policy. }
+        owner_user_group_ids: { type: array, items: { type: integer }, description: IDs of the user groups that own the policy. }
+        cloud_rule_ids: { type: array, items: { type: integer }, description: IDs of the cloud rules the policy is attached to. }
+        scheduled_frequency: { $ref: "#/components/schemas/AutomationPolicyScheduledFrequency" }
+        cloud_provider_policies:
+          type: array
+          description: The provider-specific policies this automation policy runs. At least one is required.
+          items: { $ref: "#/components/schemas/AutomationPolicyCloudProviderPolicy" }
+    AutomationPolicyScheduledFrequency:
+      type: object
+      description: When the policy runs. Omit for a policy that only runs on demand.
+      properties:
+        type: { type: integer, format: uint8, description: "Frequency type. 0 = daily, 1 = weekly, 2 = monthly, 3 = quarterly, 4 = interval." }
+        days_of_week: { type: array, items: { type: integer }, description: "Days of the week to run on, 0 = Sunday. Weekly only." }
+        days_of_month: { type: array, items: { type: integer }, description: Days of the month to run on. Monthly only. }
+        quarterly_recurrence: { type: integer, format: uint8, description: Which month of the quarter to run in. Quarterly only. }
+        weekly_recurrence: { type: integer, format: uint8, description: Run every N weeks. Weekly only. }
+        hour: { type: integer, description: Hour of the day to run at, 0-23, in time_zone_identifier. }
+        minute: { type: integer, description: Minute of the hour to run at, 0-59. }
+        time_zone_identifier: { type: string, description: "IANA time zone the hour and minute are interpreted in, for example America/New_York." }
+        interval_hours: { type: integer, format: uint8, description: Run every N hours. Interval only. }
+        start_date: { type: string, description: Date the schedule starts. }
+        end_date: { type: string, description: Date the schedule stops. }
+    AutomationPolicyCloudProviderPolicy:
+      type: object
+      properties:
+        cloud_provider_id: { type: integer, description: "ID of the cloud provider this policy targets." }
+        apply_to_all_regions: { type: boolean, description: Whether the policy applies to every region rather than the listed ones. }
+        policy: { type: string, description: The policy body. }
+        resources: { type: array, items: { type: string }, description: "Resource types the policy acts on, for example ec2." }
+        regions: { type: array, items: { type: string }, description: Regions the policy runs in when apply_to_all_regions is false. }
+    AutomationPolicyResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/AutomationPolicy" }
+    AutomationPolicy:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        engine: { type: integer, format: uint8 }
+        enabled: { type: boolean }
+        owner_user_ids: { type: array, items: { type: integer } }
+        owner_user_group_ids: { type: array, items: { type: integer } }
+        cloud_rule_ids: { type: array, items: { type: integer } }
+        scheduled_frequency: { $ref: "#/components/schemas/AutomationPolicyScheduledFrequency" }
+        cloud_provider_policies:
+          type: array
+          items: { $ref: "#/components/schemas/AutomationPolicyCloudProviderPolicy" }
+        created_by_user_id: { type: integer }
+        created_at: { type: string }
+        updated_at: { type: string }
+
+# Properties the spec declares with a description and an example but no `type`.
+# tfplugingen drops the whole resource when it meets one, which is how `scope`
+# and `scope_criteria` came to have committed schema files that no longer
+# regenerate. Each is raw JSON on the wire; typing it as a string lets it map,
+# and schema_overrides.yaml then gives it jsontypes.Normalized.
+property_types:
+  ScopeCreate.criteria: string
+  ScopeCriteriaCreate.criteria: string
+  ScopeCriteriaRecord.criteria: string
+  ScopeCriteriaUpdate.criteria: string

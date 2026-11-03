@@ -1,0 +1,14 @@
+pre-push:
+  commands:
+    ci-fmt:
+      run: make ci-fmt
+    ci-vet:
+      run: make ci-vet
+    ci-lint:
+      run: make ci-lint
+    ci-test:
+      run: make ci-test
+    # A published commit message cannot be fixed without rewriting history, so
+    # this has to run before the push rather than in CI.
+    ci-internal-refs:
+      run: make ci-internal-refs

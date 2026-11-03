@@ -1,0 +1,47 @@
+# mockery v3 config: generate testify-style mocks for the codegen tools'
+# interfaces. Regenerate with:  make generate-mocks
+template: testify
+packages:
+  terraform-provider-kion/internal/kalign:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "mock_{{.InterfaceName}}.go"
+      pkgname: mocks
+    interfaces:
+      Source:
+  terraform-provider-kion/internal/kgen/kfs:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "mock_{{.InterfaceName}}.go"
+      pkgname: mocks
+    interfaces:
+      FS:
+  terraform-provider-kion/internal/kgen/schemas:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "mock_{{.InterfaceName}}.go"
+      pkgname: mocks
+    interfaces:
+      Runner:
+  terraform-provider-kion/internal/kgen/config:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "mock_{{.InterfaceName}}.go"
+      pkgname: mocks
+    interfaces:
+      Source:
+  terraform-provider-kion/internal/kgen/crud:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "mock_{{.InterfaceName}}.go"
+      pkgname: mocks
+    interfaces:
+      Source:
+  terraform-provider-kion/internal/conns:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "mock_{{.InterfaceName}}.go"
+      pkgname: mocks
+    interfaces:
+      ServicePackage:
+      HTTPDoer:

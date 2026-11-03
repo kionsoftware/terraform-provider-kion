@@ -1,0 +1,850 @@
+# Hand-tuned generator-config entries that `kconfig gen` can't derive on its own
+# (non-standard operation names or paths). These are merged OVER the derived
+# config by `kconfig gen`/`check`, so they survive regeneration. No hand-editing
+# the generated codegen/generator_config.yaml. Keep this small: genuine exceptions
+# only. Overridden verbs win; an overridden resource is no longer flagged heuristic.
+
+resources:
+  # Singleton: one row, no create and no delete. kconfig cannot derive this
+  # because the resource has no create call to introspect, so the paths are
+  # given here and the schema comes from the PATCH body plus the GET response.
+  app_config:
+    # A singleton: one row that always exists, so there is no create call.
+    # tfplugingen requires create+read to emit a schema, and the PATCH body is
+    # exactly the set of settable attributes a create body would describe, so
+    # create points at it too.
+    create:
+      path: /v3/app-config
+      method: PATCH
+    read:
+      path: /v3/app-config
+      method: GET
+    schema:
+      # `message` is the PATCH response envelope's "User-friendly message.", not
+      # a setting, same family as status/record_id/data elsewhere in this file.
+      ignores: [status, record_id, data, message]
+    update:
+      path: /v3/app-config
+      method: PATCH
+
+  # account converts and moves an existing account rather than creating one, so
+  # kconfig finds no read to pair with its create. It reads a single account by
+  # id like every other account-shaped resource.
+  account:
+    read:
+      path: /v3/account/{id}
+      method: GET
+    # The create is raw (#102) and picks one of three routes at runtime, so no
+    # single call names it for kconfig to find. This is the create-new route.
+    create:
+      path: /v3/account-cache/create/__qs__/account-type/aws
+      method: POST
+  billing_source_gcp:
+    # GCP billing source. Like AWS: create + shared delete, no update endpoint,
+    # and no public by-id read (private /v1/payer/{id}).
+    create:
+      path: /v3/billing-source/gcp
+      method: POST
+    read:
+      path: /v4/billing-source
+      method: GET
+    delete:
+      path: /v3/billing-source/{id}
+      method: DELETE
+    schema:
+      ignores: [status, record_id, data, count, page, sort_method, sort_order, big_query_export]
+
+  billing_source_aws:
+    # AWS billing source. No update endpoint exists. The API has POST
+    # /v3/billing-source/aws and the shared DELETE, but no PATCH, so every
+    # attribute is effectively replace-only. Read is the private /v1/payer/{id}
+    # (declared in private_endpoints.yaml).
+    create:
+      path: /v3/billing-source/aws
+      method: POST
+    read:
+      path: /v4/billing-source
+      method: GET
+    delete:
+      path: /v3/billing-source/{id}
+      method: DELETE
+    schema:
+      ignores: [status, record_id, data, count, page, sort_method, sort_order]
+
+  billing_source_govcloud:
+    # GovCloud info attached to an existing commercial billing source. Every op
+    # is parent-scoped on the commercial payer's id and the path is identical
+    # for all four verbs, so kconfig gen cannot derive it.
+    create:
+      path: /v3/billing-source/{id}/govcloud
+      method: POST
+    read:
+      path: /v3/billing-source/{id}/govcloud
+      method: GET
+    update:
+      path: /v3/billing-source/{id}/govcloud
+      method: PATCH
+    delete:
+      path: /v3/billing-source/{id}/govcloud
+      method: DELETE
+    schema:
+      ignores: [status, record_id, data]
+
+  billing_source_oci:
+    # OCI billing source. kconfig gen cannot derive these: the create/update
+    # paths are type-suffixed (/oci, /oci/{id}) while delete is the shared
+    # /v3/billing-source/{id}, and there is no public by-id read at all. The
+    # read is the private /v1/payer/{id}, declared in private_endpoints.yaml.
+    create:
+      path: /v3/billing-source/oci
+      method: POST
+    read:
+      path: /v4/billing-source
+      method: GET
+    update:
+      path: /v3/billing-source/oci/{id}
+      method: PATCH
+    delete:
+      path: /v3/billing-source/{id}
+      method: DELETE
+    schema:
+      ignores: [status, record_id, data, count, page, sort_method, sort_order]
+
+  ou_note:
+    # Standard entity ops; listed here (verified) to clear the heuristic flag.
+    create:
+      path: /v3/ou-note
+      method: POST
+    read:
+      path: /v3/ou-note/{id}
+      method: GET
+    update:
+      path: /v3/ou-note/{id}
+      method: PATCH
+    delete:
+      path: /v3/ou-note/{id}
+      method: DELETE
+  billing_rule:
+    # Standard entity ops; listed here (verified) to clear the heuristic flag.
+    create:
+      path: /v3/billing-rule
+      method: POST
+    read:
+      path: /v3/billing-rule/{id}
+      method: GET
+    update:
+      path: /v3/billing-rule/{id}
+      method: PATCH
+    delete:
+      path: /v3/billing-rule/{id}
+      method: DELETE
+  scope_criteria:
+    # No single-criteria GET; read the parent scope (which contains the criteria).
+    read:
+      path: /beta/scope/{id}
+      method: GET
+  account_linkage:
+    # Read/delete op names are GetSpecific/RemoveAccountLinkage, off-convention.
+    read:
+      path: /v3/account-linkages/{id}
+      method: GET
+    delete:
+      path: /v3/account-linkages/{id}
+      method: DELETE
+  category:
+    # Read/update/delete are Get/Update/DeleteCategoryByID, off-convention (not Get<Name>).
+    create:
+      path: /v3/category
+      method: POST
+    read:
+      path: /v3/category/{id}
+      method: GET
+    update:
+      path: /v3/category/{id}
+      method: PATCH
+    delete:
+      path: /v3/category/{id}
+      method: DELETE
+  azure_policy:
+    # Reads are GetAzurePolicyAll (list) / GetAzurePolicyByID; neither matches Get<Name>.
+    create:
+      path: /v3/azure-policy
+      method: POST
+    read:
+      path: /v3/azure-policy/{id}
+      method: GET
+    update:
+      path: /v3/azure-policy/{id}
+      method: PATCH
+    delete:
+      path: /v3/azure-policy/{id}
+      method: DELETE
+  oauth2_client:
+    # Ops are *OAuthClient, which Oauth2Client does not match; update is PUT.
+    create:
+      path: /v3/oauth2/clients
+      method: POST
+    read:
+      path: /v3/oauth2/clients/{id}
+      method: GET
+    update:
+      path: /v3/oauth2/clients/{id}
+      method: PUT
+    delete:
+      path: /v3/oauth2/clients/{id}
+      method: DELETE
+  permission_scheme:
+    # Read is GetPermissionSchemebyid (off-convention); update is PUT, not PATCH.
+    create:
+      path: /v3/permission-scheme
+      method: POST
+    read:
+      path: /v3/permission-scheme/{id}
+      method: GET
+    update:
+      path: /v3/permission-scheme/{id}
+      method: PUT
+    delete:
+      path: /v3/permission-scheme/{id}
+      method: DELETE
+
+  custom_variable:
+    # Ops derive cleanly; but the polymorphic `default_value` (untyped in the
+    # spec) makes tfplugingen skip the whole resource. Ignore it here, then
+    # re-express it as typed sub-attributes in schema_overrides.yaml.
+    ignores: [default_value]
+
+  # --- Implemented resources whose SDK ops are off-convention, so the derivation
+  # can't find them. Verbs below are taken from the working code's actual SDK calls.
+  aws_account:
+    # Read is GetAccount (generic account endpoint), not Get<Name>.
+    read:
+      path: /v3/account/{id}
+      method: GET
+    # Raw create, as account's above.
+    create:
+      path: /v3/account-cache/create/__qs__/account-type/aws
+      method: POST
+  ou_cloud_access_role:
+    read:
+      path: /v3/ou-cloud-access-role/{id}
+      method: GET
+  project_cloud_access_role:
+    read:
+      path: /v3/project-cloud-access-role/{id}
+      method: GET
+  project_enforcement:
+    # Read is GetProjectEnforcements (list under the parent project).
+    read:
+      path: /v3/project/{id}/enforcement
+      method: GET
+  project:
+    # Create makes two calls, one per financial mode (see crud_archetypes.yaml),
+    # so derivation would pick whichever appears first in the source and the
+    # schema would follow it. Only with-spend-plan may drive the schema: its body
+    # is ProjectCreate, which carries project_funding, while with-budget's
+    # ProjectCreateWithBudgets carries budget instead. The provider serves both
+    # modes from one schema, so it needs project_funding from here and budget
+    # from schema_overrides.yaml. Pinned so a source reordering cannot silently
+    # drop project_funding from the schema.
+    create:
+      path: /v3/project/with-spend-plan
+      method: POST
+  custom_variable_override:
+    # Polymorphic (account/ou/project); account variant is representative.
+    # Create is an upsert PUT; read shares the same sub-resource path.
+    # `value` is polymorphic/untyped. Ignore it and re-express as value_* in
+    # schema_overrides.yaml (like custom_variable's default_value).
+    create:
+      path: /v3/account/{account_id}/custom-variable/{custom_variable_id}
+      method: PUT
+    read:
+      path: /v3/account/{account_id}/custom-variable/{custom_variable_id}
+      method: GET
+    ignores: [value]
+  ou_permission_mapping:
+    # Mapping resource: no POST. Created/updated via PATCH upsert; read is the index.
+    # `message` is the PATCH envelope's status field. Drop it; real fields are
+    # re-expressed in schema_overrides.yaml. update repeats the create path because
+    # they are the same upsert, and derivation attributes that one PATCH to create
+    # only, which would leave the resource with no update and force replacement.
+    create:
+      path: /v3/ou/{id}/permission-mapping
+      method: PATCH
+    update:
+      path: /v3/ou/{id}/permission-mapping
+      method: PATCH
+    read:
+      path: /v3/ou/{id}/permission-mapping
+      method: GET
+    ignores: [message]
+  project_permission_mapping:
+    create:
+      path: /v3/project/{id}/permission-mapping
+      method: PATCH
+    update:
+      path: /v3/project/{id}/permission-mapping
+      method: PATCH
+    read:
+      path: /v3/project/{id}/permission-mapping
+      method: GET
+    ignores: [message]
+
+  # --- Stubs with clean CRUD the derivation couldn't name-match (off-convention
+  # op names). Supplying the op-mapping makes them schema-generatable.
+  gcp_iam_role:
+    # Ops are PostGCPRole/GetGCPRole (drop "IAM").
+    create:
+      path: /v3/gcp-iam-role
+      method: POST
+    read:
+      path: /v3/gcp-iam-role/{id}
+      method: GET
+    update:
+      path: /v3/gcp-iam-role/{id}
+      method: PATCH
+    delete:
+      path: /v3/gcp-iam-role/{id}
+      method: DELETE
+  gcp_service_account:
+    # Ops are PostServiceAccount/GetServiceAccount (no "GCP" prefix).
+    create:
+      path: /v3/gcp/service-account
+      method: POST
+    read:
+      path: /v3/gcp/service-account/{id}
+      method: GET
+    update:
+      path: /v3/gcp/service-account/{id}
+      method: PATCH
+    delete:
+      path: /v3/gcp/service-account/{id}
+      method: DELETE
+  idms_group_association:
+    # Create is PostIDMSGroupAssociations (plural); read is singular by-id.
+    create:
+      path: /v3/idms/group-association
+      method: POST
+    read:
+      path: /v3/idms/group-association/{id}
+      method: GET
+    update:
+      path: /v3/idms/group-association/{id}
+      method: PATCH
+    delete:
+      path: /v3/idms/group-association/{id}
+      method: DELETE
+  custom_account:
+    # Provider-specific create; read/update/delete on the generic account endpoint.
+    create:
+      path: /v3/account/__qs__/account-type/custom
+      method: POST
+    read:
+      path: /v3/account/{id}
+      method: GET
+    update:
+      path: /v3/account/{id}
+      method: PATCH
+    delete:
+      path: /v3/account/{id}
+      method: DELETE
+  gcp_account:
+    create:
+      path: /v3/account/__qs__/account-type/google-cloud
+      method: POST
+    read:
+      path: /v3/account/{id}
+      method: GET
+    update:
+      path: /v3/account/{id}
+      method: PATCH
+    delete:
+      path: /v3/account/{id}
+      method: DELETE
+
+  # --- Association mappings (index read + PATCH/POST upsert). Off-convention
+  # UserMapping naming; message envelope dropped.
+  global_permission_mapping:
+    create:
+      path: /v3/global/permission-mapping
+      method: POST
+    read:
+      path: /v3/global/permission-mapping
+      method: GET
+    update:
+      path: /v3/global/permission-mapping
+      method: PATCH
+    delete:
+      path: /v3/global/permission-mapping
+      method: DELETE
+    ignores: [message]
+  funding_source_permission_mapping:
+    # No POST. Created/updated via PATCH upsert; read is the index.
+    create:
+      path: /v3/funding-source/{id}/permission-mapping
+      method: PATCH
+    read:
+      path: /v3/funding-source/{id}/permission-mapping
+      method: GET
+    ignores: [message]
+
+  # --- New resources added to reach full spec coverage. ---
+  scope:
+    create:
+      path: /beta/scope
+      method: POST
+    read:
+      path: /beta/scope/{id}
+      method: GET
+    update:
+      path: /beta/scope/{id}
+      method: PATCH
+    delete:
+      path: /beta/scope/{id}
+      method: DELETE
+  service_catalog:
+    create:
+      path: /v3/service-catalog
+      method: POST
+    read:
+      path: /v3/service-catalog/{id}
+      method: GET
+    update:
+      path: /v3/service-catalog/{id}
+      method: PATCH
+  compliance_control:
+    create:
+      path: /v4/compliance/control
+      method: POST
+    read:
+      path: /v4/compliance/control/{id}
+      method: GET
+    update:
+      path: /v4/compliance/control/{id}
+      method: PUT
+  idms_open_id:
+    create:
+      path: /v4/idms/open-id
+      method: POST
+    read:
+      path: /v4/idms/open-id/{id}
+      method: GET
+    update:
+      path: /v4/idms/open-id/{id}
+      method: PATCH
+    # An OpenID IDMS is deleted through the generic IDMS route, which the /v4
+    # open-id path does not carry. Without this the generated Delete was a
+    # warning -- "kion_idms_open_id has no delete endpoint, so it is removed from
+    # Terraform state only and may still exist in Kion" -- so every destroy left
+    # a live identity provider behind. kion_idms already deletes this way.
+    # Verified against a live install: DELETE /v3/idms/{id} answers 200 and the
+    # record then reads 404.
+    delete:
+      path: /v3/idms/{id}
+      method: DELETE
+  app_role:
+    # By-id read + typed create body supplied via spec_additions.yaml.
+    create:
+      path: /v3/app-role
+      method: POST
+    read:
+      path: /v3/app-role/{id}
+      method: GET
+    update:
+      path: /v3/app-role/{id}
+      method: PATCH
+  project_note:
+    # By-id read + typed bodies via spec_additions.yaml (public read is list-only,
+    # real by-id read is private /v2). Computed fields via schema_overrides.
+    create:
+      path: /v3/project-note
+      method: POST
+    read:
+      path: /v3/project-note/{id}
+      method: GET
+    delete:
+      path: /v3/project-note/{id}
+      method: DELETE
+  aws_resource_tag:
+    create:
+      path: /v3/aws-resource-tag
+      method: POST
+    read:
+      path: /v3/aws-resource-tag
+      method: GET
+    delete:
+      path: /v3/aws-resource-tag/{id}
+      method: DELETE
+  billing_source:
+    # Provider-specific create (custom variant is representative); list read.
+    create:
+      path: /v3/billing-source/custom
+      method: POST
+    read:
+      path: /v4/billing-source
+      method: GET
+    delete:
+      path: /v3/billing-source/{id}
+      method: DELETE
+    # The read is the /v4 list, so its query and pagination fields land in the
+    # resource schema. `count` is a reserved Terraform root attribute name and
+    # fails schema validation outright.
+    ignores: [count, page, sort_method, sort_order]
+  # The read below only anchors codegen; the resource's Read, its import and its
+  # acceptance test use the parent_read in private_endpoints.yaml (#80).
+  ou_cloud_access_role_exemption:
+    create:
+      path: /v3/ou-cloud-access-role-exemption
+      method: POST
+    read:
+      path: /v3/ou/{id}/cloud-rule/exemption
+      method: GET
+    delete:
+      path: /v3/ou-cloud-access-role-exemption/{id}
+      method: DELETE
+  project_cloud_access_role_exemption:
+    create:
+      path: /v3/project-cloud-access-role-exemption
+      method: POST
+    read:
+      path: /v3/project/{id}/cloud-rule/exemption
+      method: GET
+    delete:
+      path: /v3/project-cloud-access-role-exemption/{id}
+      method: DELETE
+  dashboard:
+    # Public spec has an untyped create body and no read; the typed create body +
+    # private read come from codegen/spec_additions.yaml so this generates.
+    # Computed fields (id/created_at/...) are added in schema_overrides.yaml.
+    create:
+      path: /beta/dashboard
+      method: POST
+    read:
+      path: /beta/dashboard/{id}
+      method: GET
+
+  # Enforcements: create/update/delete derive, but the read is a list under the
+  # parent (GET .../enforcement) that no naming convention finds, so tfplugingen
+  # would drop both as INCOMPLETE.
+  funding_source_enforcement:
+    read:
+      path: /v3/funding-source/{id}/enforcement
+      method: GET
+  ou_enforcement:
+    read:
+      path: /v3/ou/{id}/enforcement
+      method: GET
+
+  # Derivation emits the literal query string `/v3/account?account-type=azure`,
+  # which matches no path in the spec, so tfplugingen cannot resolve it and the
+  # whole schema run fails -- nothing is written for any resource. The spec
+  # models these factory-creates as synthetic /__qs__/ segments (the SDK's own
+  # convention; see queryStringPathMarker in the generated client), which is the
+  # form the custom and google-cloud siblings already carry.
+  azure_account:
+    create:
+      path: /v3/account/__qs__/account-type/azure
+      method: POST
+
+  # Served entirely over raw HTTP (internal/conns), so its CRUD calls no SDK op
+  # and derivation sees nothing. See codegen/private_endpoints.yaml.
+  funding_source_note:
+    create:
+      path: /v2/funding-source-note
+      method: POST
+    read:
+      path: /v2/funding-source-note/{id}
+      method: GET
+
+  # Also entirely raw HTTP, for the same reason. The spec has an AutomationPolicy
+  # component but no path using it, so derivation has nothing to find either.
+  automation_policy:
+    create:
+      path: /v1/automation-policy
+      method: POST
+    read:
+      path: /v1/automation-policy/{id}
+      method: GET
+
+  # Private, and shares POST /v1/payer/standalone with every other billing
+  # source type; these are the schema-only paths spec_additions.yaml adds.
+  billing_source_azure:
+    create:
+      path: /v1/payer/standalone/azure
+      method: POST
+    read:
+      path: /v1/payer/{id}/azure
+      method: GET
+
+  billing_source_anthropic:
+    create:
+      path: /v1/payer/standalone/anthropic
+      method: POST
+    read:
+      path: /v1/payer/{id}/anthropic
+      method: GET
+
+data_sources:
+  gcp_regions:
+    # GetGCPRegionsList doesn't match Get<Name>; the `data` list is renamed to
+    # `regions` via codegen/renames.yaml.
+    read:
+      path: /v3/gcp-resources/list-regions
+      method: GET
+
+  # --- Data-source reads mirrored to each resource's list/index endpoint.
+  # Blocked (no list endpoint): budget, custom_variable_override, azure_account,
+  # forecast(_category).
+  account:
+    read:
+      path: /v3/account
+      method: GET
+  oauth2_client:
+    read:
+      path: /v3/oauth2/clients
+      method: GET
+  azure_arm_template:
+    read:
+      path: /v3/azure-arm-template
+      method: GET
+  project_note:
+    read:
+      path: /v3/project-note
+      method: GET
+  funding_source_permission_mapping:
+    read:
+      path: /v3/funding-source/{id}/permission-mapping
+      method: GET
+  account_cache:
+    read:
+      path: /v3/account-cache
+      method: GET
+  account_linkage:
+    read:
+      path: /v3/account-linkages
+      method: GET
+  ami:
+    read:
+      path: /v3/ami
+      method: GET
+  app_api_key:
+    read:
+      path: /v3/app-api-key
+      method: GET
+  app_config:
+    read:
+      path: /v3/app-config
+      method: GET
+  aws_account:
+    read:
+      path: /v3/account
+      method: GET
+  aws_iam_policy:
+    read:
+      path: /v3/iam-policy
+      method: GET
+  azure_policy:
+    read:
+      path: /v3/azure-policy
+      method: GET
+  azure_role:
+    read:
+      path: /v3/azure-role
+      method: GET
+  billing_rule:
+    read:
+      path: /v3/billing-rule
+      method: GET
+  category:
+    read:
+      path: /v3/category
+      method: GET
+  cft:
+    read:
+      path: /v3/cft
+      method: GET
+  cloud_rule:
+    read:
+      path: /v3/cloud-rule
+      method: GET
+  compliance_check:
+    read:
+      path: /v3/compliance/check
+      method: GET
+  compliance_family:
+    read:
+      path: /v4/compliance/program/{id}/family
+      method: GET
+  compliance_level:
+    read:
+      path: /v4/compliance/program/{id}/level
+      method: GET
+  compliance_program:
+    read:
+      path: /v4/compliance/program
+      method: GET
+  compliance_standard:
+    read:
+      path: /v3/compliance/standard
+      method: GET
+  custom_account:
+    read:
+      path: /v3/account
+      method: GET
+  azure_account:
+    # No azure-specific list; read the generic account index (like the other
+    # provider account variants).
+    read:
+      path: /v3/account
+      method: GET
+  custom_variable:
+    # Ignore the polymorphic default_value so the data source isn't dropped. The
+    # path is data.items.default_value: the list response nests records under
+    # items, and an ignore that does not match the path tfplugingen reports is
+    # never applied, so the data source was dropped anyway and its stale schema
+    # file survived unnoticed.
+    read:
+      path: /v3/custom-variable
+      method: GET
+    ignores: [data.items.default_value]
+  funding_source:
+    read:
+      path: /v3/funding-source
+      method: GET
+  gcp_account:
+    read:
+      path: /v3/account
+      method: GET
+  gcp_iam_role:
+    read:
+      path: /v3/gcp-iam-role
+      method: GET
+  gcp_service_account:
+    read:
+      path: /v3/gcp/service-account
+      method: GET
+  global_permission_mapping:
+    read:
+      path: /v3/global/permission-mapping
+      method: GET
+  iam_policy:
+    read:
+      path: /v3/iam-policy
+      method: GET
+  idms:
+    read:
+      path: /v3/idms
+      method: GET
+  # The API serves this collection only for a SAML IDMS (idms_type_id 3) and
+  # fails for every other type, on every install measured (#48). `match` makes
+  # kion-import read it only under parents whose list record matches.
+  idms_group_association:
+    read:
+      path: /v3/idms/{id}/group-association
+      method: GET
+      match: { idms_type_id: "3" }
+  label:
+    read:
+      path: /v3/label
+      method: GET
+  ou_cloud_access_role:
+    read:
+      path: /v4/ou-cloud-access-role
+      method: GET
+  ou_note:
+    read:
+      path: /v3/ou/{id}/ou-note
+      method: GET
+  permission_scheme:
+    read:
+      path: /v3/permission-scheme
+      method: GET
+  project:
+    read:
+      path: /v3/project
+      method: GET
+  project_cloud_access_role:
+    read:
+      path: /v4/project-cloud-access-role
+      method: GET
+  project_line_item:
+    read:
+      path: /v3/project-line-item
+      method: GET
+  scope_criteria:
+    read:
+      path: /beta/scope
+      method: GET
+  service_control_policy:
+    read:
+      path: /v3/service-control-policy
+      method: GET
+  user:
+    read:
+      path: /v3/user
+      method: GET
+  webhook:
+    read:
+      path: /v3/webhook
+      method: GET
+
+  # --- Data sources for the newly-added resources (list endpoints). ---
+  scope:
+    read:
+      path: /beta/scope
+      method: GET
+  service_catalog:
+    read:
+      path: /v3/service-catalog
+      method: GET
+  app_role:
+    read:
+      path: /v3/app-role
+      method: GET
+  aws_resource_tag:
+    read:
+      path: /v3/aws-resource-tag
+      method: GET
+  billing_source:
+    read:
+      path: /v4/billing-source
+      method: GET
+  compliance_control:
+    read:
+      path: /v4/compliance/program/{id}/control
+      method: GET
+  ou_cloud_access_role_exemption:
+    read:
+      path: /v3/ou/{id}/cloud-rule/exemption
+      method: GET
+  project_cloud_access_role_exemption:
+    read:
+      path: /v3/project/{id}/cloud-rule/exemption
+      method: GET
+
+  # Read ops the data source reaches through a helper, so ServiceOps does not
+  # attribute the SDK call to the package.
+  ou:
+    read:
+      path: /v3/ou
+      method: GET
+  user_group:
+    read:
+      path: /v3/user-group
+      method: GET
+
+  # Derivation picks /v3/idms/group-association/{id}, whose collection is POST
+  # only, so the import manifest would list from a path that cannot be listed.
+  # The records hang off the parent, and only a SAML parent; see
+  # idms_group_association above.
+  saml_group_association:
+    read:
+      path: /v3/idms/{id}/group-association
+      method: GET
+      match: { idms_type_id: "3" }
+
+  # Polymorphic across account/ou/project, so derivation resolves whichever GET
+  # the data source reaches first (/v3/ou) and calls it the collection. There is
+  # no single list for these; the manifest handles the type specially.
+  custom_variable_override:
+    skip: true

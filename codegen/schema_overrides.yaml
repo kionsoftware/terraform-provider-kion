@@ -1,0 +1,1655 @@
+# Schema overrides: per-type customizations the OpenAPI spec cannot express.
+#
+# tfplugingen derives schemas purely from the spec, so it has no notion of plan
+# modifiers, defaults, Terraform-idiomatic type choices (e.g. string IDs), or a
+# resource-level description. This sidecar is applied to the tfplugingen
+# provider code spec *before* framework generation, so the emitted
+# *_schema_gen.go carries these settings and each resource can consume the
+# generated schema directly instead of hand-maintaining its own.
+#
+# Applied after renames.yaml, so attribute keys are the final (renamed) names.
+#
+# Shape:
+#   resources / data_sources:
+#     <name>:
+#       description: <schema-level description>
+#       attributes:
+#         <attr>:
+#           type: string|int64|bool|...          # retype the attribute
+#           computed_optional_required: computed # computed|optional|required|computed_optional
+#           description: <attribute description>
+#           plan_modifiers:                      # resource attributes only
+#             - stringplanmodifier.UseStateForUnknown()
+
+resources:
+
+  # The spec fragment in spec_additions.yaml cannot express which fields the
+  # backend actually insists on, so required-ness is declared here. Both of
+  # these are enforced server-side: a create with no name is rejected as a
+  # duplicate of the unnamed policy, and an empty provider-policy list fails
+  # with "At least one cloud service provider policy must be selected".
+  automation_policy:
+    description: "Manages a Kion Automation Policy."
+    attributes:
+      name:
+        type: string
+        computed_optional_required: required
+        description: Name of the automation policy. Must be unique.
+      cloud_provider_policies:
+        computed_optional_required: required
+        description: The provider-specific policies this automation policy runs. At least one is required.
+      engine:
+        type: int64
+        computed_optional_required: computed_optional
+        description: "Engine that runs the policy: 0 (Kion) or 1 (Cloud Custodian). Kion rejects creating a policy with 1, but existing ones can be imported."
+        validators:
+          - int64validator.OneOf(0, 1)
+
+  # --- JSON-valued attributes -------------------------------------------
+  # These carry JSON as a string. The API's rendering never matches what a
+  # practitioner wrote, so every plan reported a change "# whitespace changes"
+  # and nothing could round-trip: 2,539 of the 2,561 in-place updates a
+  # verification import produced were exactly this.
+  #
+  # The fix is in flex, not here: reads canonicalise to the compact,
+  # key-sorted form Terraform's jsonencode emits, so the two are byte-equal.
+  # jsontypes.Normalized is NOT the answer -- semantic equality is not
+  # consulted when a generated configuration is planned, and its validator
+  # rejects the YAML CloudFormation templates are often written in.
+
+  # --- Required attributes the read cannot supply -------------------------
+  # A Required attribute must be recoverable from Read, or the resource can
+  # never be imported: `terraform plan -generate-config-out` writes config from
+  # Read, omits what Read returned as null, and validation then rejects the
+  # config the provider itself produced. Importing a real install hit this 181
+  # times across these five.
+  #
+  # They come from the spec's create-body `required` list, which is the wrong
+  # question: what a create needs and what a read returns are different sets.
+  # computed_optional keeps them settable while letting import populate them.
+  # billing_source is blended: its schema is derived from the /v4/billing-source
+  # LIST read (there is no public by-id GET), which leaks the list's sort query
+  # params into the resource schema as Optional+Computed attrs that no CRUD op
+  # ever sets. Drop them; they are not resource attributes. (count/page are
+  # response-derived and already dropped via generator_config `ignores`.)
+  billing_source:
+    description: "Manages a Kion custom billing source. Supply exactly one connection block, either aws_connection or azure_connection, as Kion rejects a request carrying both."
+    attributes:
+      # The credential lives inside the azure_connection block, not at top level.
+      # Overrides are add-if-missing, so naming it at the wrong depth silently
+      # invents a second, unpopulated attribute instead of marking the real one.
+      azure_connection:
+        attributes:
+          tenant_client_secret:
+            sensitive: true
+      sort_method:
+        remove: true
+      sort_order:
+        remove: true
+
+  billing_source_aws:
+    # Same shape as billing_source/billing_source_oci: derived from the /v4 list
+    # read, which leaks its sort query params and carries no per-record id.
+    description: Manages a Kion AWS Billing Source.
+    attributes:
+      # The private update has no column for either; see private_endpoints.yaml.
+      account_type_id:
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      only_dbr:
+        plan_modifiers:
+          - boolplanmodifier.UseStateForUnknown()
+          - boolplanmodifier.RequiresReplace()
+      key_id:
+        sensitive: true
+      key_secret:
+        type: string
+        computed_optional_required: computed_optional
+        sensitive: true
+        description: "The AWS Secret Access Key used to access the billing s3 bucket"
+      sort_method:
+        remove: true
+      sort_order:
+        remove: true
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The ID of the AWS billing source.
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+
+  billing_source_anthropic:
+    description: "Manages an Anthropic billing source (an Anthropic organization) in Kion. Requires Kion 3.16 or later."
+    attributes:
+      admin_api_key:
+        sensitive: true
+        description: "Anthropic Admin API key (sk-ant-admin...). Kion uses it to read the organization's usage and validates it with Anthropic on create. Kion never returns it, so it is not read back."
+      analytics_api_key:
+        sensitive: true
+        description: "Anthropic Enterprise Analytics API key, provisioned at claude.ai with the read:analytics scope. Kion never returns it, so it is not read back."
+      billing_start_date:
+        description: "First month Kion reads billing data for, as YYYY-MM."
+      organization_id:
+        type: string
+        computed_optional_required: computed
+        description: "The Anthropic organization the Admin API key belongs to, resolved by Kion when the billing source is created."
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+  billing_source_azure:
+    description: "Manages an Azure billing source (CSP, EA or MCA) in Kion."
+    attributes:
+      account_type_id:
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      client_secret:
+        sensitive: true
+        description: "Client secret of the Azure service principal. Kion never returns it, so it is not read back: a change made outside Terraform is not detected."
+      billing_start_date:
+        description: "First month Kion reads billing data for, as YYYY-MM."
+      skip_validation:
+        description: "Create or update without first testing the Azure credentials and storage access. Kion still stores the values as given."
+  billing_source_gcp:
+    description: Manages a Kion GCP Billing Source.
+    attributes:
+      account_type_id:
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      sort_method:
+        remove: true
+      sort_order:
+        remove: true
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The ID of the GCP billing source.
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+
+  billing_source_oci:
+    # Same shape as billing_source: derived from the /v4/billing-source LIST
+    # read (no public by-id GET), which leaks the list's sort query params into
+    # the resource schema. Drop them, and add the id the list response does not
+    # carry per-record.
+    description: Manages a Kion OCI Billing Source.
+    attributes:
+      private_key:
+        type: string
+        computed_optional_required: computed_optional
+        sensitive: true
+        description: "The private key used for API Access"
+      sort_method:
+        remove: true
+      sort_order:
+        remove: true
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The ID of the OCI billing source.
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+
+  oauth2_client:
+    description: "Manages a Kion OAuth2 client. Requires Kion 3.17.3 or later. Updating a dynamically registered client through Terraform permanently converts it to a manually managed client and revokes its registration access token."
+    attributes:
+      secret:
+        # Only the create response carries it, so the derived schema has none.
+        type: string
+        sensitive: true
+        computed_optional_required: computed
+        description: "Client secret. Returned only when the client is created, so it is null after import and for public clients."
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+      owner_user_id:
+        computed_optional_required: computed_optional
+        description: "Owner of the client. Omitted from configuration, the current owner is kept; Kion makes a client with no owner a global application."
+        plan_modifiers:
+          - int64planmodifier.UseStateForUnknown()
+      is_public:
+        # The secret is issued only at create; flipping this in place would leave
+        # a confidential client with no captured secret, or a stale one in state.
+        description: "Whether the client is public (no secret). Changing it replaces the client, which issues a new secret."
+        plan_modifiers:
+          - boolplanmodifier.UseStateForUnknown()
+          - boolplanmodifier.RequiresReplace()
+      is_dynamically_registered:
+        # Read-response only, so it is added here like secret.
+        type: bool
+        computed_optional_required: computed
+        description: "Whether the client is managed with an RFC 7592 registration access token."
+
+  label:
+    description: Manages a Kion Label.
+    attributes:
+      id:
+        # The API models the label ID as int64; Terraform's convention is a
+        # string id that carries across refreshes untouched.
+        type: string
+        computed_optional_required: computed
+        description: The ID of the label.
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+  custom_variable:
+    description: "Manages a Kion Custom Variable."
+    # The spec's polymorphic `default_value` is ignored in config_overrides.yaml
+    # (tfplugingen can't type it); re-express it as the three typed sub-attributes
+    # the resource actually uses. These are inserted (add-if-missing), not retyped.
+    #
+    # PUT /v3/custom-variable/{id} carries neither name nor type, so both force
+    # replacement rather than being accepted and ignored. #75.
+    attributes:
+      name:
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - stringplanmodifier.RequiresReplace()
+      type:
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - stringplanmodifier.RequiresReplace()
+      default_value_string:
+        type: string
+        computed_optional_required: optional
+        description: Default value when the custom variable type is string.
+      default_value_list:
+        type: list
+        element_type: string
+        computed_optional_required: optional
+        description: Default value when the custom variable type is list.
+      default_value_map:
+        type: map
+        element_type: string
+        computed_optional_required: optional
+        description: Default value when the custom variable type is map.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  custom_variable_override:
+    # Synthetic multi-entity resource: the spec op gives only the path params
+    # (account_id→entity_id via renames.yaml, custom_variable_id). Everything
+    # else is reconstructed here. entity_type/id/last_updated are not in the
+    # spec, and value_* replace the ignored polymorphic `value`.
+    description: Manages a Kion Custom Variable Override.
+    attributes:
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The ID of the Custom Variable Override.
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+      custom_variable_id:
+        type: string
+        computed_optional_required: required
+        description: The ID of the custom variable.
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      entity_id:
+        type: string
+        computed_optional_required: required
+        description: The ID of the entity.
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      entity_type:
+        type: string
+        computed_optional_required: required
+        description: The type of the entity.
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+      value_string:
+        type: string
+        computed_optional_required: optional
+        description: The value of the custom variable override as a string.
+      value_list:
+        type: list
+        element_type: string
+        computed_optional_required: optional
+        description: The value of the custom variable override as a list.
+      value_map:
+        type: map
+        element_type: string
+        computed_optional_required: optional
+        description: The value of the custom variable override as a map.
+  compliance_check:
+    description: "Manages a Kion Compliance Check."
+    # Computed server fields live in the read response, not the create body, so
+    # tfplugingen omits them; add them back as computed. (owner_users →
+    # owner_user_ids etc. are already present in API-truth form.)
+    attributes:
+      created_at:
+        type: string
+        computed_optional_required: computed
+        description: When the compliance check was created.
+      ct_managed:
+        type: bool
+        computed_optional_required: computed
+        description: Whether the compliance check is managed by Kion.
+      last_scan_id:
+        type: int64
+        computed_optional_required: computed
+        description: The ID of the most recent scan.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  compliance_standard:
+    description: "Manages a Kion Compliance Standard."
+    attributes:
+      created_at:
+        type: string
+        computed_optional_required: computed
+        description: When the compliance standard was created.
+      ct_managed:
+        type: bool
+        computed_optional_required: computed
+        description: Whether the compliance standard is managed by Kion.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  iam_policy:
+    description: "Manages a Kion Iam Policy."
+    # PATCH /v3/iam-policy/{id} has no aws_iam_path, so it forces replacement. #75.
+    attributes:
+      aws_iam_path:
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - stringplanmodifier.RequiresReplace()
+      aws_managed_policy:
+        type: bool
+        computed_optional_required: computed
+        description: Whether this is an AWS-managed policy.
+      system_managed_policy:
+        type: bool
+        computed_optional_required: computed
+        description: Whether this is a system-managed policy.
+      path_suffix:
+        type: string
+        computed_optional_required: computed
+        description: The path suffix of the IAM policy.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  aws_iam_policy:
+    attributes:
+      aws_managed_policy:
+        type: bool
+        computed_optional_required: computed
+        description: Whether this is an AWS-managed policy.
+      system_managed_policy:
+        type: bool
+        computed_optional_required: computed
+        description: Whether this is a system-managed policy.
+      path_suffix:
+        type: string
+        computed_optional_required: computed
+        description: The path suffix of the IAM policy.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  ou:
+    description: "Manages a Kion OU."
+    attributes:
+      parent_ou_id:
+        description: "ID of the OU containing this OU. A parent OU ID of 0 will create a top-level OU. Changing it moves the OU in place, with its child OUs and projects, rather than recreating it: inherited cloud rules and permissions are then those of the new ancestry. The move goes through Kion's internal POST /v2/ou/{id}/move route, which the public API does not publish, and requires global admin."
+      created_at:
+        type: string
+        computed_optional_required: computed
+        description: When the OU was created.
+      labels:
+        type: map
+        element_type: string
+        computed_optional_required: computed_optional
+        description: The labels applied to the OU.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  saml_group_association:
+    description: "Manages a Kion Saml Group Association."
+    # PATCH /v3/idms/group-association/{id} has no idms_id, so it forces
+    # replacement. #75.
+    attributes:
+      idms_id:
+        plan_modifiers:
+          - int64planmodifier.UseStateForUnknown()
+          - int64planmodifier.RequiresReplace()
+      idms_saml_id:
+        type: int64
+        computed_optional_required: computed
+        description: The ID of the SAML IDMS.
+      should_update_on_login:
+        type: bool
+        computed_optional_required: computed
+        description: Whether the association updates on login.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  account_cache:
+    description: "Manages a cached account in Kion. This resource represents an account that lives in the account cache (not yet assigned to a project). To assign a cached account to a project, use kion_aws_account with project_id set."
+    attributes:
+      # Create-time inputs Kion cannot change afterwards; replacing would
+      # drop the cache entry and create a different AWS account, so a change
+      # is warned about instead of dropped in silence (#75).
+      account_type_id:
+        plan_modifiers:
+          - int64planmodifier.UseStateForUnknown()
+          - framework.CreateOnlyInt64()
+      organizational_unit:
+        plan_modifiers:
+          - objectplanmodifier.UseStateForUnknown()
+          - framework.CreateOnlyObject()
+      commercial_account_name:
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - framework.CreateOnlyString()
+      create_govcloud:
+        plan_modifiers:
+          - boolplanmodifier.UseStateForUnknown()
+          - framework.CreateOnlyBool()
+      gov_account_name:
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - framework.CreateOnlyString()
+      payer_id:
+        plan_modifiers:
+          - framework.CreateOnlyInt64()
+      account_number:
+        type: string
+        computed_optional_required: computed_optional
+        description: The account number.
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - framework.CreateOnlyString()
+      car_external_id:
+        type: string
+        computed_optional_required: computed
+        description: The cloud access role external ID.
+      created_at:
+        type: string
+        computed_optional_required: computed
+        description: When the account cache was created.
+      linked_account_number:
+        type: string
+        computed_optional_required: computed
+        description: The linked account number.
+      service_external_id:
+        type: string
+        computed_optional_required: computed
+        description: The service external ID.
+      skip_access_checking:
+        type: bool
+        computed_optional_required: computed_optional
+        description: Whether access checking is skipped.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  cloud_rule:
+    description: "Manages a Kion Cloud Rule."
+    attributes:
+      # A filter query param of GET /v3/cloud-rule that leaked into the resource
+      # schema. No request body has it, so it was accepted and discarded. #75.
+      source:
+        remove: true
+      built_in:
+        type: bool
+        computed_optional_required: computed
+        description: Whether the cloud rule is built in.
+      labels:
+        type: map
+        element_type: string
+        computed_optional_required: computed_optional
+        description: The labels applied to the cloud rule.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  ou_cloud_access_role:
+    description: "Manages a Kion Ou Cloud Access Role."
+    # The PATCH body carries no role name, IAM path or ou_id: the role is
+    # created under them, so a change forces a new role. #75.
+    attributes:
+      aws_iam_role_name:
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - stringplanmodifier.RequiresReplace()
+      aws_iam_path:
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - stringplanmodifier.RequiresReplace()
+      ou_id:
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      cloud_access_role_type_id:
+        type: int64
+        computed_optional_required: computed_optional
+        description: "Type of the cloud access role. 1 User (default), 2 Custom Trust, 3 Account, 4 Service. Non-User types are AWS only. Changing this forces a new role: the update body carries no role type, so the API would accept the change and ignore it."
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+        validators:
+          - int64validator.OneOf(1, 2, 3, 4)
+      aws_partition:
+        type: string
+        computed_optional_required: computed_optional
+        description: "AWS partition a non-User role syncs to. Defaults to aws when omitted."
+        validators:
+          - stringvalidator.OneOf("aws", "aws-us-gov", "aws-iso", "aws-iso-b")
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  project_cloud_access_role:
+    description: "Manages a Kion Project Cloud Access Role."
+    # The PATCH body carries no role name, IAM path or project_id: the role is
+    # created under them, so a change forces a new role. #75.
+    # policytype is a filter query param of the list endpoint that leaked into
+    # the resource schema; no request body has it.
+    attributes:
+      policytype:
+        remove: true
+      aws_iam_role_name:
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - stringplanmodifier.RequiresReplace()
+      aws_iam_path:
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - stringplanmodifier.RequiresReplace()
+      project_id:
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      cloud_access_role_type_id:
+        type: int64
+        computed_optional_required: computed_optional
+        description: "Type of the cloud access role. 1 User (default), 2 Custom Trust, 3 Account, 4 Service. Non-User types are AWS only. Changing this forces a new role: the update body carries no role type, so the API would accept the change and ignore it."
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+        validators:
+          - int64validator.OneOf(1, 2, 3, 4)
+      aws_partition:
+        type: string
+        computed_optional_required: computed_optional
+        description: "AWS partition a non-User role syncs to. Defaults to aws when omitted."
+        validators:
+          - stringvalidator.OneOf("aws", "aws-us-gov", "aws-iso", "aws-iso-b")
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  user_group:
+    description: "Manages a Kion User Group."
+    attributes:
+      created_at:
+        type: string
+        computed_optional_required: computed
+        description: When the user group was created.
+      enabled:
+        type: bool
+        computed_optional_required: computed
+        description: Whether the user group is enabled.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+  ou_permission_mapping:
+    description: "Manages a Kion Ou Permission Mapping."
+    # Association: path {id}→ou_id (renames), message ignored (config_overrides).
+    # Re-express the composite key + member sets; add the synthetic string id.
+    attributes:
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The synthetic ID of the mapping.
+      ou_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the OU.
+      app_role_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the app role.
+      user_ids:
+        type: set
+        element_type: int64
+        computed_optional_required: computed_optional
+        description: The IDs of the users in the mapping.
+      user_groups_ids:
+        type: set
+        element_type: int64
+        computed_optional_required: computed_optional
+        description: The IDs of the user groups in the mapping.
+  project_permission_mapping:
+    description: "Manages a Kion Project Permission Mapping."
+    # Association: path {id}→project_id (renames), message ignored (config_overrides).
+    attributes:
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The synthetic ID of the mapping.
+      project_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the project.
+      app_role_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the app role.
+      user_ids:
+        type: set
+        element_type: int64
+        computed_optional_required: computed_optional
+        description: The IDs of the users in the mapping.
+      user_groups_ids:
+        type: set
+        element_type: int64
+        computed_optional_required: computed_optional
+        description: The IDs of the user groups in the mapping.
+  project_enforcement:
+    description: "Manages enforcement rules for projects to control service usage based on various criteria likespend limits and timeframe restrictions. . This resource allows for creating, reading, updating, and deleting project-specific enforcement settings."
+    # Path {id} is project_id (not surfaced by tfplugingen); enabled/triggered are
+    # computed server fields absent from the create body.
+    attributes:
+      project_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the project the enforcement belongs to.
+      enabled:
+        type: bool
+        computed_optional_required: computed_optional
+        description: Whether the enforcement is enabled.
+      triggered:
+        type: bool
+        computed_optional_required: computed
+        description: Whether the enforcement has been triggered.
+  funding_source_enforcement:
+    description: "Manages a Kion Funding Source Enforcement."
+    # Path {id} is funding_source_id (not surfaced by tfplugingen); enabled/
+    # triggered are computed server fields absent from the create body.
+    attributes:
+      funding_source_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the funding source the enforcement belongs to.
+      enabled:
+        type: bool
+        computed_optional_required: computed_optional
+        description: Whether the enforcement is enabled.
+      triggered:
+        type: bool
+        computed_optional_required: computed
+        description: Whether the enforcement has been triggered.
+  ou_enforcement:
+    description: "Manages a Kion OU Enforcement."
+    # Path {id} is ou_id (not surfaced by tfplugingen); enabled/triggered are
+    # computed server fields absent from the create body.
+    attributes:
+      ou_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the OU the enforcement belongs to.
+      enabled:
+        type: bool
+        computed_optional_required: computed_optional
+        description: Whether the enforcement is enabled.
+      triggered:
+        type: bool
+        computed_optional_required: computed
+        description: Whether the enforcement has been triggered.
+  idms_open_id_access_rule:
+    description: "Manages an access rule for a Kion OpenID Connect IDMS."
+    # The create path {id} is the parent OpenID IDMS id (not surfaced by
+    # tfplugingen); read/update/delete address the rule by its own id.
+    attributes:
+      open_id_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the OpenID IDMS the access rule belongs to.
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+  idms_open_id_group_association:
+    description: "Manages a group association for a Kion OpenID Connect IDMS."
+    attributes:
+      open_id_id:
+        type: int64
+        computed_optional_required: computed_optional
+        description: The ID of the OpenID IDMS the group association belongs to.
+        plan_modifiers:
+          - int64planmodifier.UseStateForUnknown()
+          - int64planmodifier.RequiresReplace()
+  aws_account:
+    description: "Creates or imports an AWS Account and adds it to a Kion project or the Kion account cache. If account_number is provided, an existing account will be imported into Kion, otherwise a new AWS account will be created.  If project_id is provided the account will be added to the corresponding project, otherwise the account will be added to the account cache. Once added, an account can be moved between projects or in and out of the account cache by changing the project_id.  When moving accounts between projects, use move_project_settings to control how financials will be treated between the old and new project. NOTE: This resource requires Kion v3.8.4 or greater."
+    # email/name/aws_organizational_unit come via renames.yaml. Add the computed
+    # read-only fields and the move_project_settings nested block.
+    #
+    # Anchored because kion_account renders the *same* template as kion_aws_account
+    # (crud/cloud_account.gtpl, parameterized only by package/receiver name), so the
+    # two resources must expose the same schema. Aliasing rather than copying keeps
+    # that a single source of truth: without it, account derived only the 14
+    # attributes the spec yields and silently disagreed with the schema its own
+    # template declares.
+    attributes: &cloud_account_attributes
+      account_number:
+        type: string
+        computed_optional_required: computed_optional
+        description: The AWS account number.
+      car_external_id:
+        type: string
+        computed_optional_required: computed
+        description: The cloud access role external ID.
+      created_at:
+        type: string
+        computed_optional_required: computed
+        description: When the account was created.
+      labels:
+        type: map
+        element_type: string
+        computed_optional_required: computed_optional
+        description: The labels applied to the account.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+      linked_account_number:
+        type: string
+        computed_optional_required: computed
+        description: The linked account number.
+      location:
+        type: string
+        computed_optional_required: computed_optional
+        description: The account location.
+      project_id:
+        type: int64
+        computed_optional_required: computed_optional
+        description: The ID of the project the account belongs to.
+      service_external_id:
+        type: string
+        computed_optional_required: computed
+        description: The service external ID.
+      skip_access_checking:
+        type: bool
+        computed_optional_required: computed_optional
+        description: Whether access checking is skipped.
+      start_datecode:
+        type: string
+        computed_optional_required: computed_optional
+        description: The start datecode for the account.
+      use_org_account_info:
+        type: bool
+        computed_optional_required: computed_optional
+        description: Whether to use organization account info.
+      move_project_settings:
+        type: single_nested
+        computed_optional_required: computed_optional
+        description: Settings applied when moving the account between projects.
+        attributes:
+          financials:
+            type: string
+            computed_optional_required: computed_optional
+            description: Financial handling for the move (JSON).
+          move_datecode:
+            type: int64
+            computed_optional_required: computed_optional
+            description: The datecode of the move.
+  project:
+    description: "Manages a Kion Project."
+    # Add computed fields, labels, and the budget / move_ou_settings nested blocks.
+    attributes:
+      permission_scheme_id:
+        # GET /v3/project/{id} returns archived, auto_pay, default_aws_region,
+        # description, id, name, ou_id. No permission scheme.
+        computed_optional_required: computed_optional
+      archived:
+        type: bool
+        computed_optional_required: computed_optional
+        description: Whether the project is archived.
+      labels:
+        type: map
+        element_type: string
+        computed_optional_required: computed_optional
+        description: The labels applied to the project.
+      last_updated:
+        type: string
+        computed_optional_required: computed_optional
+        description: The last time this resource was updated.
+      # Read when ou_id changes: POST /v3/project/{id}/move takes all three and
+      # they decide what happens to data the project already has, so none is
+      # inferable. Omitted settings take the option that preserves what exists.
+      move_ou_settings:
+        type: set_nested
+        computed_optional_required: computed_optional
+        description: "How to handle the project's cloud rules, financial history and budgets when `ou_id` changes. Ignored unless the project moves."
+        attributes:
+          cloud_rule_setting:
+            type: string
+            computed_optional_required: computed_optional
+            description: "`convert` rewrites the project's cloud rules for the destination OU, `remove` strips them. Defaults to `convert`."
+            validators:
+              - stringvalidator.OneOf("convert", "remove")
+          financial_setting:
+            type: string
+            computed_optional_required: computed_optional
+            description: "`preserve` leaves financial history on the current OU, `move` takes it to the new one. Defaults to `preserve`."
+            validators:
+              - stringvalidator.OneOf("preserve", "move")
+          spend_plan_setting:
+            type: string
+            computed_optional_required: computed_optional
+            description: "`keep` moves past, current and future budgets with the project, `create` starts a new budget and leaves the existing ones behind. Defaults to `keep`."
+            validators:
+              - stringvalidator.OneOf("keep", "create")
+      budget:
+        type: set_nested
+        computed_optional_required: computed_optional
+        description: The project budget.
+        attributes:
+          amount:
+            type: float64
+            computed_optional_required: optional
+            description: The budget amount.
+          funding_source_ids:
+            type: set
+            element_type: int64
+            computed_optional_required: optional
+            description: The funding source IDs.
+          start_datecode:
+            type: string
+            computed_optional_required: required
+            description: The budget start datecode.
+          end_datecode:
+            type: string
+            computed_optional_required: required
+            description: The budget end datecode.
+          data:
+            type: set_nested
+            computed_optional_required: optional
+            description: Per-period budget data.
+            attributes:
+              datecode:
+                type: string
+                computed_optional_required: required
+                description: The period datecode.
+              amount:
+                type: float64
+                computed_optional_required: required
+                description: The period amount.
+              funding_source_id:
+                type: int64
+                computed_optional_required: optional
+                description: The funding source ID for the period.
+              priority:
+                type: int64
+                computed_optional_required: optional
+                description: The funding priority for the period.
+  global_permission_mapping:
+    description: "Manages a Kion Global Permission Mapping."
+    # Association: the create/read body's real fields (app_role_id, user_*) are
+    # dropped by tfplugingen (all-message envelope). Reconstruct like the ou/project
+    # mappings. Global scope has no parent id.
+    attributes:
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The synthetic ID of the mapping.
+      app_role_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the app role.
+      user_ids:
+        type: set
+        element_type: int64
+        computed_optional_required: computed_optional
+        description: The IDs of the users in the mapping.
+      user_groups_ids:
+        type: set
+        element_type: int64
+        computed_optional_required: computed_optional
+        description: The IDs of the user groups in the mapping.
+  funding_source_permission_mapping:
+    description: "Manages a Kion Funding Source Permission Mapping."
+    # Association: path {id}→funding_source_id (renames), message ignored.
+    attributes:
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The synthetic ID of the mapping.
+      funding_source_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the funding source.
+      app_role_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the app role.
+      user_ids:
+        type: set
+        element_type: int64
+        computed_optional_required: computed_optional
+        description: The IDs of the users in the mapping.
+      user_groups_ids:
+        type: set
+        element_type: int64
+        computed_optional_required: computed_optional
+        description: The IDs of the user groups in the mapping.
+  dashboard:
+    description: "Manages a Kion Dashboard."
+    # Computed read-only fields from the backend Dashboard model that aren't in
+    # the create body (the read response wraps them in the ignored `data`).
+    attributes:
+      created_by_user_id:
+        type: int64
+        computed_optional_required: computed
+        description: ID of the user who created the dashboard.
+      created_at:
+        type: string
+        computed_optional_required: computed
+        description: When the dashboard was created.
+      # No UseStateForUnknown: the server stamps this on every update, so
+      # carrying the prior value into the plan and then receiving a new one
+      # fails the apply. See project_note's last_update_* for the same case.
+      updated_at:
+        type: string
+        computed_optional_required: computed
+        description: When the dashboard was last updated.
+        plan_modifiers: []
+  app_role:
+    description: "Manages a Kion App Role."
+    # Computed read-only fields not in the create body.
+    attributes:
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The ID of the app role.
+      system_managed:
+        type: bool
+        computed_optional_required: computed
+        description: Whether the app role is system-managed.
+      # Read-only, like system_managed. Kion's AppRoleCreate and AppRoleUpdate
+      # both carry only `name`; `disabled` appears in the RESPONSE model alone.
+      # It was settable, and the provider had no way to send it, so a
+      # configuration setting it was accepted and discarded -- confirmed against
+      # a live install, where PATCH {"disabled":true} answers 200 and the role
+      # reads back disabled=false.
+      disabled:
+        type: bool
+        computed_optional_required: computed
+        description: Whether the app role is disabled.
+  project_note:
+    description: "Manages a Kion Project Note."
+    # Computed audit fields from the backend ProjectNote model.
+    attributes:
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The ID of the project note.
+      # Required, not computed: POST /v3/project-note rejects a body without it
+      # ("Key: 'ProjectNoteCreate.CreateUserID' … failed on the 'required' tag"),
+      # so marking it computed made kion_project_note impossible to create. The
+      # provider already sends it; only the schema forbade supplying it. The
+      # SDKv2 provider had it Required, so this is also a migration regression.
+      create_user_id:
+        type: int64
+        computed_optional_required: required
+        description: ID of the user who created the note.
+      create_user_name:
+        type: string
+        computed_optional_required: computed
+        description: Name of the user who created the note.
+      # No UseStateForUnknown on these two: the server sets them on update, so
+      # carrying the prior state into the plan (null, for a note never updated)
+      # and then receiving a real value fails the apply outright:
+      #   .last_update_user_id: was null, but now 1
+      #   .updated_at: was null, but now "2026-09-12T06:06:51Z"
+      # An empty plan_modifiers list is how an attribute opts out of the default.
+      last_update_user_id:
+        type: int64
+        computed_optional_required: computed
+        description: ID of the user who last updated the note.
+        plan_modifiers: []
+      last_update_user_name:
+        type: string
+        computed_optional_required: computed
+        description: Name of the user who last updated the note.
+        plan_modifiers: []
+      created_at:
+        type: string
+        computed_optional_required: computed
+        description: When the note was created.
+      updated_at:
+        type: string
+        computed_optional_required: computed
+        description: When the note was last updated.
+        plan_modifiers: []
+  compliance_control:
+    description: "Manages a Kion Compliance Control."
+    # DELETE is scoped by the parent program (/v4/compliance/program/{id}/control/
+    # {controlID}), but create/read/update never reference a program id and it is
+    # absent from the ComplianceControl body. Add it as a required input used
+    # only to build the delete call (replace-on-change).
+    attributes:
+      program_id:
+        type: int64
+        computed_optional_required: required
+        description: ID of the compliance program the control belongs to (used to scope delete).
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+  aws_resource_tag:
+    description: "Manages a Kion AWS Resource Tag."
+    # No-read resource (create → id, no GET). tfplugingen emits no id (the create
+    # body/response id isn't in the modeled schema), so add a synthetic string id;
+    # there is no update endpoint, so key/value force replacement.
+    attributes:
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The ID of the AWS Resource Tag.
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+      resource_key:
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      resource_value:
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+  ami:
+    description: "Manages a Kion AMI."
+    # Three fields use the SDK's SQL-null wrappers (OptNullString {String,Valid};
+    # OptNullTime {Time,Valid}), which tfplugingen modeled as nested objects.
+    # They are semantically nullable scalars, so retype to string (flex's
+    # OptNullString/OptNullTime converters build the wrapper).
+    attributes:
+      expiration_alert_unit:
+        type: string
+        computed_optional_required: computed_optional
+        description: The unit for the expiration alert lead time (e.g. "days").
+      expiration_warning_unit:
+        type: string
+        computed_optional_required: computed_optional
+        description: The unit for the expiration warning lead time (e.g. "days").
+      expires_at:
+        type: string
+        computed_optional_required: computed_optional
+        description: The expiration timestamp for the AMI, as an RFC3339 string.
+  scope:
+    description: "Manages a Kion Scope."
+    # criteria is raw JSON in the backend / jx.Raw in the SDK; the spec models
+    # it as an empty object, so re-express it as a semantic JSON string (same as
+    # scope_criteria's criteria).
+    attributes:
+      criteria:
+        type: string
+        computed_optional_required: optional
+        description: The criteria for the scope, as a JSON-encoded string.
+        custom_type:
+          import: github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes
+          type: jsontypes.NormalizedType{}
+          value_type: jsontypes.Normalized
+      # alias is varchar(16) in Kion's own schema. The OpenAPI spec does not say
+      # so, and a longer value is answered with a bare 500 -- "error creating
+      # scope" -- naming neither the field nor the limit. Validating it here
+      # turns that into a plan-time message.
+      alias:
+        type: string
+        computed_optional_required: computed_optional
+        description: Alias of the scope in the application. Limited to 16 characters.
+        validators:
+          - stringvalidator.LengthAtMost(16)
+  scope_criteria:
+    # Compound-key sub-resource (see the compound-key/parent-read archetype).
+    # Identity is (scope_id, criteria_id); the spec models neither of those as an
+    # input, and models `criteria` as an empty object (fixed to jx.Raw in the
+    # SDK). Re-express the schema here: a JSON-string criteria, the parent
+    # scope_id (Required, replace-on-change), and the computed criteria_id.
+    description: Manages a Kion Scope Criteria, a versioned criteria record on a scope.
+    attributes:
+      id:
+        type: string
+        computed_optional_required: computed
+        description: The composite ID of the scope criteria, formatted "scope_id/criteria_id".
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+      scope_id:
+        type: int64
+        computed_optional_required: required
+        description: The ID of the parent scope.
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      criteria_id:
+        type: int64
+        computed_optional_required: computed
+        description: The ID of the criteria record within the scope.
+        plan_modifiers:
+          - int64planmodifier.UseStateForUnknown()
+      criteria:
+        # raw JSON in the backend; jx.Raw in the SDK. Modeled here as a
+        # JSON string with semantic (not byte-for-byte) equality so a
+        # server-canonicalized payload doesn't produce a perpetual diff.
+        type: string
+        computed_optional_required: required
+        description: The criteria for the scope, as a JSON-encoded string.
+        custom_type:
+          import: github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes
+          type: jsontypes.NormalizedType{}
+          value_type: jsontypes.Normalized
+      # Replace-on-change, because that is what Kion does with the window. A
+      # PATCH keeping it edits the record in place; one that moves it SPLITS the
+      # record into versions, so the scope ends up holding a different record
+      # than the one Terraform tracks and the apply fails with a sibling's
+      # values. See the note in the acceptance test.
+      start_month:
+        type: int64
+        computed_optional_required: required
+        description: Start month for the criteria period (YYYYMM format).
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      end_month:
+        type: int64
+        computed_optional_required: optional
+        description: End month for the criteria period (YYYYMM format).
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+
+  # kion_account shares cloud_account.gtpl with kion_aws_account, so it shares the
+  # schema too. See the anchor on aws_account.attributes above.
+  account:
+    description: "Manages a Kion Account."
+    attributes: *cloud_account_attributes
+
+  # app_config is a settings singleton: one row that always exists, addressed by a
+  # static id rather than a path parameter. Because /v3/app-config takes no {id},
+  # the string-id default has nothing to key off and the derived schema carries no
+  # `id` at all, but the resource still needs one for ImportStatePassthroughID.
+  app_config:
+    description: "Manages the Kion App Config (workspace-wide application settings singleton)."
+    attributes:
+      # These six descriptions are restated because the spec's own text is worse
+      # than what the resource documented by hand: two entries carry OpenAPI
+      # metadata that tfplugingen copies verbatim into the docs ("oneOf: ...",
+      # "examples: true"), one embeds newlines that break the attribute list, and
+      # two simply lack the closing period. Without them, generating the schema
+      # would have quietly degraded docs/resources/app_config.md.
+      id:
+        type: string
+        computed_optional_required: computed
+        description: Static identifier for the app-config singleton.
+      budget_mode:
+        description: Indicates if budget mode is enabled in the application.
+      cloud_rule_group_ownership_only:
+        description: Indicates if cloud rules are restricted to User Group ownership only. Setting this to true will remove all users from cloud rules. This cannot be undone.
+      default_org_chart_view:
+        description: Defines the default organization chart view.
+      enforce_funding:
+        description: Indicates whether spend plans or budgets must be created on all projects.
+      supported_aws_regions:
+        description: The list of supported AWS regions.
+      smtp_password:
+        type: string
+        computed_optional_required: computed_optional
+        sensitive: true
+        description: The SMTP password.
+
+
+  # Resource-level descriptions for types that need no other override. These
+  # cannot come from the spec, because OpenAPI has no notion of a Terraform
+  # resource description. Without them tfplugindocs emits an empty summary and the
+  # generated docs/ page has no title line.
+  app_api_key:
+    description: "Manages a Kion App Api Key."
+  azure_account:
+    description: "Manages a Kion Azure Account."
+    # PATCH /v3/account/{id} has no subscription_uuid: pointing the resource at
+    # a different subscription is a different account. #75.
+    attributes:
+      project_id:
+        description: "ID of the project the account belongs to. Changing it moves the account in place through POST /v3/account/{id}/move rather than recreating it: Kion gives the account a new id, the resource adopts it, and the account's financial history stays with the old project (the move's preserve setting). The new project's cloud rules and cloud access roles apply after the move. Requires permission to manage accounts and projects."
+      subscription_uuid:
+        computed_optional_required: computed_optional
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - stringplanmodifier.RequiresReplace()
+  azure_arm_template:
+    description: "Manages a Kion Azure Arm Template."
+    # PATCH /v3/azure-arm-template/{id} has no resource group fields. #75.
+    attributes:
+      resource_group_name:
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      resource_group_region_id:
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+  azure_policy:
+    description: "Manages a Kion Azure Policy."
+  azure_role:
+    description: "Manages a Kion Azure Role."
+    attributes:
+  billing_rule:
+    description: "Manages a Kion Billing Rule."
+    attributes:
+      description:
+        computed_optional_required: computed_optional
+      name:
+        computed_optional_required: computed_optional
+      rule_type:
+        computed_optional_required: computed_optional
+      rule_value:
+        computed_optional_required: computed_optional
+      start_month:
+        computed_optional_required: computed_optional
+      billing_source_ids:
+        computed_optional_required: computed_optional
+  budget:
+    description: "Manages a Kion Budget."
+  category:
+    description: "Manages a Kion Category."
+  cft:
+    description: "Manages a Kion Cft."
+    attributes:
+  compliance_family:
+    description: "Manages a Kion Compliance Family."
+    # No update endpoint: the generated Update raises a diagnostic saying
+    # changes force replacement. Nothing made that happen, though -- without
+    # RequiresReplace, Terraform planned an in-place update and every change
+    # failed the apply instead of recreating the resource. #75.
+    attributes:
+      compliance_program_id:
+        type: int64
+        computed_optional_required: required
+        description: "ComplianceProgramID of the compliance family."
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      description:
+        type: string
+        computed_optional_required: computed_optional
+        description: "Description for the compliance family in the application."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      name:
+        type: string
+        computed_optional_required: required
+        description: "Name of the compliance family in the application."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+  compliance_level:
+    description: "Manages a Kion Compliance Level."
+    # No update endpoint: the generated Update raises a diagnostic saying
+    # changes force replacement. Nothing made that happen, though -- without
+    # RequiresReplace, Terraform planned an in-place update and every change
+    # failed the apply instead of recreating the resource. #75.
+    attributes:
+      compliance_program_id:
+        type: int64
+        computed_optional_required: required
+        description: "ComplianceProgramID of the compliance level."
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      description:
+        type: string
+        computed_optional_required: computed_optional
+        description: "Description for the compliance level in the application."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      name:
+        type: string
+        computed_optional_required: required
+        description: "Name of the compliance level in the application."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+  compliance_program:
+    description: "Manages a Kion Compliance Program."
+    # No update endpoint: the generated Update raises a diagnostic saying
+    # changes force replacement. Nothing made that happen, though -- without
+    # RequiresReplace, Terraform planned an in-place update and every change
+    # failed the apply instead of recreating the resource. #75.
+    attributes:
+      description:
+        type: string
+        computed_optional_required: computed_optional
+        description: "Description for the Compliance Program in the application."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      grouping_type:
+        type: string
+        computed_optional_required: computed_optional
+        description: "GroupType of the Compliance Program in the application."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      name:
+        type: string
+        computed_optional_required: required
+        description: "Name of the Compliance Program in the application.\nThis is the proper name of the program meant for formal page/card/document titles in the UI."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      terse_name:
+        type: string
+        computed_optional_required: computed_optional
+        description: "TerseName of the Compliance Program in the application.\nThis is a concise name meant for easy identification and small UI spaces like program icons."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      verbose_name:
+        type: string
+        computed_optional_required: computed_optional
+        description: "VerboseName of the Compliance Program in the application.\nThis is a more detailed program name meant to suppliment the Name or TerseName in specific contexts."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      version:
+        type: string
+        computed_optional_required: required
+        description: "Version of the Compliance Program in the application."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+  custom_account:
+    description: "Attaches a custom account to a project in Kion. If project_id is provided, the account will be added to the corresponding project, otherwise the account will be added to the account cache. Once added, an account can be moved between projects or in and out of the account cache by changing the project_id. When importing existing Kion accounts into terraform state, you can use one of these methods:  Default import (tries project first, then cache): terraform import kion_custom_account.example 123 Explicit project account import: terraform import kion_custom_account.example account_id=123 Explicit cache account import: terraform import kion_custom_account.example account_cache_id=123"
+    # PATCH /v3/account/{id} has no account_number, and a custom account's
+    # spend is matched to it, so a new number is a different account. #75.
+    attributes:
+      project_id:
+        description: "ID of the project the account belongs to. Changing it moves the account in place through POST /v3/account/{id}/move rather than recreating it: Kion gives the account a new id, the resource adopts it, and the account's financial history stays with the old project (the move's preserve setting). The new project's cloud rules and cloud access roles apply after the move. Requires permission to manage accounts and projects."
+      account_number:
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+  forecast:
+    description: "Manages a Kion Forecast."
+  forecast_category:
+    description: "Manages a Kion Forecast Category."
+  funding_source:
+    description: "Manages a Kion Funding Source."
+    attributes:
+      permission_scheme_id:
+        # GET /v3/funding-source omits it entirely.
+        computed_optional_required: computed_optional
+  gcp_account:
+    description: "Creates or imports a Google Cloud Project and adds it to a Kion project or the Kion account cache. If create_mode is set to import, an existing project will be imported into Kion, otherwise if create_mode is set to create, a new GCP Project will be created.  If project_id is provided the account will be added to the corresponding project, otherwise the account will be added to the account cache. Once added, an account can be moved between projects or in and out of the account cache by changing the project_id.  When moving accounts between projects, use move_project_settings to control how financials will be treated between the old and new project. When importing an existing Kion account into terraform state (different from using terraform to import an existing GCP Project into Kion), you must use the account_id= or account_cache_id= ID prefix to indicate whether the ID is an account ID or a cached account ID. For example: terraform import kion_gcp_account.test-account account_id=123 terraform import kion_gcp_account.test-cached-account account_cache_id=321  NOTE: This resource requires Kion v3.8.4 or greater."
+    # PATCH /v3/account/{id} has no google_cloud_project_id: pointing the
+    # resource at a different GCP project is a different account. #75.
+    attributes:
+      project_id:
+        description: "ID of the project the account belongs to. Changing it moves the account in place through POST /v3/account/{id}/move rather than recreating it: Kion gives the account a new id, the resource adopts it, and the account's financial history stays with the old project (the move's preserve setting). The new project's cloud rules and cloud access roles apply after the move. Requires permission to manage accounts and projects."
+      google_cloud_project_id:
+        computed_optional_required: computed_optional
+        plan_modifiers:
+          - stringplanmodifier.UseStateForUnknown()
+          - stringplanmodifier.RequiresReplace()
+  gcp_iam_role:
+    description: "Manages a Kion Gcp Iam Role."
+    attributes:
+      role_permissions:
+        # Returned for most roles but null for managed ones, so 27 of 1382
+        # failed to import.
+        computed_optional_required: computed_optional
+  gcp_service_account:
+    description: "Manages a Kion Gcp Service Account."
+    # PATCH /v3/gcp/service-account/{id} has none of email, gcp_project_id or
+    # unique_id: together they name the GCP service account, so a change is a
+    # different one. #75.
+    attributes:
+      email:
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      gcp_project_id:
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      unique_id:
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      oauth_client_secret:
+        type: string
+        computed_optional_required: computed_optional
+        sensitive: true
+        description: "OAuthClientSecret is the client secret for an oauth client in the service account's project"
+  idms:
+    description: "Manages a Kion Idms."
+  idms_group_association:
+    description: "Manages a Kion IDMS Group Association."
+    # PATCH /v3/idms/group-association/{id} has no idms_id, so it forces
+    # replacement. #75.
+    attributes:
+      idms_id:
+        plan_modifiers:
+          - int64planmodifier.UseStateForUnknown()
+          - int64planmodifier.RequiresReplace()
+  permission_scheme:
+    description: "Manages a Kion Permission Scheme."
+  project_line_item:
+    description: "Manages a Kion Project Line Item."
+  service_control_policy:
+    description: "Manages a Kion Service Control Policy."
+    attributes:
+  user:
+    description: "Manages a Kion User."
+  webhook:
+    description: "Manages a Kion Webhook."
+    attributes:
+  # Resources with no committed doc page before now, so no prior description
+  # to carry forward.
+  account_linkage:
+    description: "Manages a Kion Account Linkage, associating an account with a project."
+    # Kion publishes no update for a linkage, so the generated Update is a flat
+    # error: "kion_account_linkage cannot be updated in place; changes force
+    # replacement." Nothing made that happen, though -- no attribute required
+    # replacement, so Terraform planned an in-place update and every change to a
+    # linkage failed the apply instead of recreating it. (Kion itself does serve a
+    # PATCH; the public spec does not declare it, so the SDK has no method for it.)
+    attributes:
+      azure_object_id:
+        type: string
+        computed_optional_required: required
+        description: Azure Object ID of the user (UUID format).
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      azure_principal_name:
+        type: string
+        computed_optional_required: required
+        description: Azure Principal Name (UPN) of the user.
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+      payer_id:
+        type: int64
+        computed_optional_required: required
+        description: ID of the payer this linkage is associated with.
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      user_id:
+        type: int64
+        computed_optional_required: required
+        description: ID of the Kion user to link.
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+  billing_source_govcloud:
+    description: "Manages the GovCloud information attached to an existing Kion commercial billing source. One per billing source, addressed by the commercial payer's id."
+  funding_source_note:
+    description: "Manages a Kion Funding Source Note."
+  idms_open_id:
+    description: "Manages a Kion OpenID Connect identity management system (IDMS)."
+  ou_cloud_access_role_exemption:
+    description: "Manages a Kion OU Cloud Access Role Exemption."
+    # No update endpoint: the generated Update raises a diagnostic saying
+    # changes force replacement. Nothing made that happen, though -- without
+    # RequiresReplace, Terraform planned an in-place update and every change
+    # failed the apply instead of recreating the resource. #75.
+    attributes:
+      ou_cloud_access_role_id:
+        type: int64
+        computed_optional_required: computed_optional
+        description: "ID of the ou cloud access role in the application being exempted from."
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      ou_id:
+        type: int64
+        computed_optional_required: computed_optional
+        description: "ID of the ou in the application."
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      reason:
+        type: string
+        computed_optional_required: computed_optional
+        description: "Reason the Cloud Access Role is being exempted."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+  ou_note:
+    description: "Manages a Kion OU Note."
+    # PATCH /v3/ou-note/{id} carries name and text only; the OU and author are
+    # fixed at create. #75.
+    attributes:
+      ou_id:
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      create_user_id:
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+  project_cloud_access_role_exemption:
+    description: "Manages a Kion Project Cloud Access Role Exemption."
+    # No update endpoint: the generated Update raises a diagnostic saying
+    # changes force replacement. Nothing made that happen, though -- without
+    # RequiresReplace, Terraform planned an in-place update and every change
+    # failed the apply instead of recreating the resource. #75.
+    attributes:
+      ou_cloud_access_role_id:
+        type: int64
+        computed_optional_required: computed_optional
+        description: "ID of the ou cloud access role in the application being exempted from."
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      project_id:
+        type: int64
+        computed_optional_required: computed_optional
+        description: "ID of the project in the application."
+        plan_modifiers:
+          - int64planmodifier.RequiresReplace()
+      reason:
+        type: string
+        computed_optional_required: computed_optional
+        description: "Reason the Cloud Access Role is being exempted."
+        plan_modifiers:
+          - stringplanmodifier.RequiresReplace()
+  service_catalog:
+    description: "Manages a Kion Service Catalog portfolio."
+
+# Data-source descriptions. Same reasoning as the resource ones above.
+data_sources:
+  account:
+    description: "Use this data source to access information about Kion Accounts."
+  account_cache:
+    description: "Use this data source to access information about Kion Account Caches."
+    attributes:
+      data:
+        attributes:
+          key_secret:
+            sensitive: true
+  ami:
+    description: "Use this data source to access information about Kion AMIs."
+  app_api_key:
+    description: "Use this data source to access information about Kion App API Keys."
+  app_config:
+    description: "Use this data source to access information about Kion App Configs."
+    attributes:
+      data:
+        attributes:
+          smtp_password:
+            sensitive: true
+  aws_account:
+    description: "Use this data source to access information about Kion Aws Accounts."
+  azure_account:
+    description: "Use this data source to access information about Kion Azure Accounts."
+  azure_arm_template:
+    description: "Use this data source to access information about Kion Azure ARM Templates."
+  azure_policy:
+    description: "Use this data source to access information about Kion Azure Policys."
+  azure_role:
+    description: "Use this data source to access information about Kion Azure Roles."
+  billing_rule:
+    description: "Use this data source to access information about Kion Billing Rules."
+  billing_source_govcloud:
+    description: "Use this data source to look up a Kion BillingSourceGovcloud by id."
+  budget:
+    description: "Use this data source to access information about Kion Budgets."
+  category:
+    description: "Use this data source to access information about Kion Categories."
+  cft:
+    description: "Use this data source to access information about Kion Cfts."
+  cloud_rule:
+    description: "Use this data source to access information about Kion Cloud Rules."
+  compliance_check:
+    description: "Use this data source to access information about Kion Compliance Checks."
+  compliance_family:
+    description: "Use this data source to access information about Kion Compliance Families."
+  compliance_level:
+    description: "Use this data source to access information about Kion Compliance Levels."
+  compliance_program:
+    description: "Use this data source to access information about Kion Compliance Programs."
+  compliance_standard:
+    description: "Use this data source to access information about Kion Compliance Standards."
+  custom_account:
+    description: "Use this data source to access information about Kion Custom Accounts."
+  custom_variable:
+    description: "Use this data source to access information about Kion Custom Variables."
+  custom_variable_override:
+    description: "Use this data source to access information about Kion Custom Variable Overrides."
+  forecast:
+    description: "Use this data source to access information about Kion Forecasts."
+  forecast_category:
+    description: "Use this data source to access information about Kion Forecast Categories."
+  funding_source:
+    description: "Use this data source to access information about Kion Funding Sources."
+  funding_source_permission_mapping:
+    description: "Use this data source to access information about Kion Funding Source Permission Mappings."
+  gcp_account:
+    description: "Use this data source to access information about Kion Gcp Accounts."
+  gcp_iam_role:
+    description: "Use this data source to access information about Kion Gcp Iam Roles."
+  gcp_service_account:
+    description: "Use this data source to access information about Kion GCP Service Accounts."
+    attributes:
+      data:
+        attributes:
+          oauth_client_secret:
+            sensitive: true
+  global_permission_mapping:
+    description: "Use this data source to access information about Kion Global Permission Mappings."
+  iam_policy:
+    description: "Use this data source to access information about Kion Iam Policys."
+  idms:
+    description: "Use this data source to access information about Kion IDMS configurations."
+  idms_group_association:
+    description: "Use this data source to access information about Kion IDMS Group Associations."
+  label:
+    description: "Use this data source to access information about a Kion Label."
+  oauth2_client:
+    description: "Use this data source to access information about Kion OAuth2 clients."
+  ou:
+    description: "Use this data source to access information about Kion OUs."
+  ou_cloud_access_role:
+    description: "Use this data source to access information about Kion Ou Cloud Access Roles."
+  ou_permission_mapping:
+    description: "Use this data source to access information about Kion Ou Permission Mappings."
+  permission_scheme:
+    description: "Use this data source to access information about Kion Permission Schemes."
+  project:
+    description: "Use this data source to access information about Kion Projects."
+  project_cloud_access_role:
+    description: "Use this data source to access information about Kion Project Cloud Access Roles."
+  project_enforcement:
+    description: "Use this data source to access information about Kion Project Enforcements."
+  project_line_item:
+    description: "Use this data source to access information about Kion Project Line Items."
+  project_note:
+    description: "Use this data source to access information about Kion Project Notes."
+  project_permission_mapping:
+    description: "Use this data source to access information about Kion Project Permission Mappings."
+  saml_group_association:
+    description: "Use this data source to access information about Kion Saml Group Associations."
+  service_control_policy:
+    description: "Use this data source to access information about Kion Service Control Policys."
+  user:
+    description: "Use this data source to access information about Kion Users."
+  user_group:
+    description: "Use this data source to access information about Kion User Groups."
+  webhook:
+    description: "Use this data source to access information about Kion Webhooks."
+
+  gcp_regions:
+    description: "Retrieves the Google Cloud regions known to Kion."

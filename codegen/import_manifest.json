@@ -1,0 +1,1057 @@
+{
+  "version": 2,
+  "resources": [
+    {
+      "tf_type": "kion_account",
+      "kind": "account",
+      "archetype": "cloud_account",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/account",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_account_cache",
+      "kind": "account_cache",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/account-cache",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_account_linkage",
+      "kind": "account_linkage",
+      "archetype": "blended",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/account-linkages",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_ami",
+      "kind": "ami",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/ami",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_app_api_key",
+      "kind": "app_api_key",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/app-api-key",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_app_config",
+      "kind": "app_config",
+      "archetype": "singleton",
+      "read_shape": "special",
+      "readable": true,
+      "list_path": "/v3/app-config",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_app_role",
+      "kind": "app_role",
+      "archetype": "blended",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/app-role",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_automation_policy",
+      "kind": "automation_policy",
+      "archetype": "automation_policy",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v1/automation-policy",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_aws_account",
+      "kind": "aws_account",
+      "archetype": "cloud_account",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/account",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_aws_cloudformation_template",
+      "kind": "aws_cloudformation_template",
+      "archetype": "",
+      "read_shape": "",
+      "readable": false,
+      "import_id": {
+        "format": ""
+      },
+      "reason": "second tf_type for kion_cft; importing both would put two resources in charge of one record",
+      "alias_of": "kion_cft"
+    },
+    {
+      "tf_type": "kion_aws_iam_policy",
+      "kind": "aws_iam_policy",
+      "archetype": "",
+      "read_shape": "",
+      "readable": false,
+      "import_id": {
+        "format": ""
+      },
+      "reason": "second tf_type for kion_iam_policy; importing both would put two resources in charge of one record",
+      "alias_of": "kion_iam_policy"
+    },
+    {
+      "tf_type": "kion_aws_resource_tag",
+      "kind": "aws_resource_tag",
+      "archetype": "no_read",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/aws-resource-tag",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_azure_account",
+      "kind": "azure_account",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/account",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_azure_arm_template",
+      "kind": "azure_arm_template",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/azure-arm-template",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_azure_policy",
+      "kind": "azure_policy",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/azure-policy",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_azure_role",
+      "kind": "azure_role",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/azure-role",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_billing_rule",
+      "kind": "billing_rule",
+      "archetype": "blended",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/billing-rule?rule_type_ids=1\u0026rule_type_ids=2\u0026rule_type_ids=3",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_billing_source",
+      "kind": "billing_source",
+      "archetype": "blended",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v4/billing-source",
+      "name_field": "name",
+      "require_valid_field": "custom_billing_source",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_billing_source_anthropic",
+      "kind": "billing_source_anthropic",
+      "archetype": "payer",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v4/billing-source",
+      "name_field": "name",
+      "require_valid_field": "anthropic_billing_source",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_billing_source_aws",
+      "kind": "billing_source_aws",
+      "archetype": "blended",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v4/billing-source",
+      "name_field": "name",
+      "require_valid_field": "aws_payer",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_billing_source_azure",
+      "kind": "billing_source_azure",
+      "archetype": "payer",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v4/billing-source",
+      "name_field": "name",
+      "require_valid_field": "azure_payer",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_billing_source_gcp",
+      "kind": "billing_source_gcp",
+      "archetype": "blended",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v4/billing-source",
+      "require_valid_field": "gcp_payer",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_billing_source_govcloud",
+      "kind": "billing_source_govcloud",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "name_field": "name",
+      "parent": {
+        "kind": "billing_source",
+        "list_path": "/v4/billing-source",
+        "child_path": "/v3/billing-source/{parent_id}/govcloud",
+        "parent_id_field": "billing_source_id"
+      },
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_billing_source_oci",
+      "kind": "billing_source_oci",
+      "archetype": "blended",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v4/billing-source",
+      "name_field": "name",
+      "require_valid_field": "oci_payer",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_budget",
+      "kind": "budget",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "ou",
+        "list_path": "/v3/ou",
+        "child_path": "/v3/ou/{parent_id}/budget",
+        "parent_id_field": "ou_id"
+      },
+      "parents": [
+        {
+          "kind": "ou",
+          "list_path": "/v3/ou",
+          "child_path": "/v3/ou/{parent_id}/budget",
+          "parent_id_field": "ou_id"
+        },
+        {
+          "kind": "project",
+          "list_path": "/v3/project",
+          "child_path": "/v3/project/{parent_id}/budget",
+          "parent_id_field": "project_id"
+        }
+      ],
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_category",
+      "kind": "category",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/category",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_cft",
+      "kind": "cft",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/cft",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_cloud_rule",
+      "kind": "cloud_rule",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/cloud-rule",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_compliance_check",
+      "kind": "compliance_check",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/compliance/check",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_compliance_control",
+      "kind": "compliance_control",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "name_field": "name",
+      "parent": {
+        "kind": "compliance_program",
+        "list_path": "/v4/compliance/program",
+        "child_path": "/v4/compliance/program/{parent_id}/control",
+        "parent_id_field": "compliance_program_id"
+      },
+      "import_id": {
+        "format": "parent_slash_key",
+        "key_field": "id"
+      }
+    },
+    {
+      "tf_type": "kion_compliance_family",
+      "kind": "compliance_family",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "name_field": "name",
+      "parent": {
+        "kind": "compliance_program",
+        "list_path": "/v4/compliance/program",
+        "child_path": "/v4/compliance/program/{parent_id}/family",
+        "parent_id_field": "compliance_program_id"
+      },
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_compliance_level",
+      "kind": "compliance_level",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "name_field": "name",
+      "parent": {
+        "kind": "compliance_program",
+        "list_path": "/v4/compliance/program",
+        "child_path": "/v4/compliance/program/{parent_id}/level",
+        "parent_id_field": "compliance_program_id"
+      },
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_compliance_program",
+      "kind": "compliance_program",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v4/compliance/program",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_compliance_standard",
+      "kind": "compliance_standard",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/compliance/standard",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_custom_account",
+      "kind": "custom_account",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/account",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_custom_variable",
+      "kind": "custom_variable",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/custom-variable",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_custom_variable_override",
+      "kind": "custom_variable_override",
+      "archetype": "cv_override",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "account",
+        "list_path": "/v3/account",
+        "child_path": "/v3/account/{parent_id}/custom-variable",
+        "parent_id_field": "entity_id"
+      },
+      "require_valid_field": "override",
+      "parents": [
+        {
+          "kind": "account",
+          "list_path": "/v3/account",
+          "child_path": "/v3/account/{parent_id}/custom-variable",
+          "parent_id_field": "entity_id"
+        },
+        {
+          "kind": "ou",
+          "list_path": "/v3/ou",
+          "child_path": "/v3/ou/{parent_id}/custom-variable",
+          "parent_id_field": "entity_id"
+        },
+        {
+          "kind": "project",
+          "list_path": "/v3/project",
+          "child_path": "/v3/project/{parent_id}/custom-variable",
+          "parent_id_field": "entity_id"
+        }
+      ],
+      "import_id": {
+        "format": "kind_parent_slash_key",
+        "key_field": "custom_variable_id"
+      }
+    },
+    {
+      "tf_type": "kion_dashboard",
+      "kind": "dashboard",
+      "archetype": "raw_http",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v1/dashboards",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_funding_source",
+      "kind": "funding_source",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/funding-source",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_funding_source_enforcement",
+      "kind": "funding_source_enforcement",
+      "archetype": "parent_list",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "funding_source",
+        "list_path": "/v3/funding-source",
+        "child_path": "/v3/funding-source/{parent_id}/enforcement",
+        "parent_id_field": "funding_source_id"
+      },
+      "import_id": {
+        "format": "parent_slash_key",
+        "key_field": "id"
+      }
+    },
+    {
+      "tf_type": "kion_funding_source_note",
+      "kind": "funding_source_note",
+      "archetype": "raw_http",
+      "read_shape": "parent_list",
+      "readable": true,
+      "name_field": "name",
+      "parent": {
+        "kind": "funding_source",
+        "list_path": "/v3/funding-source",
+        "child_path": "/v2/funding-source/{parent_id}/funding-source-note",
+        "parent_id_field": "funding_source_id"
+      },
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_funding_source_permission_mapping",
+      "kind": "funding_source_permission_mapping",
+      "archetype": "association",
+      "read_shape": "association",
+      "readable": true,
+      "parent": {
+        "kind": "funding_source",
+        "list_path": "/v3/funding-source",
+        "child_path": "/v3/funding-source/{parent_id}/permission-mapping",
+        "parent_id_field": "funding_source_id"
+      },
+      "import_id": {
+        "format": "parent_slash_key",
+        "key_field": "app_role_id"
+      }
+    },
+    {
+      "tf_type": "kion_gcp_account",
+      "kind": "gcp_account",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/account",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_gcp_iam_role",
+      "kind": "gcp_iam_role",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/gcp-iam-role",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_gcp_service_account",
+      "kind": "gcp_service_account",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/gcp/service-account",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_global_permission_mapping",
+      "kind": "global_permission_mapping",
+      "archetype": "association",
+      "read_shape": "association",
+      "readable": true,
+      "list_path": "/v3/global/permission-mapping",
+      "import_id": {
+        "format": "id",
+        "key_field": "app_role_id"
+      }
+    },
+    {
+      "tf_type": "kion_iam_policy",
+      "kind": "iam_policy",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/iam-policy",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_idms",
+      "kind": "idms",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/idms",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_idms_group_association",
+      "kind": "idms_group_association",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "idms",
+        "list_path": "/v3/idms",
+        "child_path": "/v3/idms/{parent_id}/group-association",
+        "parent_id_field": "idms_id",
+        "match": {
+          "idms_type_id": "3"
+        }
+      },
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_idms_open_id",
+      "kind": "idms_open_id",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "name_field": "name",
+      "parent": {
+        "kind": "idms",
+        "list_path": "/v3/idms",
+        "child_path": "/v4/idms/open-id/{parent_id}",
+        "parent_id_field": "idms_id"
+      },
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_idms_open_id_access_rule",
+      "kind": "idms_open_id_access_rule",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "idms",
+        "list_path": "/v3/idms",
+        "child_path": "/v4/idms/open-id/{parent_id}/access-rule",
+        "parent_id_field": "idms_id"
+      },
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_idms_open_id_group_association",
+      "kind": "idms_open_id_group_association",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "idms",
+        "list_path": "/v3/idms",
+        "child_path": "/v4/idms/open-id/{parent_id}/group-association",
+        "parent_id_field": "idms_id"
+      },
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_label",
+      "kind": "label",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/label",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_oauth2_client",
+      "kind": "oauth2_client",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/oauth2/clients",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_ou",
+      "kind": "ou",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/ou",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_ou_cloud_access_role",
+      "kind": "ou_cloud_access_role",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v4/ou-cloud-access-role",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_ou_cloud_access_role_exemption",
+      "kind": "ou_cloud_access_role_exemption",
+      "archetype": "no_read",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "ou",
+        "list_path": "/v3/ou",
+        "child_path": "/v1/ou/{parent_id}/ou-cloud-access-role",
+        "parent_id_field": "ou_id",
+        "child_records_key": "ou_exemptions"
+      },
+      "import_id": {
+        "format": "parent_slash_key",
+        "key_field": "id"
+      }
+    },
+    {
+      "tf_type": "kion_ou_enforcement",
+      "kind": "ou_enforcement",
+      "archetype": "parent_list",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "ou",
+        "list_path": "/v3/ou",
+        "child_path": "/v3/ou/{parent_id}/enforcement",
+        "parent_id_field": "ou_id"
+      },
+      "import_id": {
+        "format": "parent_slash_key",
+        "key_field": "id"
+      }
+    },
+    {
+      "tf_type": "kion_ou_note",
+      "kind": "ou_note",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "name_field": "name",
+      "parent": {
+        "kind": "ou",
+        "list_path": "/v3/ou",
+        "child_path": "/v3/ou/{parent_id}/ou-note",
+        "parent_id_field": "ou_id"
+      },
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_ou_permission_mapping",
+      "kind": "ou_permission_mapping",
+      "archetype": "association",
+      "read_shape": "association",
+      "readable": true,
+      "parent": {
+        "kind": "ou",
+        "list_path": "/v3/ou",
+        "child_path": "/v3/ou/{parent_id}/permission-mapping",
+        "parent_id_field": "ou_id"
+      },
+      "import_id": {
+        "format": "parent_slash_key",
+        "key_field": "app_role_id"
+      }
+    },
+    {
+      "tf_type": "kion_permission_scheme",
+      "kind": "permission_scheme",
+      "archetype": "blended",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/permission-scheme",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_project",
+      "kind": "project",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/project",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_project_cloud_access_role",
+      "kind": "project_cloud_access_role",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v4/project-cloud-access-role",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_project_cloud_access_role_exemption",
+      "kind": "project_cloud_access_role_exemption",
+      "archetype": "no_read",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "project",
+        "list_path": "/v3/project",
+        "child_path": "/v1/project/{parent_id}/ou-cloud-access-role",
+        "parent_id_field": "project_id",
+        "child_records_key": "project_exemptions"
+      },
+      "import_id": {
+        "format": "parent_slash_key",
+        "key_field": "id"
+      }
+    },
+    {
+      "tf_type": "kion_project_enforcement",
+      "kind": "project_enforcement",
+      "archetype": "parent_list",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "project",
+        "list_path": "/v3/project",
+        "child_path": "/v3/project/{parent_id}/enforcement",
+        "parent_id_field": "project_id"
+      },
+      "import_id": {
+        "format": "parent_slash_key",
+        "key_field": "id"
+      }
+    },
+    {
+      "tf_type": "kion_project_line_item",
+      "kind": "project_line_item",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/project-line-item",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_project_note",
+      "kind": "project_note",
+      "archetype": "blended",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/project-note",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_project_permission_mapping",
+      "kind": "project_permission_mapping",
+      "archetype": "association",
+      "read_shape": "association",
+      "readable": true,
+      "parent": {
+        "kind": "project",
+        "list_path": "/v3/project",
+        "child_path": "/v3/project/{parent_id}/permission-mapping",
+        "parent_id_field": "project_id"
+      },
+      "import_id": {
+        "format": "parent_slash_key",
+        "key_field": "app_role_id"
+      }
+    },
+    {
+      "tf_type": "kion_saml_group_association",
+      "kind": "saml_group_association",
+      "archetype": "entity",
+      "read_shape": "parent_list",
+      "readable": true,
+      "parent": {
+        "kind": "idms",
+        "list_path": "/v3/idms",
+        "child_path": "/v3/idms/{parent_id}/group-association",
+        "parent_id_field": "idms_id",
+        "match": {
+          "idms_type_id": "3"
+        }
+      },
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_scope",
+      "kind": "scope",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/beta/scope",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_scope_criteria",
+      "kind": "scope_criteria",
+      "archetype": "compound_key_parent_read",
+      "read_shape": "nested_collection",
+      "readable": true,
+      "list_path": "/beta/scope",
+      "collection": "criteria_records",
+      "parent_id_field": "scope_id",
+      "child_id_field": "criteria_id",
+      "import_id": {
+        "format": "parent_slash_key"
+      }
+    },
+    {
+      "tf_type": "kion_service_catalog",
+      "kind": "service_catalog",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/service-catalog",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_service_control_policy",
+      "kind": "service_control_policy",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/service-control-policy",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_user",
+      "kind": "user",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/user",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_user_group",
+      "kind": "user_group",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/user-group",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    },
+    {
+      "tf_type": "kion_webhook",
+      "kind": "webhook",
+      "archetype": "entity",
+      "read_shape": "generic",
+      "readable": true,
+      "list_path": "/v3/webhook",
+      "name_field": "name",
+      "import_id": {
+        "format": "id"
+      }
+    }
+  ]
+}

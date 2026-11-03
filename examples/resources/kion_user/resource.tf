@@ -1,2 +1,13 @@
-# Note: The kion_user resource is currently read-only and cannot be created or modified directly.
-# Users are typically managed through your Identity Management System (IDMS).
+resource "kion_user" "example" {
+  # Required
+  email      = "example"
+  first_name = "example"
+  idms_id    = 1
+  last_name  = "example"
+  username   = "example"
+
+  # Optional
+  # mfa            = 1
+  # phone          = "example"
+  # user_group_ids = []
+}
