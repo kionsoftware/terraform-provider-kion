@@ -50,16 +50,13 @@ read the counts rather than the exit code.
 `KION_ACC_APP_CONFIG_MUTATION_OK` is opt-in rather than discovered: app config
 is global state, so mutating it affects everyone on the install.
 
-## In CI
+## Not in CI
 
-`.github/workflows/acctest.yml` runs them, on `workflow_dispatch` only. It is
-deliberately not on push or pull_request: that would mutate an installation on
-every commit, and a fork PR would do it with someone else's configuration.
-
-Credentials come from a GitHub Environment, chosen per run. Put reviewers on
-that Environment and a run against a protected install needs approval before
-anything is written. The workflow sweeps before and after, including on
-cancellation.
+Acceptance tests run only from a developer's machine, against an install that
+developer chooses. No workflow runs them, and none should: CI never holds
+credentials for a live Kion install. `ci.yml`'s `acctest-config` job is
+hermetic. It checks the tests' HCL against the provider schema without
+contacting an install.
 
 ## Tests that are red on purpose
 
