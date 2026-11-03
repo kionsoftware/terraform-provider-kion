@@ -20,6 +20,7 @@ func ComplianceProgramResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "Description for the Compliance Program in the application.",
 				MarkdownDescription: "Description for the Compliance Program in the application.",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -29,6 +30,7 @@ func ComplianceProgramResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "GroupType of the Compliance Program in the application.",
 				MarkdownDescription: "GroupType of the Compliance Program in the application.",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -54,6 +56,7 @@ func ComplianceProgramResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "TerseName of the Compliance Program in the application.\nThis is a concise name meant for easy identification and small UI spaces like program icons.",
 				MarkdownDescription: "TerseName of the Compliance Program in the application.\nThis is a concise name meant for easy identification and small UI spaces like program icons.",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -63,6 +66,7 @@ func ComplianceProgramResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "VerboseName of the Compliance Program in the application.\nThis is a more detailed program name meant to suppliment the Name or TerseName in specific contexts.",
 				MarkdownDescription: "VerboseName of the Compliance Program in the application.\nThis is a more detailed program name meant to suppliment the Name or TerseName in specific contexts.",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},

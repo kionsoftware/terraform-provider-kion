@@ -1,0 +1,6 @@
+kind: BUG FIXES
+body: >-
+  kion_webhook: setting owner_user_group_ids or owner_user_ids to an empty set no longer fails the apply with
+  "inconsistent result after apply: was cty.SetValEmpty, but now null". Kion returns an empty owner list as null, as
+  it does for kion_user_group (#147).
+time: 2026-11-02T23:47:55Z

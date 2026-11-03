@@ -724,3 +724,54 @@ func TestCheckNothingSkipped(t *testing.T) {
 	assert.Contains(t, err.Error(), "data source kept_ds")
 	assert.Contains(t, err.Error(), "property_types")
 }
+
+// TestUseStateForUnknownDefault_keptWithRequiresReplace: declaring
+// RequiresReplace on a Computed attribute must not drop UseStateForUnknown, or
+// a change to any other attribute leaves the unset one unknown and replaces the
+// record (kion_project_cloud_access_role.cloud_access_role_type_id did).
+func TestUseStateForUnknownDefault_keptWithRequiresReplace(t *testing.T) {
+	mod := func(def string) any {
+		return map[string]any{"custom": map[string]any{
+			"imports":           []any{map[string]any{"path": planModifierBase + "int64planmodifier"}},
+			"schema_definition": def,
+		}}
+	}
+	attr := func(name string, mods any) map[string]any {
+		typeObj := map[string]any{"computed_optional_required": "computed_optional"}
+		if mods != nil {
+			typeObj["plan_modifiers"] = mods
+		}
+		return map[string]any{"name": name, "int64": typeObj}
+	}
+	replaceOnly := attr("type_id", []any{mod("int64planmodifier.RequiresReplace()")})
+	both := attr("both", []any{mod("int64planmodifier.UseStateForUnknown()"), mod("int64planmodifier.RequiresReplace()")})
+	optOut := attr("recomputed", []any{})
+	spec := []any{map[string]any{"name": "r", "schema": map[string]any{
+		"attributes": []any{replaceOnly, both, optOut},
+	}}}
+
+	require.NoError(t, applyUseStateForUnknownDefault(spec))
+
+	defs := func(a map[string]any) []string {
+		typeObj, ok := a["int64"].(map[string]any)
+		require.True(t, ok)
+		mods, ok := typeObj["plan_modifiers"].([]any)
+		require.True(t, ok)
+		var out []string
+		for _, m := range mods {
+			mm, ok := m.(map[string]any)
+			require.True(t, ok)
+			c, ok := mm["custom"].(map[string]any)
+			require.True(t, ok)
+			def, ok := c["schema_definition"].(string)
+			require.True(t, ok)
+			out = append(out, def)
+		}
+		return out
+	}
+	assert.Equal(t, []string{"int64planmodifier.UseStateForUnknown()", "int64planmodifier.RequiresReplace()"}, defs(replaceOnly),
+		"UseStateForUnknown is prepended so it runs before RequiresReplace")
+	assert.Equal(t, []string{"int64planmodifier.UseStateForUnknown()", "int64planmodifier.RequiresReplace()"}, defs(both),
+		"an attribute that already keeps state is not given a second one")
+	assert.Empty(t, defs(optOut), "an explicit [] still opts out")
+}

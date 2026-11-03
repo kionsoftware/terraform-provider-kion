@@ -28,6 +28,7 @@ func AwsResourceTagResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "ResourceKey is the resource tag's key.",
 				MarkdownDescription: "ResourceKey is the resource tag's key.",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -37,6 +38,7 @@ func AwsResourceTagResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "ResourceValue is the resource tag's value.",
 				MarkdownDescription: "ResourceValue is the resource tag's value.",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},

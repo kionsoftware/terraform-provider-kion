@@ -199,6 +199,7 @@ func ProjectCloudAccessRoleResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "Type of the cloud access role. 1 User (default), 2 Custom Trust, 3 Account, 4 Service. Non-User types are AWS only. Changing this forces a new role: the update body carries no role type, so the API would accept the change and ignore it.",
 				MarkdownDescription: "Type of the cloud access role. 1 User (default), 2 Custom Trust, 3 Account, 4 Service. Non-User types are AWS only. Changing this forces a new role: the update body carries no role type, so the API would accept the change and ignore it.",
 				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
 					int64planmodifier.RequiresReplace(),
 				},
 				Validators: []validator.Int64{

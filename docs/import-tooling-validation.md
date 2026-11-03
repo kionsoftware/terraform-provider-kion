@@ -95,6 +95,25 @@ The apply only reads, so it writes nothing to Kion. Its one warning is
 because a local dev build reports an empty version; a released install does
 not.
 
+### Repeat on a fresh local install, at 1.8.0 (2026-11-02)
+
+The same end-to-end cycle, against a freshly started local dev install and a
+provider built at `v1.8.0`, after 1.6.0–1.8.0 changed the billing sources,
+cloud access roles, saml_group_association and kion-import itself. The API is
+served at the root, so `--api-prefix ""` and `KION_APIPATH=""`.
+
+| stage | result |
+|---|---|
+| `kion-import` | 76 resource types, 7,810 import blocks, 0 read errors, 12 read with a caveat |
+| plan, generating config | 7,810 to import, 0 to change, 0 errors |
+| plan of the generated config | 7,810 to import, 0 to change |
+| `terraform apply` | 7,810 imported, 0 added/changed/destroyed, 40 s |
+| plan after apply, from state | No changes, 0 errors |
+
+The caveats are the expected empties on an install with only the internal
+IDMS (no SAML or OpenID records). A grep for `Error:` in the logs matches eight
+lines, all inside imported CloudFormation templates' embedded Python.
+
 ### Read that table by column, not by row
 
 **Record counts are properties of the install** and are not comparable between

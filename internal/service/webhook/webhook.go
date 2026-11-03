@@ -288,7 +288,7 @@ func flattenWebhook(ctx context.Context, apiObject any, model *WebhookModel) dia
 			model.SkipSsl = flex.OptNilBoolToFramework(v.Data.Value.Webhook.Value.SkipSsl)
 			model.TimeoutInSeconds = flex.OptInt64ToFramework(v.Data.Value.Webhook.Value.TimeoutInSeconds)
 			model.UseRequestHeaders = flex.OptNilBoolToFramework(v.Data.Value.Webhook.Value.UseRequestHeaders)
-			var ownerUserGroupsIDs []int64
+			ownerUserGroupsIDs := []int64{} // empty_collections: Kion returns none as null
 			for _, elem := range v.Data.Value.OwnerUserGroups.Value {
 				if elem.ID.Set {
 					ownerUserGroupsIDs = append(ownerUserGroupsIDs, int64(elem.ID.Value))
@@ -300,7 +300,7 @@ func flattenWebhook(ctx context.Context, apiObject any, model *WebhookModel) dia
 			ownerUserGroupsIDsColl, ownerUserGroupsIDsCD := types.SetValueFrom(ctx, types.Int64Type, ownerUserGroupsIDs)
 			diags.Append(ownerUserGroupsIDsCD...)
 			model.OwnerUserGroupIds = ownerUserGroupsIDsColl
-			var ownerUsersIDs []int64
+			ownerUsersIDs := []int64{} // empty_collections: Kion returns none as null
 			for _, elem := range v.Data.Value.OwnerUsers.Value {
 				if elem.ID.Set {
 					ownerUsersIDs = append(ownerUsersIDs, int64(elem.ID.Value))
