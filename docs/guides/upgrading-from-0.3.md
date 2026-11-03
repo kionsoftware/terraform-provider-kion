@@ -14,12 +14,16 @@ old-schema state to the new schema the first time you plan, the same mechanism t
 AWS provider uses across major versions. There is no separate state-rewriting
 tool to run, and nothing is changed until you review and apply.
 
+**0.3.36 is the final 0.3.x release.** The 0.3.x line gets no further fixes,
+security fixes included, and has no maintenance branch. If you need a fix,
+upgrade to the new major version.
+
 ## Requirements
 
 - **Terraform 1.0 or later.** The new provider speaks plugin protocol 6, which
   Terraform 0.x cannot load.
-- Upgrade from the **latest 0.3.x release** if you can. The state upgraders
-  are written against it. An attribute that a later 0.3.x added and your
+- Upgrade from **0.3.36**, the final 0.3.x release, if you can. The state
+  upgraders are written against it. An attribute that a later 0.3.x added and your
   version lacks simply starts empty.
 
 ## Steps
